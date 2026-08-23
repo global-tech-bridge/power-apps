@@ -1,0 +1,263 @@
+Screens:
+  SignScreen:
+    Properties:
+      Fill: =RGBA(243, 242, 241, 1)
+      OnVisible: |-
+        =Reset(txtCustomerName);
+        Reset(txtEmail);
+        Reset(txtPhone);
+        Reset(txtConsent);
+        Reset(radSignatureType);
+        Reset(penSignature);
+        Reset(txtTextSignature)
+    Children:
+      - recHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =80
+            Fill: =RGBA(0, 120, 212, 1)
+      - lblTitle:
+          Control: Label
+          Properties:
+            Text: ="顧客デジタル署名受付"
+            X: =40
+            Y: =0
+            Width: =700
+            Height: =80
+            Size: =22
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - lblCustomerName:
+          Control: Label
+          Properties:
+            Text: ="顧客名 ＊"
+            X: =60
+            Y: =104
+            Width: =580
+            Height: =28
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtCustomerName:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：山田 太郎"
+            X: =60
+            Y: =136
+            Width: =580
+            Height: =44
+            Size: =12
+      - lblEmail:
+          Control: Label
+          Properties:
+            Text: ="メールアドレス"
+            X: =60
+            Y: =196
+            Width: =580
+            Height: =28
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtEmail:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：taro.yamada@example.com"
+            X: =60
+            Y: =228
+            Width: =580
+            Height: =44
+            Size: =12
+      - lblPhone:
+          Control: Label
+          Properties:
+            Text: ="電話番号"
+            X: =60
+            Y: =288
+            Width: =580
+            Height: =28
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtPhone:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：03-1234-5678"
+            X: =60
+            Y: =320
+            Width: =580
+            Height: =44
+            Size: =12
+      - lblConsent:
+          Control: Label
+          Properties:
+            Text: ="同意内容"
+            X: =60
+            Y: =380
+            Width: =580
+            Height: =28
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtConsent:
+          Control: Classic/TextInput
+          Properties:
+            Mode: =TextMode.MultiLine
+            Default: =""
+            HintText: ="お客様にご確認いただく同意内容を入力してください。"
+            X: =60
+            Y: =412
+            Width: =580
+            Height: =220
+            Size: =12
+      - lblSignDate:
+          Control: Label
+          Properties:
+            Text: |-
+              ="署名日時：" & Text(Now(), "yyyy/mm/dd hh:mm")
+            X: =60
+            Y: =648
+            Width: =580
+            Height: =28
+            Size: =12
+            Color: =RGBA(96, 94, 92, 1)
+      - lblSignatureType:
+          Control: Label
+          Properties:
+            Text: ="署名方法 ＊"
+            X: =700
+            Y: =104
+            Width: =600
+            Height: =28
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - radSignatureType:
+          Control: Classic/Radio
+          Properties:
+            Items: =["手書き署名", "テキスト署名"]
+            Default: ="手書き署名"
+            Layout: =Layout.Horizontal
+            X: =700
+            Y: =136
+            Width: =600
+            Height: =44
+            Size: =12
+      - penSignature:
+          Control: PenInput
+          Properties:
+            Visible: |-
+              =radSignatureType.Selected.Value = "手書き署名"
+            X: =700
+            Y: =196
+            Width: =600
+            Height: =300
+            Color: =RGBA(50, 49, 48, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+      - btnClearSignature:
+          Control: Classic/Button
+          Properties:
+            Text: ="署名をクリア"
+            OnSelect: =Reset(penSignature)
+            Visible: |-
+              =radSignatureType.Selected.Value = "手書き署名"
+            X: =1140
+            Y: =508
+            Width: =160
+            Height: =40
+            Size: =12
+      - lblPenHint:
+          Control: Label
+          Properties:
+            Text: ="上の枠内にペンまたは指で署名してください。"
+            Visible: |-
+              =radSignatureType.Selected.Value = "手書き署名"
+            X: =700
+            Y: =508
+            Width: =430
+            Height: =40
+            Size: =11
+            Color: =RGBA(96, 94, 92, 1)
+      - txtTextSignature:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="署名として氏名を入力してください。"
+            Visible: |-
+              =radSignatureType.Selected.Value = "テキスト署名"
+            X: =700
+            Y: =196
+            Width: =600
+            Height: =60
+            Size: =16
+            Font: =Font.Georgia
+            Italic: =true
+      - lblValidation:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(
+                  IsBlank(txtCustomerName.Text), "※ 顧客名は必須です。",
+                  !IsBlank(txtEmail.Text) && !IsMatch(txtEmail.Text, Match.Email), "※ メールアドレスの形式が正しくありません。",
+                  radSignatureType.Selected.Value = "手書き署名" && IsBlank(penSignature.Image), "※ 手書き署名を入力してください。",
+                  radSignatureType.Selected.Value = "テキスト署名" && IsBlank(txtTextSignature.Text), "※ テキスト署名（氏名）を入力してください。",
+                  ""
+              )
+            X: =700
+            Y: =560
+            Width: =600
+            Height: =56
+            Size: =12
+            Color: =RGBA(196, 49, 75, 1)
+      - btnSubmit:
+          Control: Classic/Button
+          Properties:
+            Text: ="署名を送信"
+            DisplayMode: |-
+              =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
+            OnSelect: |-
+              =Patch(
+                  顧客署名,
+                  Defaults(顧客署名),
+                  {
+                      顧客名: txtCustomerName.Text,
+                      メールアドレス: txtEmail.Text,
+                      電話番号: txtPhone.Text,
+                      同意内容: txtConsent.Text,
+                      署名種別: If(
+                          radSignatureType.Selected.Value = "手書き署名",
+                          '署名種別 (顧客署名)'.手書き署名,
+                          '署名種別 (顧客署名)'.テキスト署名
+                      ),
+                      署名画像: If(radSignatureType.Selected.Value = "手書き署名", penSignature.Image),
+                      テキスト代替署名: If(radSignatureType.Selected.Value = "テキスト署名", txtTextSignature.Text),
+                      署名日時: Now(),
+                      ステータス: 'ステータス (顧客署名)'.完了
+                  }
+              );
+              Navigate(CompleteScreen, ScreenTransition.Fade)
+            X: =700
+            Y: =648
+            Width: =280
+            Height: =52
+            Size: =14
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+      - btnReset:
+          Control: Classic/Button
+          Properties:
+            Text: ="入力をリセット"
+            OnSelect: |-
+              =Reset(txtCustomerName);
+              Reset(txtEmail);
+              Reset(txtPhone);
+              Reset(txtConsent);
+              Reset(radSignatureType);
+              Reset(penSignature);
+              Reset(txtTextSignature);
+              Notify("入力内容をリセットしました。", NotificationType.Information)
+            X: =1000
+            Y: =648
+            Width: =180
+            Height: =52
+            Size: =12
