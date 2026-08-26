@@ -8,7 +8,7 @@ Screens:
           Properties:
             Text: ="✓"
             X: =0
-            Y: =200
+            Y: =300
             Width: =Parent.Width
             Height: =120
             Size: =72
@@ -19,21 +19,21 @@ Screens:
           Properties:
             Text: ="署名を受け付けました"
             X: =0
-            Y: =330
+            Y: =430
             Width: =Parent.Width
             Height: =60
-            Size: =28
+            Size: =26
             Align: =Align.Center
             FontWeight: =FontWeight.Semibold
       - lblCompleteNote:
           Control: Label
           Properties:
             Text: ="ご協力ありがとうございました。この画面を担当者にお見せください。"
-            X: =0
-            Y: =396
-            Width: =Parent.Width
-            Height: =40
-            Size: =14
+            X: =40
+            Y: =496
+            Width: =688
+            Height: =60
+            Size: =13
             Align: =Align.Center
             Color: =RGBA(96, 94, 92, 1)
       - btnNewSignature:
@@ -41,9 +41,9 @@ Screens:
           Properties:
             Text: ="新しい署名を開始"
             OnSelect: =Navigate(SignScreen, ScreenTransition.Fade)
-            X: =543
-            Y: =480
-            Width: =280
+            X: =224
+            Y: =600
+            Width: =320
             Height: =52
             Size: =14
             Fill: =RGBA(0, 120, 212, 1)

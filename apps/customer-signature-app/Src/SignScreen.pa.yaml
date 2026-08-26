@@ -6,7 +6,7 @@ Screens:
         =Reset(txtCustomerName);
         Reset(txtEmail);
         Reset(txtPhone);
-        Reset(txtConsent);
+        Reset(chkConsent);
         Reset(radSignatureType);
         Reset(penSignature);
         Reset(txtTextSignature)
@@ -17,7 +17,7 @@ Screens:
             X: =0
             Y: =0
             Width: =Parent.Width
-            Height: =80
+            Height: =72
             Fill: =RGBA(0, 120, 212, 1)
       - lblTitle:
           Control: Label
@@ -25,19 +25,31 @@ Screens:
             Text: ="顧客デジタル署名受付"
             X: =40
             Y: =0
-            Width: =700
-            Height: =80
-            Size: =22
+            Width: =400
+            Height: =72
+            Size: =20
             Color: =RGBA(255, 255, 255, 1)
             FontWeight: =FontWeight.Semibold
+      - lblSignDate:
+          Control: Label
+          Properties:
+            Text: |-
+              ="署名日時：" & Text(Now(), "yyyy/mm/dd hh:mm")
+            X: =400
+            Y: =0
+            Width: =328
+            Height: =72
+            Size: =11
+            Align: =Align.Right
+            Color: =RGBA(255, 255, 255, 1)
       - lblCustomerName:
           Control: Label
           Properties:
             Text: ="顧客名 ＊"
-            X: =60
-            Y: =104
-            Width: =580
-            Height: =28
+            X: =40
+            Y: =92
+            Width: =688
+            Height: =26
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtCustomerName:
@@ -45,19 +57,19 @@ Screens:
           Properties:
             Default: =""
             HintText: ="例：山田 太郎"
-            X: =60
-            Y: =136
-            Width: =580
+            X: =40
+            Y: =120
+            Width: =688
             Height: =44
             Size: =12
       - lblEmail:
           Control: Label
           Properties:
             Text: ="メールアドレス"
-            X: =60
-            Y: =196
-            Width: =580
-            Height: =28
+            X: =40
+            Y: =176
+            Width: =688
+            Height: =26
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtEmail:
@@ -65,19 +77,19 @@ Screens:
           Properties:
             Default: =""
             HintText: ="例：taro.yamada@example.com"
-            X: =60
-            Y: =228
-            Width: =580
+            X: =40
+            Y: =204
+            Width: =688
             Height: =44
             Size: =12
       - lblPhone:
           Control: Label
           Properties:
             Text: ="電話番号"
-            X: =60
-            Y: =288
-            Width: =580
-            Height: =28
+            X: =40
+            Y: =260
+            Width: =688
+            Height: =26
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtPhone:
@@ -85,51 +97,61 @@ Screens:
           Properties:
             Default: =""
             HintText: ="例：03-1234-5678"
-            X: =60
-            Y: =320
-            Width: =580
+            X: =40
+            Y: =288
+            Width: =688
             Height: =44
             Size: =12
       - lblConsent:
           Control: Label
           Properties:
-            Text: ="同意内容"
-            X: =60
-            Y: =380
-            Width: =580
-            Height: =28
+            Text: ="同意内容（キャンセルポリシー） ＊"
+            X: =40
+            Y: =344
+            Width: =688
+            Height: =26
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtConsent:
           Control: Classic/TextInput
           Properties:
             Mode: =TextMode.MultiLine
-            Default: =""
-            HintText: ="お客様にご確認いただく同意内容を入力してください。"
-            X: =60
-            Y: =412
-            Width: =580
-            Height: =220
-            Size: =12
-      - lblSignDate:
-          Control: Label
+            DisplayMode: =DisplayMode.View
+            Default: |-
+              ="【キャンセルポリシー】" & Char(10) &
+              "1. ご予約のキャンセル・変更は、ご利用日の3日前までにご連絡ください。" & Char(10) &
+              "2. キャンセル料は以下のとおりです。" & Char(10) &
+              "　・ご利用日の3日前まで：無料" & Char(10) &
+              "　・ご利用日の2日前〜前日：ご利用料金の50%" & Char(10) &
+              "　・ご利用日当日・無連絡キャンセル：ご利用料金の100%" & Char(10) &
+              "3. 天候・災害等、当社の判断により中止となった場合、キャンセル料は発生しません。" & Char(10) &
+              "4. お支払い済みの料金は、キャンセル料を差し引いた金額を返金いたします（振込手数料はお客様のご負担となります）。" & Char(10) & Char(10) &
+              "私は上記のキャンセルポリシーの内容を確認し、同意のうえ署名します。"
+            X: =40
+            Y: =372
+            Width: =688
+            Height: =170
+            Size: =11
+            Color: =RGBA(50, 49, 48, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+      - chkConsent:
+          Control: Classic/CheckBox
           Properties:
-            Text: |-
-              ="署名日時：" & Text(Now(), "yyyy/mm/dd hh:mm")
-            X: =60
-            Y: =648
-            Width: =580
-            Height: =28
+            Text: ="上記のキャンセルポリシーを確認し、同意します"
+            Default: =false
+            X: =40
+            Y: =550
+            Width: =688
+            Height: =36
             Size: =12
-            Color: =RGBA(96, 94, 92, 1)
       - lblSignatureType:
           Control: Label
           Properties:
             Text: ="署名方法 ＊"
-            X: =700
-            Y: =104
-            Width: =600
-            Height: =28
+            X: =40
+            Y: =598
+            Width: =688
+            Height: =26
             Size: =12
             FontWeight: =FontWeight.Semibold
       - radSignatureType:
@@ -138,22 +160,34 @@ Screens:
             Items: =["手書き署名", "テキスト署名"]
             Default: ="手書き署名"
             Layout: =Layout.Horizontal
-            X: =700
-            Y: =136
-            Width: =600
-            Height: =44
+            X: =40
+            Y: =626
+            Width: =688
+            Height: =40
             Size: =12
       - penSignature:
           Control: PenInput
           Properties:
             Visible: |-
               =radSignatureType.Selected.Value = "手書き署名"
-            X: =700
-            Y: =196
-            Width: =600
-            Height: =300
+            X: =40
+            Y: =676
+            Width: =688
+            Height: =200
             Color: =RGBA(50, 49, 48, 1)
             Fill: =RGBA(255, 255, 255, 1)
+      - lblPenHint:
+          Control: Label
+          Properties:
+            Text: ="上の枠内にペンまたは指で署名してください。"
+            Visible: |-
+              =radSignatureType.Selected.Value = "手書き署名"
+            X: =40
+            Y: =884
+            Width: =510
+            Height: =40
+            Size: =11
+            Color: =RGBA(96, 94, 92, 1)
       - btnClearSignature:
           Control: Classic/Button
           Properties:
@@ -161,23 +195,11 @@ Screens:
             OnSelect: =Reset(penSignature)
             Visible: |-
               =radSignatureType.Selected.Value = "手書き署名"
-            X: =1140
-            Y: =508
+            X: =568
+            Y: =884
             Width: =160
             Height: =40
             Size: =12
-      - lblPenHint:
-          Control: Label
-          Properties:
-            Text: ="上の枠内にペンまたは指で署名してください。"
-            Visible: |-
-              =radSignatureType.Selected.Value = "手書き署名"
-            X: =700
-            Y: =508
-            Width: =430
-            Height: =40
-            Size: =11
-            Color: =RGBA(96, 94, 92, 1)
       - txtTextSignature:
           Control: Classic/TextInput
           Properties:
@@ -185,9 +207,9 @@ Screens:
             HintText: ="署名として氏名を入力してください。"
             Visible: |-
               =radSignatureType.Selected.Value = "テキスト署名"
-            X: =700
-            Y: =196
-            Width: =600
+            X: =40
+            Y: =676
+            Width: =688
             Height: =60
             Size: =16
             Font: =Font.Georgia
@@ -199,20 +221,21 @@ Screens:
               =If(
                   IsBlank(txtCustomerName.Text), "※ 顧客名は必須です。",
                   !IsBlank(txtEmail.Text) && !IsMatch(txtEmail.Text, Match.Email), "※ メールアドレスの形式が正しくありません。",
+                  !chkConsent.Value, "※ キャンセルポリシーへの同意が必要です。",
                   radSignatureType.Selected.Value = "手書き署名" && IsBlank(penSignature.Image), "※ 手書き署名を入力してください。",
                   radSignatureType.Selected.Value = "テキスト署名" && IsBlank(txtTextSignature.Text), "※ テキスト署名（氏名）を入力してください。",
                   ""
               )
-            X: =700
-            Y: =560
-            Width: =600
-            Height: =56
-            Size: =12
+            X: =40
+            Y: =930
+            Width: =688
+            Height: =24
+            Size: =11
             Color: =RGBA(196, 49, 75, 1)
       - btnSubmit:
           Control: Classic/Button
           Properties:
-            Text: ="署名を送信"
+            Text: ="同意して署名を送信"
             DisplayMode: |-
               =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
             OnSelect: |-
@@ -236,10 +259,10 @@ Screens:
                   }
               );
               Navigate(CompleteScreen, ScreenTransition.Fade)
-            X: =700
-            Y: =648
-            Width: =280
-            Height: =52
+            X: =40
+            Y: =960
+            Width: =420
+            Height: =48
             Size: =14
             Fill: =RGBA(0, 120, 212, 1)
             Color: =RGBA(255, 255, 255, 1)
@@ -251,13 +274,13 @@ Screens:
               =Reset(txtCustomerName);
               Reset(txtEmail);
               Reset(txtPhone);
-              Reset(txtConsent);
+              Reset(chkConsent);
               Reset(radSignatureType);
               Reset(penSignature);
               Reset(txtTextSignature);
               Notify("入力内容をリセットしました。", NotificationType.Information)
-            X: =1000
-            Y: =648
-            Width: =180
-            Height: =52
+            X: =476
+            Y: =960
+            Width: =252
+            Height: =48
             Size: =12
