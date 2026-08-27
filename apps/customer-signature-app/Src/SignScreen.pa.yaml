@@ -6,6 +6,9 @@ Screens:
         =Reset(txtCustomerName);
         Reset(txtEmail);
         Reset(txtPhone);
+        Reset(txtMaker);
+        Reset(txtModel);
+        Reset(txtSerialNo);
         Reset(chkConsent);
         Reset(radSignatureType);
         Reset(penSignature);
@@ -47,9 +50,9 @@ Screens:
           Properties:
             Text: ="顧客名 ＊"
             X: =40
-            Y: =92
+            Y: =88
             Width: =688
-            Height: =26
+            Height: =24
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtCustomerName:
@@ -58,38 +61,38 @@ Screens:
             Default: =""
             HintText: ="例：山田 太郎"
             X: =40
-            Y: =120
+            Y: =112
             Width: =688
-            Height: =44
+            Height: =42
             Size: =12
       - lblEmail:
           Control: Label
           Properties:
             Text: ="メールアドレス"
             X: =40
-            Y: =176
-            Width: =688
-            Height: =26
+            Y: =166
+            Width: =334
+            Height: =24
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtEmail:
           Control: Classic/TextInput
           Properties:
             Default: =""
-            HintText: ="例：taro.yamada@example.com"
+            HintText: ="例：taro@example.com"
             X: =40
-            Y: =204
-            Width: =688
-            Height: =44
+            Y: =190
+            Width: =334
+            Height: =42
             Size: =12
       - lblPhone:
           Control: Label
           Properties:
             Text: ="電話番号"
-            X: =40
-            Y: =260
-            Width: =688
-            Height: =26
+            X: =394
+            Y: =166
+            Width: =334
+            Height: =24
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtPhone:
@@ -97,19 +100,79 @@ Screens:
           Properties:
             Default: =""
             HintText: ="例：03-1234-5678"
+            X: =394
+            Y: =190
+            Width: =334
+            Height: =42
+            Size: =12
+      - lblMaker:
+          Control: Label
+          Properties:
+            Text: ="メーカー"
             X: =40
-            Y: =288
-            Width: =688
-            Height: =44
+            Y: =244
+            Width: =216
+            Height: =24
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtMaker:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：ヤンマー"
+            X: =40
+            Y: =268
+            Width: =216
+            Height: =42
+            Size: =12
+      - lblModel:
+          Control: Label
+          Properties:
+            Text: ="型式"
+            X: =276
+            Y: =244
+            Width: =216
+            Height: =24
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtModel:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：YT5113"
+            X: =276
+            Y: =268
+            Width: =216
+            Height: =42
+            Size: =12
+      - lblSerialNo:
+          Control: Label
+          Properties:
+            Text: ="機番"
+            X: =512
+            Y: =244
+            Width: =216
+            Height: =24
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - txtSerialNo:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="例：12345"
+            X: =512
+            Y: =268
+            Width: =216
+            Height: =42
             Size: =12
       - lblConsent:
           Control: Label
           Properties:
             Text: ="同意内容（キャンセルポリシー） ＊"
             X: =40
-            Y: =344
+            Y: =322
             Width: =688
-            Height: =26
+            Height: =24
             Size: =12
             FontWeight: =FontWeight.Semibold
       - txtConsent:
@@ -128,9 +191,9 @@ Screens:
               "4. お支払い済みの料金は、キャンセル料を差し引いた金額を返金いたします（振込手数料はお客様のご負担となります）。" & Char(10) & Char(10) &
               "私は上記のキャンセルポリシーの内容を確認し、同意のうえ署名します。"
             X: =40
-            Y: =372
+            Y: =346
             Width: =688
-            Height: =170
+            Height: =150
             Size: =11
             Color: =RGBA(50, 49, 48, 1)
             Fill: =RGBA(255, 255, 255, 1)
@@ -140,18 +203,18 @@ Screens:
             Text: ="上記のキャンセルポリシーを確認し、同意します"
             Default: =false
             X: =40
-            Y: =550
+            Y: =504
             Width: =688
-            Height: =36
+            Height: =34
             Size: =12
       - lblSignatureType:
           Control: Label
           Properties:
             Text: ="署名方法 ＊"
             X: =40
-            Y: =598
+            Y: =548
             Width: =688
-            Height: =26
+            Height: =24
             Size: =12
             FontWeight: =FontWeight.Semibold
       - radSignatureType:
@@ -161,9 +224,9 @@ Screens:
             Default: ="手書き署名"
             Layout: =Layout.Horizontal
             X: =40
-            Y: =626
+            Y: =572
             Width: =688
-            Height: =40
+            Height: =38
             Size: =12
       - penSignature:
           Control: PenInput
@@ -171,9 +234,9 @@ Screens:
             Visible: |-
               =radSignatureType.Selected.Value = "手書き署名"
             X: =40
-            Y: =676
+            Y: =620
             Width: =688
-            Height: =200
+            Height: =190
             Color: =RGBA(50, 49, 48, 1)
             Fill: =RGBA(255, 255, 255, 1)
       - lblPenHint:
@@ -183,9 +246,9 @@ Screens:
             Visible: |-
               =radSignatureType.Selected.Value = "手書き署名"
             X: =40
-            Y: =884
+            Y: =818
             Width: =510
-            Height: =40
+            Height: =38
             Size: =11
             Color: =RGBA(96, 94, 92, 1)
       - btnClearSignature:
@@ -196,9 +259,9 @@ Screens:
             Visible: |-
               =radSignatureType.Selected.Value = "手書き署名"
             X: =568
-            Y: =884
+            Y: =818
             Width: =160
-            Height: =40
+            Height: =38
             Size: =12
       - txtTextSignature:
           Control: Classic/TextInput
@@ -208,7 +271,7 @@ Screens:
             Visible: |-
               =radSignatureType.Selected.Value = "テキスト署名"
             X: =40
-            Y: =676
+            Y: =620
             Width: =688
             Height: =60
             Size: =16
@@ -227,7 +290,7 @@ Screens:
                   ""
               )
             X: =40
-            Y: =930
+            Y: =864
             Width: =688
             Height: =24
             Size: =11
@@ -246,21 +309,20 @@ Screens:
                       顧客名: txtCustomerName.Text,
                       メールアドレス: txtEmail.Text,
                       電話番号: txtPhone.Text,
+                      メーカー: txtMaker.Text,
+                      型式: txtModel.Text,
+                      機番: txtSerialNo.Text,
                       同意内容: txtConsent.Text,
-                      署名種別: If(
-                          radSignatureType.Selected.Value = "手書き署名",
-                          '署名種別 (顧客署名)'.手書き署名,
-                          '署名種別 (顧客署名)'.テキスト署名
-                      ),
+                      署名種別: {Value: radSignatureType.Selected.Value},
                       署名画像: If(radSignatureType.Selected.Value = "手書き署名", penSignature.Image),
                       テキスト代替署名: If(radSignatureType.Selected.Value = "テキスト署名", txtTextSignature.Text),
                       署名日時: Now(),
-                      ステータス: 'ステータス (顧客署名)'.完了
+                      ステータス: {Value: "完了"}
                   }
               );
               Navigate(CompleteScreen, ScreenTransition.Fade)
             X: =40
-            Y: =960
+            Y: =900
             Width: =420
             Height: =48
             Size: =14
@@ -274,13 +336,16 @@ Screens:
               =Reset(txtCustomerName);
               Reset(txtEmail);
               Reset(txtPhone);
+              Reset(txtMaker);
+              Reset(txtModel);
+              Reset(txtSerialNo);
               Reset(chkConsent);
               Reset(radSignatureType);
               Reset(penSignature);
               Reset(txtTextSignature);
               Notify("入力内容をリセットしました。", NotificationType.Information)
             X: =476
-            Y: =960
+            Y: =900
             Width: =252
             Height: =48
             Size: =12
