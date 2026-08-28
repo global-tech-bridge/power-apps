@@ -59,7 +59,7 @@ Screens:
             Color: =RGBA(255, 255, 255, 1)
       - galSignatures:
           Control: Gallery
-          Variant: galleryVertical
+          Variant: Vertical
           Properties:
             Items: |-
               =Sort(
@@ -77,7 +77,6 @@ Screens:
             OnSelect: |-
               =Set(varSelected, ThisItem);
               Navigate(ViewScreen, ScreenTransition.Cover)
-            Layout: =Layout.Vertical
             TemplateSize: =96
             TemplatePadding: =0
             ShowScrollbar: =true
