@@ -36,15 +36,25 @@ Screens:
             Size: =13
             Align: =Align.Center
             Color: =RGBA(96, 94, 92, 1)
-      - btnNewSignature:
+      - btnToList:
           Control: Classic/Button
           Properties:
-            Text: ="新しい署名を開始"
-            OnSelect: =Navigate(SignScreen, ScreenTransition.Fade)
-            X: =224
+            Text: ="一覧に戻る"
+            OnSelect: =Navigate(ListScreen, ScreenTransition.Fade)
+            X: =40
             Y: =600
-            Width: =320
+            Width: =334
             Height: =52
             Size: =14
             Fill: =RGBA(0, 120, 212, 1)
             Color: =RGBA(255, 255, 255, 1)
+      - btnNewSignature:
+          Control: Classic/Button
+          Properties:
+            Text: ="続けて署名を受け付ける"
+            OnSelect: =Navigate(SignScreen, ScreenTransition.Fade)
+            X: =394
+            Y: =600
+            Width: =334
+            Height: =52
+            Size: =14
