@@ -168,7 +168,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 
 ### 4-3. 画面を作り、コードを貼り付ける
 
-**詳細な手順は [08 画面だけで構築する手順](08-manual-setup.md) の Part 3。**
+**詳細な手順は [08 画面だけで構築する手順](08-manual-setup.md) の Part 4。**
 貼り付け用に整形した断片が
 [`../apps/yaj-cancelfee-signature/paste/`](../apps/yaj-cancelfee-signature/paste/)
 にある（`Src/` から自動生成）。

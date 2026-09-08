@@ -6,15 +6,17 @@
 
 作業量の目安。
 
+**この順にやること。** アプリがフローを参照しているため、順番を入れ替えると手戻りする。
+
 | 工程 | 内容 | 目安 |
 |---|---|---|
 | Part 1 | SharePoint リスト7つ（**計70列**）とライブラリ4つ | 30〜45分（方法A）／60〜90分（方法B） |
-| Part 2 | 初期データの投入（確認文面・管理者・テンプレート） | 10分 |
-| Part 3 | Power Apps の取り込み（6画面・197コントロール） | 40〜60分 |
-| Part 4 | Power Automate フロー3つ | 90〜120分 |
+| Part 2 | 初期データの投入（組織マスタ・確認文面・管理者・テンプレート） | 10分 |
+| Part 3 | Power Automate フロー3つ | 90〜120分 |
+| Part 4 | Power Apps の取り込み（6画面・197コントロール） | 40〜60分 |
+| Part 5 | 動作確認と引き継ぎ | 60分 |
 
-Part 4 だけは別ファイル（[flows/](../flows/)）にある。**フローを先に作ってから
-Part 3 をやる**ほうが手戻りがない（アプリがフローを参照するため）。
+Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 
 ---
 
@@ -249,7 +251,7 @@ Power Apps 側のラベルで与えているので、SharePoint 側を日本語�
    （列見出しをドラッグ、または ビューの編集で並べ替え）
 4. TSV のヘッダー行を除いた **105行を選択してコピー**
 5. グリッドの1行目・1列目のセルをクリックして **Ctrl+V**
-6. `IsActive` は Part 1-3 で既定値を「はい」にしてあるので自動で入る
+6. `IsActive` は Part 1-2 で既定値を「はい」にしてあるので自動で入る
    （設定していない場合は、貼り付け後に列ごと選択して「はい」にする）
 
 ### 投入後の確認
@@ -335,7 +337,39 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 
 ---
 
-# Part 3. Power Apps を画面から取り込む
+# Part 3. Power Automate フローを作る
+
+3つのフローを作る。**アプリより先に作る。** アプリがフローを参照しているため、
+フローが無い状態でアプリを取り込むと「フローが見つかりません」エラーになる。
+
+| 順 | フロー名 | 手順書 |
+|---:|---|---|
+| 1 | `YAJ-CancelFee-Submit` | [flows/YAJ-CancelFee-Submit/README.md](../flows/YAJ-CancelFee-Submit/README.md) ＋ [expressions.md](../flows/YAJ-CancelFee-Submit/expressions.md) |
+| 2 | `YAJ-CancelFee-Resend` | [flows/YAJ-CancelFee-Resend/README.md](../flows/YAJ-CancelFee-Resend/README.md) |
+| 3 | `YAJ-CancelFee-Delete` | [flows/YAJ-CancelFee-Delete/README.md](../flows/YAJ-CancelFee-Delete/README.md) |
+
+手順書はアクションを1つずつ並べた形で書いてある。貼り付ける式は
+`expressions.md` にまとめてある（`E1`〜`E45` の番号が手順書と対応している）。
+
+## 特に間違えやすい2点
+
+1. **`YAJ-CancelFee-Submit` の同時実行数を 1 にする**
+   トリガーの […] → 設定 → 同時実行制御をオン → 並列度 **1**。
+   これをしないと、同時に2人が送信したときに同じ文書番号が振られる
+2. **`Catch` スコープの実行条件**
+   `Catch` の […] → 実行条件の構成 で「に失敗した」「がタイムアウトした」
+   「がスキップされた」の3つにチェック。既定（成功時のみ）のままだと
+   エラー時に応答が返らず、アプリが固まる
+
+## アプリを作る前にフロー単体でテストする
+
+[01 デプロイ手順](01-deployment.md) の「3. Power Automate フローの作成」に
+テスト用レコードの作り方がある。**PDFが出てメールが届くところまで確認してから**
+Part 4 に進むと、問題の切り分けが楽になる。
+
+---
+
+# Part 4. Power Apps を画面から取り込む
 
 `pac canvas pack` が使えないため、Studio の
 **コードのコピー/貼り付け**機能で取り込む。貼り付け用に整形した断片を
@@ -350,7 +384,7 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 
 **この順番でやること。** 順番を変えると、参照先が未作成のためエラーが大量に出る。
 
-## 3-1. 空のアプリを作る
+## 4-1. 空のアプリを作る
 
 1. [make.powerapps.com](https://make.powerapps.com) → **アプリ** → **新しいアプリ** →
    **キャンバス**
@@ -360,7 +394,7 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 4. **設定** → **全般** → **データ行の制限** を **2000** にする
    一覧のキーワード検索が3列の OR 条件なので、既定の 500 件では取りこぼす
 
-## 3-2. データとフローを接続する
+## 4-2. データとフローを接続する
 
 1. 左のメニュー → **データ** → **データの追加** → **SharePoint** →
    サイトの URL を入力 → 接続
@@ -373,11 +407,11 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 
    `YAJ-CancelFee-Submit` `YAJ-CancelFee-Resend` `YAJ-CancelFee-Delete`
 
-> フローがまだ無い場合は Part 4（[flows/](../flows/)）を先にやる。
+> フローがまだ無い場合は Part 3 に戻る。
 > フローが無いままだと、`ConsentScreen` `ErrorScreen` `DetailScreen` を貼った時点で
 > 「'YAJ-CancelFee-Submit' が見つかりません」というエラーになる。
 
-## 3-3. 画面を6つ作って、正しい名前を付ける
+## 4-3. 画面を6つ作って、正しい名前を付ける
 
 **コントロールを貼る前に、6画面すべてを作って名前を付けておく。**
 画面をまたぐ `Navigate()` があるため、貼り付け時に遷移先の画面が存在していないと
@@ -396,7 +430,7 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 改名は、ツリー ビューで画面名をダブルクリック、または
 右クリック → **名前の変更**。
 
-## 3-4. アプリの `StartScreen` と `OnStart` を設定する
+## 4-4. アプリの `StartScreen` と `OnStart` を設定する
 
 1. ツリー ビュー最上部の **アプリ** を選択
 2. 左上のプロパティ選択で `StartScreen` を選び、数式バーに `ListScreen` と入力
@@ -406,9 +440,9 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 4. **アプリ** を右クリック → **OnStart を実行**
 
 この時点で数式バーにエラーが出ていないことを確認する。
-出た場合はリストの列名・リスト名の綴りを疑う（Part 1-2 / 1-3）。
+出た場合はリストの列名・リスト名の綴りを疑う（Part 1-2）。
 
-## 3-5. 各画面にコントロールを貼り付ける
+## 4-5. 各画面にコントロールを貼り付ける
 
 `paste/README.md` の順（`ListScreen` → `EditScreen` → `ConsentScreen` →
 `CompleteScreen` → `ErrorScreen` → `DetailScreen`）で6回繰り返す。
@@ -440,7 +474,7 @@ Studio の版によっては、**設定 → 近日公開の機能**（または�
 それでも出ない場合は、画面を選択して **Ctrl+V** を試す
 （クリップボードに YAML があれば取り込まれる）。
 
-## 3-6. 残ったエラーを直す
+## 4-6. 残ったエラーを直す
 
 貼り付け直後に赤いエラーが残る場合、原因はほぼ次の3つ。
 
@@ -449,15 +483,15 @@ Studio の版によっては、**設定 → 近日公開の機能**（または�
 | `Distinct(...)` の `Value` が見つからない | `Value` を `Result` に置き換える。Power Fx の版によって `Distinct` の返す列名が異なる。該当は `ListScreen` の `ddFilterBranch` / `ddFilterBlock` / `ddFilterSite` と `EditScreen` の `ddBranch` / `ddBlock` / `ddSite` の計6箇所の `Sort(Distinct(...), Value)` |
 | フロー呼び出しの `.Success` が見つからない | Studio の入力候補に出る表記に合わせる。フローの「Power Apps または flow に応答する」で付けた出力名の大文字小文字がそのまま反映される。該当は `ConsentScreen` `ErrorScreen` `DetailScreen` |
 | `imgSignature` が画像として扱われない | `Image` プロパティを `varSelected.SignatureImageUrl & ""` にする（テキストであることを明示する） |
-| 画面名が見つからない | 3-3 の改名を確認。1文字でも違うと `Navigate()` が壊れる |
+| 画面名が見つからない | 4-3 の改名を確認。1文字でも違うと `Navigate()` が壊れる |
 
-## 3-7. 画面の並び順を整える
+## 4-7. 画面の並び順を整える
 
 動作には影響しないが、編集しやすくするため、ツリー ビューで画面をドラッグして
 `ListScreen` `EditScreen` `ConsentScreen` `CompleteScreen` `ErrorScreen` `DetailScreen`
 の順に並べる。
 
-## 3-8. 保存・公開・共有
+## 4-8. 保存・公開・共有
 
 1. **保存**
 2. **公開** → **このバージョンを公開する**
@@ -467,7 +501,7 @@ Studio の版によっては、**設定 → 近日公開の機能**（または�
 
 ---
 
-# Part 4. 動作確認
+# Part 5. 動作確認と引き継ぎ
 
 [06 テスト仕様書](06-test-spec.md) を上から実行する。
 まず次の4つが通れば、MVP として使い始められる。
@@ -486,7 +520,7 @@ Studio の版によっては、**設定 → 近日公開の機能**（または�
 
 | 症状 | 見るところ |
 |---|---|
-| アプリを開いても一覧が空・エラー | リスト名／列名の綴り（Part 1-2, 1-3） |
+| アプリを開いても一覧が空・エラー | リスト名／列名の綴り（Part 1-2） |
 | 支社のドロップダウンが空 | `OrgMaster` にデータが入っているか、`IsActive` が「はい」か（Part 2-1） |
 | 入力画面に赤い警告「確認文面がマスタに登録されていません」 | `ConsentMaster` の `IsActive` が「はい」の行が1件あるか（Part 2-2） |
 | 削除ボタンが出ない | `AppAdmins` に自分が登録されているか（Part 2-3） |

@@ -5,7 +5,7 @@ Power Apps キャンバスアプリのソースコード（Power Apps YAML v3.0 
 で検証済み（`scripts/validate-pa-yaml.py`）。
 
 **取り込み手順は [docs/01-deployment.md](../../docs/01-deployment.md) の「4. キャンバスアプリの作成」。**
-**CLI が使えない環境では [docs/08-manual-setup.md](../../docs/08-manual-setup.md) の Part 3。**
+**CLI が使えない環境では [docs/08-manual-setup.md](../../docs/08-manual-setup.md) の Part 4。**
 
 `Src/` が定義元。[`paste/`](paste/) は Studio の「コードの貼り付け」に
 そのまま貼れるように整形した断片で、`Src/` から自動生成している

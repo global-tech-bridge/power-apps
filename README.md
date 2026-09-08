@@ -47,10 +47,40 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [`templates/`](templates/) | PDF生成用 Word テンプレートと、その生成スクリプト |
 | [`scripts/`](scripts/) | SharePoint 構築スクリプトと、ソースの検証スクリプト |
 
-## ドキュメント
+## 構築の進め方
 
-**まずここから: [docs/01-deployment.md](docs/01-deployment.md) — デプロイ手順**
-**CLI が使えない環境なら: [docs/08-manual-setup.md](docs/08-manual-setup.md) — 画面だけで構築する手順**
+**CLI（`pac` / PnP.PowerShell）が使えない場合は
+[docs/08-manual-setup.md](docs/08-manual-setup.md) 1本で完結する。**
+これが今回の想定。上から順にやれば構築が終わる。
+
+PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.md) の
+方法Aでリスト構築を自動化できる（30〜45分ぶん短縮できる）。
+
+### 読む順番
+
+| 順 | やること | 見るドキュメント | 目安 |
+|---:|---|---|---|
+| 0 | **着手前の確認**（`Word Online (Business)` が DLP で使えるか） | [01 デプロイ手順](docs/01-deployment.md) の「0. 前提と準備」 | 15分 |
+| 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | [08 手順](docs/08-manual-setup.md) Part 1 ＋ [02 データ設計](docs/02-sharepoint-schema.md) | 30〜45分 |
+| 2 | 初期データ（組織マスタ105件・確認文面・管理者・テンプレート） | [08 手順](docs/08-manual-setup.md) Part 2 ＋ [data/import/](data/import/) | 10分 |
+| 3 | Power Automate フロー3つ | [flows/](flows/) の各 `README.md` と `expressions.md` | 90〜120分 |
+| 4 | キャンバスアプリの取り込み | [08 手順](docs/08-manual-setup.md) Part 4 ＋ [paste/](apps/yaj-cancelfee-signature/paste/) | 40〜60分 |
+| 5 | 動作確認 | [06 テスト仕様書](docs/06-test-spec.md) | 60分 |
+| 6 | 引き継ぎ | [01 デプロイ手順](docs/01-deployment.md) の「6. 引き継ぎ」 | 30分 |
+
+**順番を入れ替えないこと。** アプリがフローを参照しているため、
+フローより先にアプリを取り込むと「フローが見つかりません」エラーになる。
+
+### 運用に入ってから見るもの
+
+| 場面 | ドキュメント |
+|---|---|
+| 確認文面を改訂する／拠点が増えた／管理者を追加する | [05 運用・障害対応](docs/05-operations.md) |
+| 利用者がエラー画面になった／PDFが作られない | [05 運用・障害対応](docs/05-operations.md) の「4. 障害対応」＋ [03 Power Automate 設計](docs/03-power-automate.md) のエラーコード一覧 |
+| 権限を見直す | [04 権限設計](docs/04-permissions.md) |
+| 業務側の決定事項を確認する | [07 未確定事項と暫定判断](docs/07-open-issues.md) |
+
+## ドキュメント一覧
 
 | ドキュメント | 内容 |
 |---|---|
