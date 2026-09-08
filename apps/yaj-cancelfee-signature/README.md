@@ -123,6 +123,9 @@ python3 scripts/check-layout.py
 
 # Word テンプレートとフロー手順書の差し込み欄の一致
 python3 scripts/check-template-fields.py
+
+# インポート用ファイルが list-schema.json とずれていないか
+python3 scripts/check-import-files.py
 ```
 
 ## `pac canvas pack` で .msapp にする場合

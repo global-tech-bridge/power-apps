@@ -43,7 +43,7 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [`flows/`](flows/) | Power Automate フロー3つの作成手順と貼り付ける式 |
 | [`docs/`](docs/) | 設計書・デプロイ手順・権限・運用・テスト仕様・未確定事項 |
 | [`data/`](data/) | SharePoint スキーマ定義（JSON）と初期データ（組織マスタ・確認文面） |
-| [`data/import/`](data/import/) | **画面から取り込むためのインポート用ファイル**（xlsx / tsv） |
+| [`data/import/`](data/import/) | **画面から取り込むためのインポート用ファイル**。`schema/` が列の一括作成用、直下が初期データ用 |
 | [`templates/`](templates/) | PDF生成用 Word テンプレートと、その生成スクリプト |
 | [`scripts/`](scripts/) | SharePoint 構築スクリプトと、ソースの検証スクリプト |
 
@@ -103,6 +103,9 @@ python3 scripts/check-layout.py
 
 # Word テンプレートの差し込み欄とフロー手順書の差し込み表が一致しているか
 python3 scripts/check-template-fields.py
+
+# インポート用ファイルが list-schema.json とずれていないか
+python3 scripts/check-import-files.py
 ```
 
 生成物を作り直す場合。
@@ -112,7 +115,8 @@ python3 scripts/check-template-fields.py
 python3 scripts/build-org-master.py ../部門マスタ.xlsx data/OrgMaster.csv
 
 # SharePoint へ画面から取り込むためのインポート用ファイル（xlsx / tsv）を作る
-python3 scripts/build-import-files.py
+python3 scripts/build-import-files.py         # 初期データ用
+python3 scripts/build-schema-import-files.py  # 列（スキーマ）の一括作成用
 
 # Studio の「コードの貼り付け」に貼れる断片を作る
 python3 scripts/gen-paste-files.py pa.schema.yaml
