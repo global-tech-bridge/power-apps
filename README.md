@@ -43,12 +43,14 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [`flows/`](flows/) | Power Automate フロー3つの作成手順と貼り付ける式 |
 | [`docs/`](docs/) | 設計書・デプロイ手順・権限・運用・テスト仕様・未確定事項 |
 | [`data/`](data/) | SharePoint スキーマ定義（JSON）と初期データ（組織マスタ・同意文面） |
+| [`data/import/`](data/import/) | **画面から取り込むためのインポート用ファイル**（xlsx / tsv） |
 | [`templates/`](templates/) | PDF生成用 Word テンプレートと、その生成スクリプト |
 | [`scripts/`](scripts/) | SharePoint 構築スクリプトと、ソースの検証スクリプト |
 
 ## ドキュメント
 
 **まずここから: [docs/01-deployment.md](docs/01-deployment.md) — デプロイ手順**
+**CLI が使えない環境なら: [docs/08-manual-setup.md](docs/08-manual-setup.md) — 画面だけで構築する手順**
 
 | ドキュメント | 内容 |
 |---|---|
@@ -59,6 +61,7 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [05 運用・障害対応](docs/05-operations.md) | 同意文面の改訂、組織の変更、障害切り分け、定期点検 |
 | [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した66件のテストケース |
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
+| [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
 
 ## 本番運用の前に必ず決めること
 
@@ -98,6 +101,12 @@ python3 scripts/check-layout.py
 ```bash
 # 部門マスタ.xlsx から組織マスタCSVを作る
 python3 scripts/build-org-master.py ../部門マスタ.xlsx data/OrgMaster.csv
+
+# SharePoint へ画面から取り込むためのインポート用ファイル（xlsx / tsv）を作る
+python3 scripts/build-import-files.py
+
+# Studio の「コードの貼り付け」に貼れる断片を作る
+python3 scripts/gen-paste-files.py pa.schema.yaml
 
 # SharePoint スキーマ定義から設計書を作る
 python3 scripts/gen-schema-doc.py

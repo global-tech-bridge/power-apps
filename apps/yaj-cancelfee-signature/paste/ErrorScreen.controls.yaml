@@ -1,0 +1,168 @@
+- lblMark:
+    Control: Label
+    Properties:
+      Text: ="！"
+      X: =0
+      Y: =120
+      Width: =Parent.Width
+      Height: =110
+      Size: =56
+      Align: =Align.Center
+      Color: =RGBA(196, 49, 75, 1)
+- lblTitle:
+    Control: Label
+    Properties:
+      Text: ="送信は完了していません"
+      X: =0
+      Y: =236
+      Width: =Parent.Width
+      Height: =46
+      Size: =23
+      Align: =Align.Center
+      FontWeight: =FontWeight.Semibold
+- lblLead:
+    Control: Label
+    Properties:
+      Text: ="処理の途中でエラーが発生しました。お客様への署名済みPDFの送付は行われていません。"
+      X: =40
+      Y: =284
+      Width: =688
+      Height: =40
+      Size: =12
+      Align: =Align.Center
+      Color: =RGBA(50, 49, 48, 1)
+
+- recDetail:
+    Control: Rectangle
+    Properties:
+      X: =84
+      Y: =340
+      Width: =600
+      Height: =290
+      Fill: =RGBA(255, 255, 255, 1)
+- lblErrorMessage:
+    Control: Label
+    Properties:
+      Text: =varErrorMessage
+      X: =112
+      Y: =362
+      Width: =544
+      Height: =84
+      Size: =13
+      Color: =RGBA(168, 0, 0, 1)
+      FontWeight: =FontWeight.Semibold
+- lblErrorInfo:
+    Control: Label
+    Properties:
+      # 管理者に伝えるべき識別情報。個人情報は含めない（要件定義 14章）。
+      Text: |-
+        ="エラーコード：" & varErrorCode & Char(10)
+        & "文書番号：" & Coalesce(varEdit.DocumentNo, "（未採番）") & Char(10)
+        & "レコードID：" & varRecordId & Char(10)
+        & "受付キー：" & varRequestId & Char(10)
+        & "発生日時：" & Text(Now(), "yyyy/mm/dd hh:mm:ss")
+      X: =112
+      Y: =452
+      Width: =544
+      Height: =110
+      Size: =11
+      Color: =RGBA(50, 49, 48, 1)
+- lblFlowRunId:
+    Control: Label
+    Properties:
+      Text: |-
+        ="フロー実行ID：" & Coalesce(varFlowRunId, "（取得できませんでした）")
+      X: =112
+      Y: =566
+      Width: =544
+      Height: =40
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+
+- lblGuide:
+    Control: Label
+    Properties:
+      Text: |-
+        ="「もう一度送信する」を押すと、同じ受付キーで処理を再開します。"
+        & "文書番号やPDFが二重に作られることはありません。" & Char(10)
+        & "繰り返し失敗する場合は、上記のエラーコードと文書番号を管理者にお伝えください。"
+      X: =84
+      Y: =646
+      Width: =600
+      Height: =60
+      Size: =11
+      Color: =RGBA(96, 94, 92, 1)
+
+- btnRetry:
+    Control: Classic/Button
+    Properties:
+      Text: |-
+        =If(varRetrying, "再送信中…", "もう一度送信する")
+      DisplayMode: |-
+        =If(varRetrying, DisplayMode.Disabled, DisplayMode.Edit)
+      OnSelect: |-
+        =Set(varRetrying, true);
+        // 同じ varRequestId・同じレコードIDで再実行する（冪等）。
+        // varSignatureBase64 が空の場合は、フローが既に保存済みの
+        // 署名画像を再利用する（docs/03-power-automate.md 参照）。
+        IfError(
+            Set(varFlowResult,
+                'YAJ-CancelFee-Submit'.Run(varRecordId, varRequestId, varSignatureBase64)
+            ),
+            Set(varFlowResult, Blank());
+            Set(varSaveErrorDetail, FirstError.Message)
+        );
+        Set(varRetrying, false);
+        If(!IsBlank(varFlowResult) && varFlowResult.Success,
+            Set(varSignatureBase64, "");
+            Set(varCompleted, LookUp(SignatureCases, ID = varRecordId));
+            Navigate(CompleteScreen, ScreenTransition.Fade),
+            Set(varErrorCode, Coalesce(varFlowResult.ErrorCode, "E-FLOW-000"));
+            Set(varErrorMessage,
+                Coalesce(varFlowResult.ErrorMessage,
+                    "再送信でもエラーが発生しました。管理者に連絡してください。"
+                )
+            );
+            Set(varFlowRunId, Coalesce(varFlowResult.RunId, ""))
+        )
+      X: =84
+      Y: =726
+      Width: =292
+      Height: =54
+      Size: =14
+      Fill: =RGBA(0, 120, 212, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Semibold
+- btnBackToConsent:
+    Control: Classic/Button
+    Properties:
+      Text: ="署名画面に戻る"
+      OnSelect: =Navigate(ConsentScreen, ScreenTransition.UnCover)
+      X: =392
+      Y: =726
+      Width: =292
+      Height: =54
+      Size: =13
+- btnToList:
+    Control: Classic/Button
+    Properties:
+      Text: ="一覧に戻る（後で再実行する）"
+      OnSelect: =Navigate(ListScreen, ScreenTransition.Fade)
+      X: =84
+      Y: =796
+      Width: =600
+      Height: =46
+      Size: =12
+- lblAdminDetail:
+    Control: Label
+    Properties:
+      Text: |-
+        ="調査用（管理者のみ表示）: " & varSaveErrorDetail
+      Visible: |-
+        =varIsAdmin && !IsBlank(varSaveErrorDetail)
+      X: =84
+      Y: =852
+      Width: =600
+      Height: =60
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)

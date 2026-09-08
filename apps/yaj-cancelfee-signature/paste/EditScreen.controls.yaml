@@ -1,0 +1,626 @@
+# ---------------- ヘッダー ----------------
+- recHeader:
+    Control: Rectangle
+    Properties:
+      X: =0
+      Y: =0
+      Width: =Parent.Width
+      Height: =72
+      Fill: =RGBA(0, 120, 212, 1)
+- btnBack:
+    Control: Classic/Button
+    Properties:
+      Text: ="‹ 一覧"
+      OnSelect: =Navigate(ListScreen, ScreenTransition.UnCover)
+      X: =16
+      Y: =16
+      Width: =90
+      Height: =40
+      Size: =12
+      Fill: =RGBA(0, 0, 0, 0)
+      Color: =RGBA(255, 255, 255, 1)
+      BorderThickness: =0
+- lblTitle:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(varRecordId = 0, "新規作成", "ドラフトの編集")
+      X: =116
+      Y: =14
+      Width: =380
+      Height: =30
+      Size: =17
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Semibold
+- lblDocNo:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(IsBlank(varEdit.DocumentNo),
+            "文書番号：送信時に採番",
+            "文書番号：" & varEdit.DocumentNo
+        )
+      X: =500
+      Y: =0
+      Width: =252
+      Height: =72
+      Size: =10
+      Align: =Align.Right
+      Color: =RGBA(219, 235, 250, 1)
+
+# ---------------- 顧客情報 ----------------
+- recCustomer:
+    Control: Rectangle
+    Properties:
+      X: =16
+      Y: =84
+      Width: =736
+      Height: =180
+      Fill: =RGBA(255, 255, 255, 1)
+- lblSecCustomer:
+    Control: Label
+    Properties:
+      Text: ="顧客情報"
+      X: =32
+      Y: =92
+      Width: =400
+      Height: =24
+      Size: =12
+      FontWeight: =FontWeight.Semibold
+      Color: =RGBA(0, 90, 158, 1)
+- lblCapCustomerName:
+    Control: Label
+    Properties:
+      Text: ="顧客名（必須）"
+      X: =32
+      Y: =120
+      Width: =704
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtCustomerName:
+    Control: Classic/TextInput
+    Properties:
+      Default: =varEdit.CustomerName
+      HintText: ="例：山田 太郎　／　○○農産 御中"
+      X: =32
+      Y: =138
+      Width: =704
+      Height: =40
+      Size: =12
+- lblCapCustomerEmail:
+    Control: Label
+    Properties:
+      Text: ="顧客メールアドレス（必須／署名済みPDFの送付先）"
+      X: =32
+      Y: =186
+      Width: =346
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtCustomerEmail:
+    Control: Classic/TextInput
+    Properties:
+      Default: =varEdit.CustomerEmail
+      HintText: ="例：taro@example.com"
+      Format: =TextFormat.Text
+      X: =32
+      Y: =204
+      Width: =346
+      Height: =40
+      Size: =12
+- lblCapCustomerPhone:
+    Control: Label
+    Properties:
+      Text: ="顧客電話番号（任意）"
+      X: =390
+      Y: =186
+      Width: =346
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtCustomerPhone:
+    Control: Classic/TextInput
+    Properties:
+      Default: =varEdit.CustomerPhone
+      HintText: ="例：0776-00-0000"
+      X: =390
+      Y: =204
+      Width: =346
+      Height: =40
+      Size: =12
+
+# ---------------- 機体・整備情報 ----------------
+- recMachine:
+    Control: Rectangle
+    Properties:
+      X: =16
+      Y: =274
+      Width: =736
+      Height: =230
+      Fill: =RGBA(255, 255, 255, 1)
+- lblSecMachine:
+    Control: Label
+    Properties:
+      Text: ="機体・整備情報"
+      X: =32
+      Y: =282
+      Width: =400
+      Height: =24
+      Size: =12
+      FontWeight: =FontWeight.Semibold
+      Color: =RGBA(0, 90, 158, 1)
+- lblCapModel:
+    Control: Label
+    Properties:
+      Text: ="型式（必須）"
+      X: =32
+      Y: =310
+      Width: =228
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtModel:
+    Control: Classic/TextInput
+    Properties:
+      Default: =varEdit.Model
+      HintText: ="例：YT5113"
+      X: =32
+      Y: =328
+      Width: =228
+      Height: =40
+      Size: =12
+- lblCapSerialNo:
+    Control: Label
+    Properties:
+      Text: ="機番（必須）"
+      X: =272
+      Y: =310
+      Width: =228
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtSerialNo:
+    Control: Classic/TextInput
+    Properties:
+      Default: =varEdit.SerialNo
+      HintText: ="例：12345"
+      DisplayMode: |-
+        =If(chkNoSerial.Value, DisplayMode.Disabled, DisplayMode.Edit)
+      X: =272
+      Y: =328
+      Width: =228
+      Height: =40
+      Size: =12
+- lblCapMaintenanceType:
+    Control: Label
+    Properties:
+      Text: ="整備区分（必須）"
+      X: =512
+      Y: =310
+      Width: =224
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- ddMaintenanceType:
+    Control: Classic/DropDown
+    Properties:
+      Items: =colMaintenanceType
+      Default: |-
+        =Coalesce(varEdit.MaintenanceType.Value, "点検整備")
+      X: =512
+      Y: =328
+      Width: =224
+      Height: =40
+      Size: =12
+- chkNoSerial:
+    Control: Classic/CheckBox
+    Properties:
+      # 要件定義 19章-3「機番がない場合を許容するか」への暫定実装。
+      # 未確定事項が確定したら、この項目の可否を見直す（docs/07-open-issues.md D-03）。
+      Text: ="機番なしの機体"
+      Default: =varEdit.NoSerialNo
+      X: =272
+      Y: =372
+      Width: =228
+      Height: =24
+      Size: =10
+- lblCapComment:
+    Control: Label
+    Properties:
+      Text: ="コメント／顧客ご用命事項（任意）"
+      X: =32
+      Y: =400
+      Width: =704
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- txtComment:
+    Control: Classic/TextInput
+    Properties:
+      Mode: =TextMode.MultiLine
+      Default: =varEdit.Comment
+      HintText: ="例：エンジンの掛かりが悪い。始動時に白煙が出る。"
+      X: =32
+      Y: =418
+      Width: =704
+      Height: =76
+      Size: =11
+
+# ---------------- 組織 ----------------
+- recOrg:
+    Control: Rectangle
+    Properties:
+      X: =16
+      Y: =514
+      Width: =736
+      Height: =160
+      Fill: =RGBA(255, 255, 255, 1)
+- lblSecOrg:
+    Control: Label
+    Properties:
+      Text: ="組織（前回登録した支社・ブロック・拠点が初期表示されます）"
+      X: =32
+      Y: =522
+      Width: =704
+      Height: =24
+      Size: =12
+      FontWeight: =FontWeight.Semibold
+      Color: =RGBA(0, 90, 158, 1)
+- lblCapBranch:
+    Control: Label
+    Properties:
+      Text: ="支社（必須）"
+      X: =32
+      Y: =550
+      Width: =228
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- ddBranch:
+    Control: Classic/DropDown
+    Properties:
+      Items: =Sort(Distinct(colOrg, BranchName), Value)
+      Default: |-
+        =Coalesce(varEdit.BranchName, varDefaultBranch)
+      X: =32
+      Y: =568
+      Width: =228
+      Height: =40
+      Size: =12
+- lblCapBlock:
+    Control: Label
+    Properties:
+      Text: ="ブロック（必須／支社に連動）"
+      X: =272
+      Y: =550
+      Width: =228
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- ddBlock:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =Sort(
+            Distinct(
+                Filter(colOrg, BranchName = ddBranch.Selected.Value),
+                BlockName
+            ),
+            Value
+        )
+      Default: |-
+        =Coalesce(varEdit.BlockName, varDefaultBlock)
+      X: =272
+      Y: =568
+      Width: =228
+      Height: =40
+      Size: =12
+- lblCapSite:
+    Control: Label
+    Properties:
+      Text: ="拠点（必須／ブロックに連動）"
+      X: =512
+      Y: =550
+      Width: =224
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- ddSite:
+    Control: Classic/DropDown
+    Properties:
+      Items: |-
+        =Sort(
+            Distinct(
+                Filter(colOrg,
+                    BranchName = ddBranch.Selected.Value
+                    && BlockName = ddBlock.Selected.Value
+                ),
+                SiteName
+            ),
+            Value
+        )
+      Default: |-
+        =Coalesce(varEdit.SiteName, varDefaultSite)
+      X: =512
+      Y: =568
+      Width: =224
+      Height: =40
+      Size: =12
+- lblCapOperator:
+    Control: Label
+    Properties:
+      Text: ="担当者（ログインユーザーから自動設定）"
+      X: =32
+      Y: =616
+      Width: =704
+      Height: =18
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+- lblOperator:
+    Control: Label
+    Properties:
+      Text: |-
+        =varUserName & "（" & varUserEmail & "）"
+      X: =32
+      Y: =634
+      Width: =704
+      Height: =28
+      Size: =12
+      FontWeight: =FontWeight.Semibold
+
+# ---------------- 同意文面の状態 ----------------
+- recConsentInfo:
+    Control: Rectangle
+    Properties:
+      X: =16
+      Y: =684
+      Width: =736
+      Height: =78
+      Fill: |-
+        =If(IsBlank(varConsent.Body), RGBA(253, 231, 233, 1), RGBA(255, 255, 255, 1))
+- lblConsentInfo:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(IsBlank(varConsent.Body),
+            "適用中の同意文面がマスタに登録されていません。管理者に連絡してください。（E-CONSENT-000）",
+            "適用中の同意文面：" & varConsent.DisplayTitle
+                & "　版 " & varConsent.Version
+                & "　適用開始 " & Text(varConsent.EffectiveFrom, "yyyy/mm/dd")
+        )
+      X: =32
+      Y: =694
+      Width: =704
+      Height: =40
+      Size: =11
+      Color: |-
+        =If(IsBlank(varConsent.Body), RGBA(168, 0, 0, 1), RGBA(50, 49, 48, 1))
+- lblConsentNote:
+    Control: Label
+    Properties:
+      Text: ="署名時点の文面は記録に丸ごと保存されるため、後日マスタが改訂されても内容を再現できます。"
+      Visible: =!IsBlank(varConsent.Body)
+      X: =32
+      Y: =730
+      Width: =704
+      Height: =22
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
+
+# ---------------- 入力チェックと操作 ----------------
+- lblValidation:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(
+            IsBlank(Trim(txtCustomerName.Text)), "※ 顧客名は必須です。",
+            IsBlank(Trim(txtCustomerEmail.Text)), "※ 署名済みPDFの送付先となる顧客メールアドレスは必須です。",
+            !IsMatch(Trim(txtCustomerEmail.Text), Match.Email), "※ 顧客メールアドレスの形式が正しくありません。",
+            IsBlank(Trim(txtModel.Text)), "※ 型式は必須です。",
+            IsBlank(Trim(txtSerialNo.Text)) && !chkNoSerial.Value,
+                "※ 機番は必須です。機番がない機体の場合は「機番なしの機体」にチェックしてください。",
+            IsBlank(ddMaintenanceType.Selected.Value), "※ 整備区分を選択してください。",
+            IsBlank(ddBranch.Selected.Value), "※ 支社を選択してください。",
+            IsBlank(ddBlock.Selected.Value), "※ ブロックを選択してください。",
+            IsBlank(ddSite.Selected.Value), "※ 拠点を選択してください。",
+            IsBlank(varConsent.Body), "※ 同意文面マスタが未設定のため署名へ進めません。",
+            ""
+        )
+      X: =32
+      Y: =772
+      Width: =704
+      Height: =42
+      Size: =11
+      Color: =RGBA(196, 49, 75, 1)
+- btnNext:
+    Control: Classic/Button
+    Properties:
+      Text: ="同意・署名画面へ進む ›"
+      DisplayMode: |-
+        =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
+      # ドラフト保存と同一のレコード内容を保存する。
+      # 保存内容を変更する場合は btnSaveDraft.OnSelect も必ず同じように直すこと。
+      OnSelect: |-
+        =IfError(
+            Set(varEdit,
+                Patch(SignatureCases,
+                    If(varRecordId = 0,
+                        Defaults(SignatureCases),
+                        LookUp(SignatureCases, ID = varRecordId)
+                    ),
+                    {
+                        Title: Coalesce(varEdit.DocumentNo, "（作成中）"),
+                        CustomerName: Trim(txtCustomerName.Text),
+                        CustomerEmail: Trim(txtCustomerEmail.Text),
+                        CustomerPhone: Trim(txtCustomerPhone.Text),
+                        Model: Trim(txtModel.Text),
+                        SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
+                        NoSerialNo: chkNoSerial.Value,
+                        MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
+                        Comment: txtComment.Text,
+                        BranchName: ddBranch.Selected.Value,
+                        BlockName: ddBlock.Selected.Value,
+                        BlockCode: LookUp(colOrg,
+                            BranchName = ddBranch.Selected.Value
+                            && BlockName = ddBlock.Selected.Value,
+                            BlockCode
+                        ),
+                        SiteName: ddSite.Selected.Value,
+                        SiteCode: LookUp(colOrg,
+                            BranchName = ddBranch.Selected.Value
+                            && BlockName = ddBlock.Selected.Value
+                            && SiteName = ddSite.Selected.Value,
+                            SiteCode
+                        ),
+                        Status: {Value: "Draft"},
+                        OperatorEmail: varUserEmail,
+                        OperatorName: varUserName,
+                        Operator: {
+                            '@odata.type': "#Microsoft.Azure.Connectors.SharePoint.SPListExpandedUser",
+                            Claims: "i:0#.f|membership|" & varUserEmail,
+                            DisplayName: varUserName,
+                            Email: varUserEmail,
+                            Department: "",
+                            JobTitle: "",
+                            Picture: ""
+                        },
+                        RegisteredAt: Coalesce(varEdit.RegisteredAt, Now())
+                    }
+                )
+            );
+            Set(varRecordId, varEdit.ID);
+            Set(varSaveError, ""),
+            Set(varSaveError, "E-SAVE-001");
+            Set(varSaveErrorDetail, FirstError.Message)
+        );
+        If(IsBlank(varSaveError),
+            Navigate(ConsentScreen, ScreenTransition.Cover),
+            Notify(
+                "入力内容を保存できませんでした。通信状態を確認してもう一度お試しください。（"
+                    & varSaveError & "）",
+                NotificationType.Error
+            )
+        )
+      X: =16
+      Y: =822
+      Width: =380
+      Height: =52
+      Size: =14
+      Fill: =RGBA(0, 120, 212, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Semibold
+- btnSaveDraft:
+    Control: Classic/Button
+    Properties:
+      Text: ="ドラフト保存"
+      DisplayMode: |-
+        =If(IsBlank(Trim(txtCustomerName.Text)), DisplayMode.Disabled, DisplayMode.Edit)
+      # btnNext.OnSelect と同一のレコード内容。変更時は両方を直すこと。
+      OnSelect: |-
+        =IfError(
+            Set(varEdit,
+                Patch(SignatureCases,
+                    If(varRecordId = 0,
+                        Defaults(SignatureCases),
+                        LookUp(SignatureCases, ID = varRecordId)
+                    ),
+                    {
+                        Title: Coalesce(varEdit.DocumentNo, "（作成中）"),
+                        CustomerName: Trim(txtCustomerName.Text),
+                        CustomerEmail: Trim(txtCustomerEmail.Text),
+                        CustomerPhone: Trim(txtCustomerPhone.Text),
+                        Model: Trim(txtModel.Text),
+                        SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
+                        NoSerialNo: chkNoSerial.Value,
+                        MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
+                        Comment: txtComment.Text,
+                        BranchName: ddBranch.Selected.Value,
+                        BlockName: ddBlock.Selected.Value,
+                        BlockCode: LookUp(colOrg,
+                            BranchName = ddBranch.Selected.Value
+                            && BlockName = ddBlock.Selected.Value,
+                            BlockCode
+                        ),
+                        SiteName: ddSite.Selected.Value,
+                        SiteCode: LookUp(colOrg,
+                            BranchName = ddBranch.Selected.Value
+                            && BlockName = ddBlock.Selected.Value
+                            && SiteName = ddSite.Selected.Value,
+                            SiteCode
+                        ),
+                        Status: {Value: "Draft"},
+                        OperatorEmail: varUserEmail,
+                        OperatorName: varUserName,
+                        Operator: {
+                            '@odata.type': "#Microsoft.Azure.Connectors.SharePoint.SPListExpandedUser",
+                            Claims: "i:0#.f|membership|" & varUserEmail,
+                            DisplayName: varUserName,
+                            Email: varUserEmail,
+                            Department: "",
+                            JobTitle: "",
+                            Picture: ""
+                        },
+                        RegisteredAt: Coalesce(varEdit.RegisteredAt, Now())
+                    }
+                )
+            );
+            Set(varRecordId, varEdit.ID);
+            Set(varSaveError, ""),
+            Set(varSaveError, "E-SAVE-001");
+            Set(varSaveErrorDetail, FirstError.Message)
+        );
+        If(IsBlank(varSaveError),
+            Notify(
+                "ドラフトを保存しました。文書番号は署名の送信時に採番されます。",
+                NotificationType.Success
+            );
+            Navigate(ListScreen, ScreenTransition.UnCover),
+            Notify(
+                "ドラフトを保存できませんでした。通信状態を確認してもう一度お試しください。（"
+                    & varSaveError & "）",
+                NotificationType.Error
+            )
+        )
+      X: =406
+      Y: =822
+      Width: =180
+      Height: =52
+      Size: =12
+- btnReset:
+    Control: Classic/Button
+    Properties:
+      Text: ="入力リセット"
+      OnSelect: |-
+        =Set(varEdit, Defaults(SignatureCases));
+        Reset(txtCustomerName);
+        Reset(txtCustomerEmail);
+        Reset(txtCustomerPhone);
+        Reset(txtModel);
+        Reset(txtSerialNo);
+        Reset(chkNoSerial);
+        Reset(ddMaintenanceType);
+        Reset(txtComment);
+        Reset(ddBranch);
+        Reset(ddBlock);
+        Reset(ddSite);
+        Notify("入力内容をリセットしました。", NotificationType.Information)
+      X: =596
+      Y: =822
+      Width: =156
+      Height: =52
+      Size: =12
+- lblSaveErrorDetail:
+    Control: Label
+    Properties:
+      # 管理者にのみ原因調査用の詳細を見せる（要件定義 14章）。
+      Text: |-
+        ="調査用: " & varSaveError & " / " & varSaveErrorDetail
+      Visible: |-
+        =varIsAdmin && !IsBlank(varSaveError)
+      X: =16
+      Y: =884
+      Width: =736
+      Height: =40
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)

@@ -1,0 +1,151 @@
+- lblCheck:
+    Control: Label
+    Properties:
+      Text: ="✓"
+      X: =0
+      Y: =180
+      Width: =Parent.Width
+      Height: =120
+      Size: =64
+      Align: =Align.Center
+      Color: =RGBA(16, 124, 16, 1)
+- lblTitle:
+    Control: Label
+    Properties:
+      Text: ="署名を受け付けました"
+      X: =0
+      Y: =306
+      Width: =Parent.Width
+      Height: =50
+      Size: =24
+      Align: =Align.Center
+      FontWeight: =FontWeight.Semibold
+- lblThanks:
+    Control: Label
+    Properties:
+      Text: ="ご確認とご署名をいただき、ありがとうございました。この画面を担当者にお見せください。"
+      X: =40
+      Y: =358
+      Width: =688
+      Height: =40
+      Size: =12
+      Align: =Align.Center
+      Color: =RGBA(96, 94, 92, 1)
+
+- recResult:
+    Control: Rectangle
+    Properties:
+      X: =84
+      Y: =414
+      Width: =600
+      Height: =250
+      Fill: =RGBA(255, 255, 255, 1)
+- lblCapDocNo:
+    Control: Label
+    Properties:
+      Text: ="文書番号"
+      X: =112
+      Y: =436
+      Width: =544
+      Height: =18
+      Size: =9
+      Align: =Align.Center
+      Color: =RGBA(96, 94, 92, 1)
+- lblDocNo:
+    Control: Label
+    Properties:
+      Text: =varCompleted.DocumentNo
+      X: =112
+      Y: =454
+      Width: =544
+      Height: =44
+      Size: =26
+      Align: =Align.Center
+      FontWeight: =FontWeight.Semibold
+      Color: =RGBA(0, 90, 158, 1)
+- lblSteps:
+    Control: Label
+    Properties:
+      Text: |-
+        ="✓ 署名内容を保存しました（署名日時 "
+        & Text(varCompleted.SignedAt, "yyyy/mm/dd hh:mm") & "）" & Char(10)
+        & "✓ 署名済みPDFを作成し、SharePointに保存しました" & Char(10)
+        & "✓ PDFをメール送信しました（"
+        & Text(varCompleted.SentAt, "yyyy/mm/dd hh:mm") & "）"
+      X: =112
+      Y: =506
+      Width: =544
+      Height: =70
+      Size: =11
+      Color: =RGBA(16, 124, 16, 1)
+- lblRecipients:
+    Control: Label
+    Properties:
+      Text: |-
+        ="送信先：" & varCompleted.CustomerEmail & " ／ " & varCompleted.OperatorEmail
+      X: =112
+      Y: =584
+      Width: =544
+      Height: =40
+      Size: =10
+      Color: =RGBA(96, 94, 92, 1)
+- lblPdfNote:
+    Control: Label
+    Properties:
+      Text: ="お客様の控えはメールに添付したPDFをご確認ください。"
+      X: =112
+      Y: =624
+      Width: =544
+      Height: =24
+      Size: =10
+      Color: =RGBA(96, 94, 92, 1)
+
+- btnNewSignature:
+    Control: Classic/Button
+    Properties:
+      Text: ="新しい署名を開始する"
+      OnSelect: |-
+        =Set(varRecordId, 0);
+        Set(varEdit, Defaults(SignatureCases));
+        Set(varRequestId, "");
+        Set(varSignatureBase64, "");
+        // 次回以降の初期値として今回選んだ組織を保持する（要件定義 11.2）
+        Set(varDefaultBranch, varCompleted.BranchName);
+        Set(varDefaultBlock, varCompleted.BlockName);
+        Set(varDefaultSite, varCompleted.SiteName);
+        Navigate(EditScreen, ScreenTransition.Fade)
+      X: =84
+      Y: =700
+      Width: =292
+      Height: =54
+      Size: =14
+      Fill: =RGBA(0, 120, 212, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Semibold
+- btnDetail:
+    Control: Classic/Button
+    Properties:
+      Text: ="この案件の詳細を見る"
+      OnSelect: |-
+        =Set(varSelected, varCompleted);
+        Set(varRecordId, varCompleted.ID);
+        Navigate(DetailScreen, ScreenTransition.Fade)
+      X: =392
+      Y: =700
+      Width: =292
+      Height: =54
+      Size: =13
+- btnToList:
+    Control: Classic/Button
+    Properties:
+      Text: ="一覧に戻る"
+      OnSelect: |-
+        =Set(varDefaultBranch, varCompleted.BranchName);
+        Set(varDefaultBlock, varCompleted.BlockName);
+        Set(varDefaultSite, varCompleted.SiteName);
+        Navigate(ListScreen, ScreenTransition.Fade)
+      X: =84
+      Y: =770
+      Width: =600
+      Height: =46
+      Size: =12

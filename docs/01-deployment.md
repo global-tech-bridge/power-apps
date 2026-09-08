@@ -67,23 +67,25 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 > アプリが未登録の場合は、`Register-PnPEntraIDAppForInteractiveLogin` で
 > 作成してから実行する。
 
-### 方法B: 画面から手作業で作成
+### 方法B: 画面から手作業で作成（CLI が使えない場合）
 
-`docs/02-sharepoint-schema.md` の表のとおりに列を作る。**列名は必ず英語の
-まま**にすること（理由は同ファイル冒頭に記載）。日本語のラベルは Power Apps
-側で付けているため、SharePoint 側を日本語にする必要はない。
+**手順は [08 画面だけで構築する手順](08-manual-setup.md) の Part 1 と Part 2 に
+全部書き出してある。** リスト7つ（計70列）とライブラリ4つの作り方、
+列の種類ごとの注意点、インデックスの設定、初期データの投入方法まで含む。
 
-初期データは次のように投入する。
+インポート用のファイルは [`../data/import/`](../data/import/) に用意してある。
 
-- `OrgMaster` — `data/OrgMaster.csv` をリストの「Excel にエクスポート」の逆で
-  取り込むか、リストビューへの貼り付けで投入する（105 行）
-- `ConsentMaster` — 1件作成し、`Body` に
-  `data/consent/ConsentText_v0.9-draft.txt` の 2行目以降を貼り付ける。
-  1行目はタイトルなので `DisplayTitle` へ。
-  `ConsentId` = `CANCELFEE-001`、`Version` = `0.9-draft`、
-  `EffectiveFrom` = 今日、`IsActive` = はい
-- `AppAdmins` — 管理者のメールアドレスを `UserEmail` に、`IsActive` = はい
-- `DocTemplates` — `templates/整備キャンセル料同意書.docx` をアップロード
+| ファイル | 入れ先 | 方法 |
+|---|---|---|
+| `OrgMaster.xlsx` | `OrgMaster` | 「Excel からリストを作成」 |
+| `OrgMaster_grid.tsv` | `OrgMaster` | 既存リストのグリッド ビューへ貼り付け |
+| `AppAdmins_grid.tsv` | `AppAdmins` | グリッド ビューへ貼り付け |
+| `data/consent/ConsentText_v0.9-draft.txt` | `ConsentMaster` | フォームに貼り付け |
+| `templates/整備キャンセル料同意書.docx` | `DocTemplates` | ファイルのアップロード |
+
+> `ConsentMaster` 用のインポート ファイルは意図的に作っていない。本文が3,000字を
+> 超えるため、Excel からリストを作成すると1行テキスト（255字）の列になって
+> **本文が切り捨てられる**。同意文面は証跡そのものなので、フォームから入れる。
 
 ### 確認
 
@@ -164,41 +166,27 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 3. **データの追加** → 検索欄に `YAJ-CancelFee` と入力し、
    3つのフローすべてを追加する
 
-### 4-3. 画面のコードを貼り付ける
+### 4-3. 画面を作り、コードを貼り付ける
 
-`apps/yaj-cancelfee-signature/Src/` の各 `.pa.yaml` を、この順番で取り込む。
+**詳細な手順は [08 画面だけで構築する手順](08-manual-setup.md) の Part 3。**
+貼り付け用に整形した断片が
+[`../apps/yaj-cancelfee-signature/paste/`](../apps/yaj-cancelfee-signature/paste/)
+にある（`Src/` から自動生成）。
 
-1. ツリービューの **画面** を右クリック → **画面の追加** → **空** を6回繰り返す
-2. 追加した各画面を右クリック → **コードの貼り付け** に、
-   下記ファイルの中身をそのまま貼る
+要点だけ再掲する。
 
-| 貼り付ける順 | ファイル | できる画面 |
-|---|---|---|
-| 1 | `ListScreen.pa.yaml` | 一覧（ホーム） |
-| 2 | `EditScreen.pa.yaml` | 新規作成・編集 |
-| 3 | `ConsentScreen.pa.yaml` | 同意・署名 |
-| 4 | `CompleteScreen.pa.yaml` | 完了 |
-| 5 | `ErrorScreen.pa.yaml` | エラー |
-| 6 | `DetailScreen.pa.yaml` | 詳細 |
+1. **コントロールを貼る前に、6画面すべてを作って正しい名前を付ける**
+   （`ListScreen` `EditScreen` `ConsentScreen` `CompleteScreen` `ErrorScreen`
+   `DetailScreen`）。画面をまたぐ `Navigate()` があるため、
+   遷移先が未作成のまま貼るとエラーが大量に出る
+2. **アプリ** の `StartScreen` と `OnStart` を先に設定する
+   （`OnStart` は `paste/App-OnStart.txt` をそのまま貼る）
+3. 各画面を右クリック → **コードの貼り付け** に
+   `paste/<画面名>.controls.yaml` を貼る
+4. 続けて `paste/<画面名>.properties.md` の `Fill` / `OnVisible` を
+   その画面自身に手で入力する
 
-> 貼り付けは画面ごとに行う。画面名は YAML の中で決まっているため、
-> 貼り付けた後に画面名を変えると `Navigate()` が壊れる。
-
-3. 最初からあった `Screen1` を削除する
-
-### 4-4. アプリのプロパティを設定する
-
-`App.pa.yaml` は「コードの貼り付け」では取り込めない。
-ツリービュー最上部の **アプリ** を選択し、手で設定する。
-
-1. `StartScreen` に `ListScreen` を入力
-2. `OnStart` に `apps/yaj-cancelfee-signature/Src/App.pa.yaml` の
-   `OnStart:` 以下（先頭の `=` を除いた本文）をそのまま貼る
-
-貼り付け後、**アプリ** を右クリック → **OnStart を実行** して、
-数式バーにエラーが出ないことを確認する。
-
-### 4-5. 残るエラーの解消
+### 4-4. 残るエラーの解消
 
 貼り付け直後にエラーが出る場合、原因はほぼ次の3つ。
 
@@ -208,7 +196,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 | フロー呼び出しの `.Success` が見つからない | Studio の入力候補に出る表記に合わせる。「Power Apps または flow に応答する」で付けた出力名の大文字小文字がそのまま反映される |
 | `varSelected.SignatureImageUrl` が画像として扱われない | `imgSignature.Image` を `varSelected.SignatureImageUrl & ""` にする（テキストとして明示する） |
 
-### 4-6. 保存と公開
+### 4-5. 保存と公開
 
 1. **ファイル → 名前を付けて保存**。アプリ名は
    `YAJ 整備キャンセル料 同意書` など
