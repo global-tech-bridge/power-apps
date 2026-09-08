@@ -126,7 +126,7 @@ PDFがまだ無いときだけ作る。**再実行時の二重PDF生成を防ぐ
 1. `Populate_template` — Word Online (Business)「Microsoft Word テンプレートの入力」
    - 場所: 対象の SharePoint サイト
    - ドキュメント ライブラリ: `DocTemplates`
-   - ファイル: `整備キャンセル料同意書.docx`
+   - ファイル: `整備キャンセル料確認書.docx`
    - 差し込み欄は下の「6. テンプレート差し込み表」のとおり
 2. `Create_temp_docx` — SharePoint「ファイルの作成」
    - フォルダー パス: `/WorkTemp` ／ ファイル名: `E19` ／ コンテンツ: `Populate_template` の本文
@@ -204,32 +204,40 @@ PDFがまだ無いときだけ作る。**再実行時の二重PDF生成を防ぐ
 ## 7. テンプレート差し込み表
 
 `Populate_template` の各欄に入れる値。左列は Word のコンテンツ コントロール名
-（`templates/build-template.py` が付けている名前）。
+（`templates/build-template.py` が付けている名前）で、全16欄ある。
+
+テンプレートは元資料「分解・診断を伴う整備お見積り後のキャンセル料について.docx」の
+書式（A4縦の書簡形式＋確認欄）を再現している。
 
 | 欄 | 値 |
 |---|---|
 | `DocumentNo` | `varDocumentNo` |
-| `SignedAt` | `E40` |
 | `CustomerName` | `Get_case` の `CustomerName` |
-| `CustomerEmail` | `Get_case` の `CustomerEmail` |
-| `CustomerPhone` | `E41` |
-| `Model` | `Get_case` の `Model` |
-| `SerialNo` | `E42`（機番なしの機体はその旨を印字） |
-| `MaintenanceType` | `Get_case` の `MaintenanceType Value` |
-| `Comment` | `E43` |
 | `BranchName` | `Get_case` の `BranchName` |
 | `BlockName` | `Get_case` の `BlockName` |
 | `SiteName` | `Get_case` の `SiteName` |
 | `OperatorName` | `Get_case` の `OperatorName` |
 | `ConsentTitle` | `Get_case` の `ConsentTitle` |
-| `ConsentVersion` | `Get_case` の `ConsentVersion` |
 | `ConsentText` | `Get_case` の `ConsentTextSnapshot` |
+| `Model` | `Get_case` の `Model` |
+| `SerialNo` | `E42`（機番なしの機体はその旨を印字） |
+| `MaintenanceType` | `Get_case` の `MaintenanceType Value` |
+| `Comment` | `E43` |
 | `SignerName` | `E44` |
-| `SignedAtFooter` | `E40` |
+| `SignedAt` | `E40` |
+| `ConsentVersion` | `Get_case` の `ConsentVersion` |
 | `SignatureImage` | `E45`（画像欄はオブジェクト形式で渡す） |
 
-`ConsentText` に **マスタの現在値ではなくレコードの `ConsentTextSnapshot`** を渡すのが重要。
-これにより、後日マスタが改訂されても、PDFには署名時点の文面が残る（要件定義 11.3）。
+### 押さえておく2点
+
+1. **`ConsentText` に渡すのはマスタの現在値ではなく、レコードの
+   `ConsentTextSnapshot`。** これにより、後日マスタが改訂されても、PDFには
+   署名時点の文面が残る（要件定義 11.3）。
+   スナップショットには確認文（「私は上記内容について確認いたしました。」）まで
+   含まれているため、確認欄の直前にその一文が印字される。
+2. **顧客のメールアドレスと電話番号はPDFに印字しない。** 要件定義 10章が求める
+   PDF記載項目に含まれておらず、顧客へ渡す文書に不要な個人情報を載せないため
+   （要件定義 15.3）。リストには保持しているので、一覧・詳細画面からは参照できる。
 
 ## 8. メール本文（HTML）
 
@@ -239,9 +247,9 @@ PDFがまだ無いときだけ作る。**再実行時の二重PDF生成を防ぐ
 <p>@{outputs('Get_case')?['body/CustomerName']} 様</p>
 <p>
   いつもお世話になっております。ヤンマーアグリジャパン @{outputs('Get_case')?['body/SiteName']} です。<br>
-  このたびは、整備お見積りに伴うキャンセル料についてご確認・ご署名をいただき、ありがとうございました。
+  このたびは、分解・診断を伴う整備お見積り後のキャンセル料についてご確認・ご署名をいただき、ありがとうございました。
 </p>
-<p>ご署名いただいた同意書をPDFで添付いたします。内容をご確認のうえ、控えとして保管をお願いいたします。</p>
+<p>ご署名いただいた確認書をPDFで添付いたします。内容をご確認のうえ、控えとして保管をお願いいたします。</p>
 <table>
   <tr><td>文書番号</td><td>@{variables('varDocumentNo')}</td></tr>
   <tr><td>署名日時</td><td>@{formatDateTime(convertTimeZone(outputs('Get_case')?['body/SignedAt'],'UTC','Tokyo Standard Time'),'yyyy年MM月dd日 HH:mm')}</td></tr>

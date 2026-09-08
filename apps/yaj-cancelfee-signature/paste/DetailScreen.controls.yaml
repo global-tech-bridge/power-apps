@@ -23,7 +23,7 @@
 - lblTitle:
     Control: Label
     Properties:
-      Text: ="同意書の詳細"
+      Text: ="確認書の詳細"
       X: =116
       Y: =14
       Width: =300
@@ -393,7 +393,7 @@
       Size: =11
       Fill: =RGBA(250, 249, 248, 1)
 
-# ---------------- 同意・署名 ----------------
+# ---------------- 確認・署名 ----------------
 - recSign:
     Control: Rectangle
     Properties:
@@ -405,7 +405,7 @@
 - lblSecSign:
     Control: Label
     Properties:
-      Text: ="同意・署名"
+      Text: ="確認・署名"
       X: =32
       Y: =478
       Width: =300
@@ -416,7 +416,7 @@
 - lblCapConsent:
     Control: Label
     Properties:
-      Text: ="同意文面（署名時点）"
+      Text: ="確認文面（署名時点）"
       X: =32
       Y: =504
       Width: =344
@@ -603,7 +603,7 @@
       Height: =Parent.Height
       Fill: =RGBA(0, 0, 0, 0.55)
 
-# --- 同意文面スナップショットの全文表示 ---
+# --- 確認文面スナップショットの全文表示 ---
 - recSnapshot:
     Control: Rectangle
     Properties:

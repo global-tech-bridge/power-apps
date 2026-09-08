@@ -17,7 +17,7 @@ Screens:
       - lblTitle:
           Control: Label
           Properties:
-            Text: ="整備キャンセル料 同意書"
+            Text: ="整備キャンセル料 確認書"
             X: =24
             Y: =14
             Width: =440
@@ -426,7 +426,7 @@ Screens:
       - lblEmpty:
           Control: Label
           Properties:
-            Text: ="該当する同意書はありません。条件を変更するか「＋ 新規作成」から登録してください。"
+            Text: ="該当する確認書はありません。条件を変更するか「＋ 新規作成」から登録してください。"
             Visible: =CountRows(galCases.AllItems) = 0
             X: =16
             Y: =400

@@ -69,7 +69,7 @@
       Size: =11
       Color: =RGBA(50, 49, 48, 1)
 
-# ---------------- 同意文面 ----------------
+# ---------------- 確認文面 ----------------
 - lblConsentTitle:
     Control: Label
     Properties:
@@ -121,11 +121,11 @@
       Size: =9
       Color: =RGBA(96, 94, 92, 1)
 
-# ---------------- 同意チェック ----------------
+# ---------------- 確認チェック ----------------
 - chkConsent:
     Control: Classic/CheckBox
     Properties:
-      Text: ="内容を確認し同意する"
+      Text: ="上記内容について確認しました"
       Default: =false
       X: =16
       Y: =538
@@ -196,9 +196,9 @@
     Properties:
       Text: |-
         =If(
-            !chkConsent.Value, "※ 「内容を確認し同意する」にチェックしてください。",
+            !chkConsent.Value, "※ 「上記内容について確認しました」にチェックしてください。",
             IsBlank(penSignature.Image), "※ 署名欄にご署名をお願いします。",
-            IsBlank(varConsent.Body), "※ 同意文面マスタが未設定です。管理者に連絡してください。",
+            IsBlank(varConsent.Body), "※ 確認文面マスタが未設定です。管理者に連絡してください。",
             ""
         )
       X: =16
@@ -210,7 +210,7 @@
 - btnSubmit:
     Control: Classic/Button
     Properties:
-      Text: ="同意して署名を送信"
+      Text: ="確認して署名を送信"
       DisplayMode: |-
         =If(IsBlank(lblValidation.Text) && !varSubmitting,
             DisplayMode.Edit,
@@ -276,7 +276,7 @@
             & If(varEdit.NoSerialNo, "（機番なし）", " / " & varEdit.SerialNo) & Char(10)
         & "整備区分：" & varEdit.MaintenanceType.Value & Char(10)
         & "組織：" & varEdit.BranchName & " › " & varEdit.BlockName & " › " & varEdit.SiteName & Char(10)
-        & "同意文面：版 " & varConsent.Version & Char(10) & Char(10)
+        & "確認文面：版 " & varConsent.Version & Char(10) & Char(10)
         & "送信すると文書番号が採番され、署名済みPDFが上記の顧客メールアドレスと"
         & varUserEmail & " に送信されます。送信後の内容は変更できません。"
       Visible: =varShowConfirm

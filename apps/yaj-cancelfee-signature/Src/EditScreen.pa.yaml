@@ -1,5 +1,5 @@
 # 新規作成／編集画面 — 要件定義 7.2
-# 入力値は「ドラフト保存」「同意・署名画面へ進む」のどちらでも
+# 入力値は「ドラフト保存」「確認・署名画面へ進む」のどちらでも
 # Status=Draft のレコードとして SharePoint に保存する（文書番号は送信時に採番）。
 Screens:
   EditScreen:
@@ -392,7 +392,7 @@ Screens:
             Size: =12
             FontWeight: =FontWeight.Semibold
 
-      # ---------------- 同意文面の状態 ----------------
+      # ---------------- 確認文面の状態 ----------------
       - recConsentInfo:
           Control: Rectangle
           Properties:
@@ -407,8 +407,8 @@ Screens:
           Properties:
             Text: |-
               =If(IsBlank(varConsent.Body),
-                  "適用中の同意文面がマスタに登録されていません。管理者に連絡してください。（E-CONSENT-000）",
-                  "適用中の同意文面：" & varConsent.DisplayTitle
+                  "適用中の確認文面がマスタに登録されていません。管理者に連絡してください。（E-CONSENT-000）",
+                  "適用中の確認文面：" & varConsent.DisplayTitle
                       & "　版 " & varConsent.Version
                       & "　適用開始 " & Text(varConsent.EffectiveFrom, "yyyy/mm/dd")
               )
@@ -447,7 +447,7 @@ Screens:
                   IsBlank(ddBranch.Selected.Value), "※ 支社を選択してください。",
                   IsBlank(ddBlock.Selected.Value), "※ ブロックを選択してください。",
                   IsBlank(ddSite.Selected.Value), "※ 拠点を選択してください。",
-                  IsBlank(varConsent.Body), "※ 同意文面マスタが未設定のため署名へ進めません。",
+                  IsBlank(varConsent.Body), "※ 確認文面マスタが未設定のため署名へ進めません。",
                   ""
               )
             X: =32
@@ -459,7 +459,7 @@ Screens:
       - btnNext:
           Control: Classic/Button
           Properties:
-            Text: ="同意・署名画面へ進む ›"
+            Text: ="確認・署名画面へ進む ›"
             DisplayMode: |-
               =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
             # ドラフト保存と同一のレコード内容を保存する。

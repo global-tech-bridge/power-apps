@@ -11,7 +11,7 @@ App:
     StartScreen: =ListScreen
     OnStart: |-
       =// ---- マスタをローカルコレクションへ読み込む -------------------------
-      // 組織マスタ105件・同意文面・管理者はいずれも少件数のため、
+      // 組織マスタ105件・確認文面・管理者はいずれも少件数のため、
       // 委任制限（既定500件）を回避する目的で起動時に一括取得する。
       Concurrent(
           ClearCollect(colOrg, Filter(OrgMaster, IsActive = true)),
@@ -24,7 +24,7 @@ App:
       Set(varUserName, User().FullName);
       Set(varIsAdmin, CountRows(Filter(colAdmin, Lower(UserEmail) = varUserEmail)) > 0);
 
-      // ---- 適用中の同意文面（適用開始日が過去で、終了日が未来または未設定）
+      // ---- 適用中の確認文面（適用開始日が過去で、終了日が未来または未設定）
       // 複数該当する場合は適用開始日が最も新しいものを採用する。
       Set(varConsent,
           First(

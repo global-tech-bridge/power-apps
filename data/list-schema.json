@@ -2,7 +2,7 @@
   "$comment": "SharePoint リスト／ライブラリのスキーマ定義。scripts/Provision-SharePoint.ps1 と scripts/check-references.py が参照する単一の定義元。列は英語名で作成し、内部名も英語に揃える（日本語名で作ると内部名が _x9867_ 形式にエスケープされ、Power Automate の OData フィルターや Word テンプレートのマッピングが読めなくなるため）。",
   "Lists": {
     "SignatureCases": {
-      "Description": "整備キャンセル料 同意書の署名案件（要件定義 11.1）",
+      "Description": "整備キャンセル料 確認書の署名案件（要件定義 11.1）",
       "Template": "GenericList",
       "Columns": [
         {"Name": "DocumentNo",          "Type": "Text",     "Indexed": true,  "Note": "文書番号 YYYYMMDD-NNN。採番はフローが行う"},
@@ -20,9 +20,9 @@
         {"Name": "SiteName",            "Type": "Text",     "Indexed": true, "Note": "拠点"},
         {"Name": "SiteCode",            "Type": "Text",     "Indexed": true, "Note": "拠点コード（変換前拠点コード）"},
         {"Name": "Status",              "Type": "Choice",   "Choices": ["Draft", "Signed", "PdfCreated", "Stored", "Sent", "Error"], "Indexed": true, "Note": "内部コードで保持し、画面の日本語ラベルはアプリ側の colStatus で対応付ける"},
-        {"Name": "ConsentId",           "Type": "Text",     "Note": "同意文面ID"},
-        {"Name": "ConsentTitle",        "Type": "Text",     "Note": "同意文面の表示タイトル（PDFの見出しに使う）"},
-        {"Name": "ConsentVersion",      "Type": "Text",     "Note": "同意文面の版"},
+        {"Name": "ConsentId",           "Type": "Text",     "Note": "確認文面ID"},
+        {"Name": "ConsentTitle",        "Type": "Text",     "Note": "確認文面の表示タイトル（PDFの見出しに使う）"},
+        {"Name": "ConsentVersion",      "Type": "Text",     "Note": "確認文面の版"},
         {"Name": "ConsentTextSnapshot", "Type": "Note",     "Note": "署名時点の文面全文。マスタ改訂後も署名時の内容を再現するため"},
         {"Name": "SignedAt",            "Type": "DateTime", "Indexed": true, "Note": "署名日時"},
         {"Name": "SignerName",          "Type": "Text",     "Note": "署名者お名前（任意入力）"},
@@ -56,7 +56,7 @@
       ]
     },
     "ConsentMaster": {
-      "Description": "同意文面マスタ（要件定義 11.3）",
+      "Description": "確認文面マスタ（要件定義 11.3）",
       "Template": "GenericList",
       "Columns": [
         {"Name": "ConsentId",     "Type": "Text",     "Indexed": true},
@@ -95,7 +95,7 @@
       ]
     },
     "AuditLog": {
-      "Description": "監査ログ（削除・再送・同意文面変更／要件定義 15.4）",
+      "Description": "監査ログ（削除・再送・確認文面変更／要件定義 15.4）",
       "Template": "GenericList",
       "Columns": [
         {"Name": "Action",      "Type": "Choice",   "Choices": ["Delete", "Resend", "ConsentChange", "Other"]},
@@ -123,7 +123,7 @@
       "Description": "手書き署名のPNG"
     },
     "DocTemplates": {
-      "Description": "PDF生成に使う Word テンプレート（templates/整備キャンセル料同意書.docx）"
+      "Description": "PDF生成に使う Word テンプレート（templates/整備キャンセル料確認書.docx）"
     },
     "WorkTemp": {
       "Description": "Word→PDF 変換の中間ファイル置き場。個人 OneDrive を中継点にしないため（要件定義 15.5）。フローが処理後に削除する"

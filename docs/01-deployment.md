@@ -33,7 +33,7 @@ pwsh -Command 'Install-Module PnP.PowerShell -Scope CurrentUser'
 
 1. SharePoint 管理センター、または SharePoint スタート画面から
    **チームサイト**（またはコミュニケーションサイト）を新規作成する
-   - サイト名の例: `YAJ整備キャンセル料同意書`
+   - サイト名の例: `YAJ整備キャンセル料確認書`
    - URL の例: `https://<テナント>.sharepoint.com/sites/yaj-cancelfee`
 2. サイトの **プライバシー設定は「プライベート」** にする。
    顧客名・メールアドレス・電話番号・署名画像を扱うため、既定で全社公開に
@@ -59,9 +59,9 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 - ライブラリ4つ（`SignatureDocs` / `SignatureImages` / `DocTemplates` / `WorkTemp`）
 - `SignatureDocs` のバージョン管理を有効化
 - 組織マスタ 105 件（`data/OrgMaster.csv`）
-- 同意文面マスタ 版 `0.9-draft`（`data/consent/ConsentText_v0.9-draft.txt`）
+- 確認文面マスタ 版 `1.0`（`data/consent/ConsentText_v1.0.txt`／元資料そのままの文面）
 - 実行したユーザーを `AppAdmins` に登録
-- `templates/整備キャンセル料同意書.docx` を `DocTemplates` へアップロード
+- `templates/整備キャンセル料確認書.docx` を `DocTemplates` へアップロード
 
 > `ClientId` は PnP.PowerShell 2.x 以降で必須。テナントに PnP 用の Entra ID
 > アプリが未登録の場合は、`Register-PnPEntraIDAppForInteractiveLogin` で
@@ -80,19 +80,19 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 | `OrgMaster.xlsx` | `OrgMaster` | 「Excel からリストを作成」 |
 | `OrgMaster_grid.tsv` | `OrgMaster` | 既存リストのグリッド ビューへ貼り付け |
 | `AppAdmins_grid.tsv` | `AppAdmins` | グリッド ビューへ貼り付け |
-| `data/consent/ConsentText_v0.9-draft.txt` | `ConsentMaster` | フォームに貼り付け |
-| `templates/整備キャンセル料同意書.docx` | `DocTemplates` | ファイルのアップロード |
+| `data/consent/ConsentText_v1.0.txt` | `ConsentMaster` | フォームに貼り付け |
+| `templates/整備キャンセル料確認書.docx` | `DocTemplates` | ファイルのアップロード |
 
 > `ConsentMaster` 用のインポート ファイルは意図的に作っていない。本文が3,000字を
 > 超えるため、Excel からリストを作成すると1行テキスト（255字）の列になって
-> **本文が切り捨てられる**。同意文面は証跡そのものなので、フォームから入れる。
+> **本文が切り捨てられる**。確認文面は証跡そのものなので、フォームから入れる。
 
 ### 確認
 
 - `OrgMaster` が 105 件あること
 - `ConsentMaster` に `IsActive` = はい の行が **ちょうど1件** あること
   （複数あると適用開始日が最新のものが使われる）
-- `DocTemplates` に `整備キャンセル料同意書.docx` があること
+- `DocTemplates` に `整備キャンセル料確認書.docx` があること
 
 ## 3. Power Automate フローの作成
 
@@ -199,7 +199,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 ### 4-5. 保存と公開
 
 1. **ファイル → 名前を付けて保存**。アプリ名は
-   `YAJ 整備キャンセル料 同意書` など
+   `YAJ 整備キャンセル料 確認書` など
 2. **公開**する
 3. **共有** で利用者のセキュリティグループを追加する
    （フローの接続も一緒に共有されることを確認する）
@@ -210,7 +210,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 最低限、次の4つが通れば MVP として使い始められる。
 
 1. 新規作成 → ドラフト保存 → 一覧から再開できる
-2. 同意チェックなし・署名なしでは送信ボタンが押せない
+2. 確認チェックなし・署名なしでは送信ボタンが押せない
 3. 送信すると文書番号が採番され、PDFが届き、ステータスが「メール送信済み」になる
 4. 同じ日に2件送信すると `-001` `-002` と連番になる
 
@@ -238,7 +238,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 | SharePoint サイト管理者 | |
 | アプリ・フローの共同所有者 | |
 | 利用対象セキュリティグループ | |
-| 同意文面の現行版 | |
+| 確認文面の現行版 | |
 | 記録・PDFの保管期間 | （要件定義 19章-10 が未確定） |
 
 ## 補遺A: ソリューション環境で構築する場合

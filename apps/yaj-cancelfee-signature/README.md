@@ -25,7 +25,7 @@ ListScreen（一覧・ホーム）
    │  ドラフト行をタップ ────────────>│  ドラフト保存 ──> ListScreen
    │                                  │
    │                                  ▼
-   │                            ConsentScreen（同意・署名）
+   │                            ConsentScreen（確認・署名）
    │                                  │ 確認ダイアログ → 送信
    │                        ┌─────────┴──────────┐
    │                        ▼                    ▼
@@ -41,7 +41,7 @@ ListScreen（一覧・ホーム）
 | [`Src/App.pa.yaml`](Src/App.pa.yaml) | — | `StartScreen` と `OnStart`（マスタ読み込み・権限判定・初期値） |
 | [`Src/ListScreen.pa.yaml`](Src/ListScreen.pa.yaml) | 一覧 | 検索・絞り込み・ギャラリー・新規作成 |
 | [`Src/EditScreen.pa.yaml`](Src/EditScreen.pa.yaml) | 新規作成・編集 | 顧客／機体／組織の入力、ドラフト保存 |
-| [`Src/ConsentScreen.pa.yaml`](Src/ConsentScreen.pa.yaml) | 同意・署名 | 同意文面の全文表示、同意チェック、手書き署名、送信 |
+| [`Src/ConsentScreen.pa.yaml`](Src/ConsentScreen.pa.yaml) | 確認・署名 | 確認文面の全文表示、確認チェック、手書き署名、送信 |
 | [`Src/CompleteScreen.pa.yaml`](Src/CompleteScreen.pa.yaml) | 完了 | 文書番号と各工程の成功表示 |
 | [`Src/ErrorScreen.pa.yaml`](Src/ErrorScreen.pa.yaml) | エラー | 失敗した工程の表示と冪等な再実行 |
 | [`Src/DetailScreen.pa.yaml`](Src/DetailScreen.pa.yaml) | 詳細 | 参照、文面スナップショット、PDF再送、削除（管理者） |
@@ -73,7 +73,7 @@ Power Fx の `OnSelect` は同期実行されるため、直接フローを呼�
 署名画像は `varSignatureBase64` に保持しているため、
 署名画面を離れた後でも再実行できる。
 
-### 同意文面のスナップショット
+### 確認文面のスナップショット
 
 署名時に保存するのは、マスタの現在値ではなく
 **画面に表示していたコントロールの `Text`**（`txtConsentBody.Text`）。
@@ -120,6 +120,9 @@ python3 scripts/check-references.py
 
 # タブレット縦（768×1024）に収まっているか
 python3 scripts/check-layout.py
+
+# Word テンプレートとフロー手順書の差し込み欄の一致
+python3 scripts/check-template-fields.py
 ```
 
 ## `pac canvas pack` で .msapp にする場合

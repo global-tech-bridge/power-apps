@@ -158,7 +158,7 @@ concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body
 
 **E27** — 件名
 ```
-concat('【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する同意書（文書番号 ',variables('varDocumentNo'),'）')
+concat('【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書（文書番号 ',variables('varDocumentNo'),'）')
 ```
 
 **E28** — 送信日時
@@ -203,8 +203,8 @@ if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),startsWith(output
 ```
 if(equals(outputs('Compose_ErrorCode'),'E-FLOW-020'),'文書番号の採番に失敗しました。時間をおいて、もう一度送信してください。',
 if(equals(outputs('Compose_ErrorCode'),'E-FLOW-030'),'署名画像の保存に失敗しました。もう一度送信してください。',
-if(equals(outputs('Compose_ErrorCode'),'E-FLOW-040'),'同意書PDFの作成に失敗しました。管理者に連絡してください。',
-if(equals(outputs('Compose_ErrorCode'),'E-FLOW-050'),'同意書PDFの保存に失敗しました。もう一度送信してください。',
+if(equals(outputs('Compose_ErrorCode'),'E-FLOW-040'),'確認書PDFの作成に失敗しました。管理者に連絡してください。',
+if(equals(outputs('Compose_ErrorCode'),'E-FLOW-050'),'確認書PDFの保存に失敗しました。もう一度送信してください。',
 if(equals(outputs('Compose_ErrorCode'),'E-FLOW-060'),'PDFのメール送信に失敗しました。顧客メールアドレスを確認して、もう一度送信してください。',
 '処理中にエラーが発生しました。もう一度送信してください。')))))
 ```
@@ -219,11 +219,6 @@ workflow()['run']['name']
 **E40** — 署名日時（日本時間・和暦風の表記）
 ```
 formatDateTime(convertTimeZone(outputs('Get_case')?['body/SignedAt'],'UTC','Tokyo Standard Time'),'yyyy年MM月dd日 HH:mm')
-```
-
-**E41** — 電話番号（未入力なら「—」）
-```
-coalesce(outputs('Get_case')?['body/CustomerPhone'],'—')
 ```
 
 **E42** — 機番（機番なしの機体はその旨を印字）

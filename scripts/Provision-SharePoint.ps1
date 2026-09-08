@@ -210,7 +210,7 @@ if ($existingConsent -gt 0) {
     Write-Host "  既に $existingConsent 件あるため投入をスキップします" -ForegroundColor DarkGray
 }
 else {
-    $bodyPath = Join-Path $repoRoot 'data/consent/ConsentText_v0.9-draft.txt'
+    $bodyPath = Join-Path $repoRoot 'data/consent/ConsentText_v1.0.txt'
     $body = Get-Content $bodyPath -Raw -Encoding UTF8
     # 1行目を表示タイトル、残りを本文にする
     $lines = $body -split "`r?`n"
@@ -220,16 +220,18 @@ else {
     Add-PnPListItem -List 'ConsentMaster' -Values @{
         Title         = 'CANCELFEE-001'
         ConsentId     = 'CANCELFEE-001'
-        Version       = '0.9-draft'
+        Version       = '1.0'
         EffectiveFrom = (Get-Date).Date
         IsActive      = $true
         DisplayTitle  = $title
         Body          = $text
-        RevisedBy     = 'provisioning script'
+        RevisedBy     = 'サービス事業推進部（2026-06-02 起案）'
         RevisedAt     = (Get-Date)
     } | Out-Null
-    Write-Host "  版 0.9-draft を投入しました" -ForegroundColor Green
-    Write-Warning "  この文面は要件定義 19章-1 が未確定のための仮版です。法務確認後に正式版へ差し替えてください。"
+    Write-Host "  版 1.0 を投入しました（元資料 2026-06-02 支社起案版）" -ForegroundColor Green
+    Write-Warning "  この文面は中部近畿支社サービス事業推進部の起案版です。上申・法務確認の"
+    Write-Warning "  結果（収入印紙の取扱い、署名欄の過不足、保管期限）が未確定のため、"
+    Write-Warning "  本番運用の開始前に docs/07-open-issues.md の残課題を確認してください。"
 }
 
 # ---------------------------------------------------------------------------
@@ -256,10 +258,10 @@ else {
 # Word テンプレートのアップロード
 # ---------------------------------------------------------------------------
 Write-Host "`n[初期データ] DocTemplates" -ForegroundColor Yellow
-$tpl = Join-Path $repoRoot 'templates/整備キャンセル料同意書.docx'
+$tpl = Join-Path $repoRoot 'templates/整備キャンセル料確認書.docx'
 if (Test-Path $tpl) {
     Add-PnPFile -Path $tpl -Folder 'DocTemplates' | Out-Null
-    Write-Host "  整備キャンセル料同意書.docx をアップロードしました" -ForegroundColor Green
+    Write-Host "  整備キャンセル料確認書.docx をアップロードしました" -ForegroundColor Green
 }
 else {
     Write-Warning "  テンプレートが見つかりません: $tpl（python3 templates/build-template.py で生成）"
