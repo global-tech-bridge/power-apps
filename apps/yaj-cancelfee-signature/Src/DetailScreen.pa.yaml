@@ -1,0 +1,903 @@
+# 詳細画面 — 要件定義 7.5 / 13章 / 17.4
+# 通常利用者：参照とPDFの再送のみ。編集・削除は不可。
+# 管理者：誤登録データの削除が可能（理由の入力を必須にし、監査ログへ記録する）。
+Screens:
+  DetailScreen:
+    Properties:
+      Fill: =RGBA(243, 242, 241, 1)
+      OnVisible: |-
+        =Set(varShowSnapshot, false);
+        Set(varShowResend, false);
+        Set(varShowDelete, false);
+        Set(varBusy, false);
+        Reset(txtDeleteReason);
+        Reset(txtResendTo)
+    Children:
+      # ---------------- ヘッダー ----------------
+      - recHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =72
+            Fill: =RGBA(0, 120, 212, 1)
+      - btnBack:
+          Control: Classic/Button
+          Properties:
+            Text: ="‹ 一覧"
+            OnSelect: =Navigate(ListScreen, ScreenTransition.UnCover)
+            X: =16
+            Y: =16
+            Width: =90
+            Height: =40
+            Size: =12
+            Fill: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            BorderThickness: =0
+      - lblTitle:
+          Control: Label
+          Properties:
+            Text: ="同意書の詳細"
+            X: =116
+            Y: =14
+            Width: =300
+            Height: =30
+            Size: =17
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - lblHeaderDocNo:
+          Control: Label
+          Properties:
+            Text: |-
+              =Coalesce(varSelected.DocumentNo, "（番号未採番）")
+            X: =420
+            Y: =0
+            Width: =332
+            Height: =72
+            Size: =14
+            Align: =Align.Right
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
+      # ---------------- 案件情報 ----------------
+      - recCase:
+          Control: Rectangle
+          Properties:
+            X: =16
+            Y: =84
+            Width: =736
+            Height: =134
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblSecCase:
+          Control: Label
+          Properties:
+            Text: ="案件情報"
+            X: =32
+            Y: =90
+            Width: =300
+            Height: =22
+            Size: =11
+            FontWeight: =FontWeight.Semibold
+            Color: =RGBA(0, 90, 158, 1)
+      - lblCapA1:
+          Control: Label
+          Properties:
+            Text: ="文書番号"
+            X: =32
+            Y: =116
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValA1:
+          Control: Label
+          Properties:
+            Text: |-
+              =Coalesce(varSelected.DocumentNo, "（未採番）")
+            X: =32
+            Y: =132
+            Width: =172
+            Height: =26
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+      - lblCapA2:
+          Control: Label
+          Properties:
+            Text: ="ステータス"
+            X: =212
+            Y: =116
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValA2:
+          Control: Label
+          Properties:
+            Text: |-
+              =LookUp(colStatus, Code = varSelected.Status.Value, Label)
+            X: =212
+            Y: =132
+            Width: =172
+            Height: =26
+            Size: =12
+            FontWeight: =FontWeight.Semibold
+            Color: |-
+              =Switch(varSelected.Status.Value,
+                  "Sent",  RGBA(16, 124, 16, 1),
+                  "Error", RGBA(168, 0, 0, 1),
+                  RGBA(50, 49, 48, 1)
+              )
+      - lblCapA3:
+          Control: Label
+          Properties:
+            Text: ="作成日"
+            X: =392
+            Y: =116
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValA3:
+          Control: Label
+          Properties:
+            Text: |-
+              =Text(varSelected.RegisteredAt, "yyyy/mm/dd hh:mm")
+            X: =392
+            Y: =132
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapA4:
+          Control: Label
+          Properties:
+            Text: ="署名日時"
+            X: =572
+            Y: =116
+            Width: =164
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValA4:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(IsBlank(varSelected.SignedAt), "—",
+                  Text(varSelected.SignedAt, "yyyy/mm/dd hh:mm")
+              )
+            X: =572
+            Y: =132
+            Width: =164
+            Height: =26
+            Size: =12
+      - lblCapB1:
+          Control: Label
+          Properties:
+            Text: ="担当者"
+            X: =32
+            Y: =164
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValB1:
+          Control: Label
+          Properties:
+            Text: =varSelected.OperatorName
+            X: =32
+            Y: =180
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapB2:
+          Control: Label
+          Properties:
+            Text: ="支社"
+            X: =212
+            Y: =164
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValB2:
+          Control: Label
+          Properties:
+            Text: =varSelected.BranchName
+            X: =212
+            Y: =180
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapB3:
+          Control: Label
+          Properties:
+            Text: ="ブロック"
+            X: =392
+            Y: =164
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValB3:
+          Control: Label
+          Properties:
+            Text: =varSelected.BlockName
+            X: =392
+            Y: =180
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapB4:
+          Control: Label
+          Properties:
+            Text: ="拠点"
+            X: =572
+            Y: =164
+            Width: =164
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValB4:
+          Control: Label
+          Properties:
+            Text: =varSelected.SiteName
+            X: =572
+            Y: =180
+            Width: =164
+            Height: =26
+            Size: =12
+
+      # ---------------- 顧客・機体・整備情報 ----------------
+      - recCustomer:
+          Control: Rectangle
+          Properties:
+            X: =16
+            Y: =228
+            Width: =736
+            Height: =234
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblSecCustomer:
+          Control: Label
+          Properties:
+            Text: ="顧客・機体・整備情報"
+            X: =32
+            Y: =234
+            Width: =400
+            Height: =22
+            Size: =11
+            FontWeight: =FontWeight.Semibold
+            Color: =RGBA(0, 90, 158, 1)
+      - lblCapC1:
+          Control: Label
+          Properties:
+            Text: ="顧客名"
+            X: =32
+            Y: =260
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValC1:
+          Control: Label
+          Properties:
+            Text: =varSelected.CustomerName
+            X: =32
+            Y: =276
+            Width: =172
+            Height: =26
+            Size: =13
+            FontWeight: =FontWeight.Semibold
+      - lblCapC2:
+          Control: Label
+          Properties:
+            Text: ="メールアドレス"
+            X: =212
+            Y: =260
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValC2:
+          Control: Label
+          Properties:
+            Text: =varSelected.CustomerEmail
+            X: =212
+            Y: =276
+            Width: =172
+            Height: =26
+            Size: =10
+      - lblCapC3:
+          Control: Label
+          Properties:
+            Text: ="電話番号"
+            X: =392
+            Y: =260
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValC3:
+          Control: Label
+          Properties:
+            Text: |-
+              =Coalesce(varSelected.CustomerPhone, "—")
+            X: =392
+            Y: =276
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapC4:
+          Control: Label
+          Properties:
+            Text: ="整備区分"
+            X: =572
+            Y: =260
+            Width: =164
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValC4:
+          Control: Label
+          Properties:
+            Text: =varSelected.MaintenanceType.Value
+            X: =572
+            Y: =276
+            Width: =164
+            Height: =26
+            Size: =12
+      - lblCapD1:
+          Control: Label
+          Properties:
+            Text: ="型式"
+            X: =32
+            Y: =310
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValD1:
+          Control: Label
+          Properties:
+            Text: =varSelected.Model
+            X: =32
+            Y: =326
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapD2:
+          Control: Label
+          Properties:
+            Text: ="機番"
+            X: =212
+            Y: =310
+            Width: =172
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValD2:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(varSelected.NoSerialNo, "（機番なしの機体）", varSelected.SerialNo)
+            X: =212
+            Y: =326
+            Width: =172
+            Height: =26
+            Size: =12
+      - lblCapComment:
+          Control: Label
+          Properties:
+            Text: ="コメント／顧客ご用命事項"
+            X: =32
+            Y: =360
+            Width: =704
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - txtComment:
+          Control: Classic/TextInput
+          Properties:
+            Mode: =TextMode.MultiLine
+            DisplayMode: =DisplayMode.View
+            Default: |-
+              =Coalesce(varSelected.Comment, "（記載なし）")
+            X: =32
+            Y: =378
+            Width: =704
+            Height: =70
+            Size: =11
+            Fill: =RGBA(250, 249, 248, 1)
+
+      # ---------------- 同意・署名 ----------------
+      - recSign:
+          Control: Rectangle
+          Properties:
+            X: =16
+            Y: =472
+            Width: =736
+            Height: =344
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblSecSign:
+          Control: Label
+          Properties:
+            Text: ="同意・署名"
+            X: =32
+            Y: =478
+            Width: =300
+            Height: =22
+            Size: =11
+            FontWeight: =FontWeight.Semibold
+            Color: =RGBA(0, 90, 158, 1)
+      - lblCapConsent:
+          Control: Label
+          Properties:
+            Text: ="同意文面（署名時点）"
+            X: =32
+            Y: =504
+            Width: =344
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValConsent:
+          Control: Label
+          Properties:
+            Text: |-
+              ="文面ID " & varSelected.ConsentId & "　版 " & varSelected.ConsentVersion
+            X: =32
+            Y: =520
+            Width: =344
+            Height: =26
+            Size: =12
+      - btnShowSnapshot:
+          Control: Classic/Button
+          Properties:
+            Text: ="署名時点の文面を全文表示"
+            OnSelect: =Set(varShowSnapshot, true)
+            X: =392
+            Y: =512
+            Width: =344
+            Height: =38
+            Size: =11
+      - lblCapSigner:
+          Control: Label
+          Properties:
+            Text: ="署名者お名前"
+            X: =32
+            Y: =556
+            Width: =344
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - lblValSigner:
+          Control: Label
+          Properties:
+            Text: |-
+              =Coalesce(varSelected.SignerName, "（入力なし）")
+            X: =32
+            Y: =572
+            Width: =344
+            Height: =26
+            Size: =12
+      - lblCapSignature:
+          Control: Label
+          Properties:
+            Text: ="手書き署名"
+            X: =32
+            Y: =604
+            Width: =704
+            Height: =16
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - recSignatureFrame:
+          Control: Rectangle
+          Properties:
+            X: =32
+            Y: =622
+            Width: =704
+            Height: =176
+            Fill: =RGBA(250, 249, 248, 1)
+      - imgSignature:
+          Control: Image
+          Properties:
+            # SignatureImages ライブラリに保存した PNG の URL（テキスト列）を表示する。
+            Image: =varSelected.SignatureImageUrl
+            ImagePosition: =ImagePosition.Fit
+            X: =36
+            Y: =626
+            Width: =696
+            Height: =168
+      - lblNoSignature:
+          Control: Label
+          Properties:
+            Text: ="署名画像は保存されていません。"
+            Visible: =IsBlank(varSelected.SignatureImageUrl)
+            X: =36
+            Y: =694
+            Width: =696
+            Height: =30
+            Size: =11
+            Align: =Align.Center
+            Color: =RGBA(96, 94, 92, 1)
+
+      # ---------------- 操作 ----------------
+      - btnOpenPdf:
+          Control: Classic/Button
+          Properties:
+            Text: ="署名済みPDFを開く"
+            DisplayMode: |-
+              =If(IsBlank(varSelected.PdfUrl), DisplayMode.Disabled, DisplayMode.Edit)
+            OnSelect: =Launch(varSelected.PdfUrl)
+            X: =16
+            Y: =828
+            Width: =240
+            Height: =52
+            Size: =13
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - btnResend:
+          Control: Classic/Button
+          Properties:
+            Text: ="PDFを再送"
+            DisplayMode: |-
+              =If(IsBlank(varSelected.PdfUrl) || varBusy,
+                  DisplayMode.Disabled,
+                  DisplayMode.Edit
+              )
+            OnSelect: =Set(varShowResend, true)
+            X: =272
+            Y: =828
+            Width: =200
+            Height: =52
+            Size: =13
+      - btnDelete:
+          Control: Classic/Button
+          Properties:
+            Text: ="削除"
+            Visible: =varIsAdmin
+            DisplayMode: |-
+              =If(varBusy, DisplayMode.Disabled, DisplayMode.Edit)
+            OnSelect: =Set(varShowDelete, true)
+            X: =488
+            Y: =828
+            Width: =136
+            Height: =52
+            Size: =13
+            Color: =RGBA(168, 0, 0, 1)
+            BorderColor: =RGBA(168, 0, 0, 1)
+            BorderThickness: =1
+            Fill: =RGBA(255, 255, 255, 1)
+      - btnToList:
+          Control: Classic/Button
+          Properties:
+            Text: ="一覧"
+            OnSelect: =Navigate(ListScreen, ScreenTransition.UnCover)
+            X: =640
+            Y: =828
+            Width: =112
+            Height: =52
+            Size: =13
+      - lblReadOnlyNote:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(varIsAdmin,
+                  "署名完了後の内容は編集できません。誤登録の削除は理由の記録が必要です。",
+                  "署名完了後の内容は編集・削除できません。誤登録の場合は管理者に連絡してください。"
+              )
+            X: =16
+            Y: =888
+            Width: =736
+            Height: =36
+            Size: =10
+            Color: =RGBA(96, 94, 92, 1)
+      - lblStoredError:
+          Control: Label
+          Properties:
+            # 過去にエラーで止まった案件の識別情報（管理者のみ）
+            Text: |-
+              ="記録されたエラー: " & varSelected.ErrorCode & " / " & varSelected.ErrorMessage
+            Visible: |-
+              =varIsAdmin && !IsBlank(varSelected.ErrorCode)
+            X: =16
+            Y: =924
+            Width: =736
+            Height: =40
+            Size: =9
+            Color: =RGBA(168, 0, 0, 1)
+
+      # ================ オーバーレイ ================
+      - recOverlay:
+          Control: Rectangle
+          Properties:
+            Visible: |-
+              =varShowSnapshot || varShowResend || varShowDelete || varBusy
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Fill: =RGBA(0, 0, 0, 0.55)
+
+      # --- 同意文面スナップショットの全文表示 ---
+      - recSnapshot:
+          Control: Rectangle
+          Properties:
+            Visible: =varShowSnapshot
+            X: =40
+            Y: =100
+            Width: =688
+            Height: =824
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblSnapshotTitle:
+          Control: Label
+          Properties:
+            Text: |-
+              =varSelected.ConsentTitle & "（版 " & varSelected.ConsentVersion & "）"
+            Visible: =varShowSnapshot
+            X: =64
+            Y: =124
+            Width: =640
+            Height: =30
+            Size: =14
+            FontWeight: =FontWeight.Semibold
+      - txtSnapshot:
+          Control: Classic/TextInput
+          Properties:
+            Mode: =TextMode.MultiLine
+            DisplayMode: =DisplayMode.View
+            Default: =varSelected.ConsentTextSnapshot
+            Visible: =varShowSnapshot
+            X: =64
+            Y: =160
+            Width: =640
+            Height: =684
+            Size: =11
+            Fill: =RGBA(250, 249, 248, 1)
+      - btnCloseSnapshot:
+          Control: Classic/Button
+          Properties:
+            Text: ="閉じる"
+            Visible: =varShowSnapshot
+            OnSelect: =Set(varShowSnapshot, false)
+            X: =64
+            Y: =856
+            Width: =640
+            Height: =46
+            Size: =12
+
+      # --- PDF再送の確認 ---
+      - recResend:
+          Control: Rectangle
+          Properties:
+            Visible: =varShowResend
+            X: =84
+            Y: =300
+            Width: =600
+            Height: =330
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblResendTitle:
+          Control: Label
+          Properties:
+            Text: ="署名済みPDFを再送します"
+            Visible: =varShowResend
+            X: =112
+            Y: =324
+            Width: =544
+            Height: =32
+            Size: =16
+            FontWeight: =FontWeight.Semibold
+      - lblResendBody:
+          Control: Label
+          Properties:
+            Text: |-
+              ="文書番号 " & varSelected.DocumentNo & " の保存済みPDFを再送します。"
+              & "PDFは作り直さず、SharePointに保存済みのファイルをそのまま添付します。" & Char(10) & Char(10)
+              & "宛先を変更する場合は下の欄を書き換えてください（空欄のままなら登録済みのアドレスへ送ります）。"
+            Visible: =varShowResend
+            X: =112
+            Y: =360
+            Width: =544
+            Height: =104
+            Size: =11
+      - txtResendTo:
+          Control: Classic/TextInput
+          Properties:
+            Default: =varSelected.CustomerEmail
+            HintText: ="送信先メールアドレス"
+            Visible: =varShowResend
+            X: =112
+            Y: =470
+            Width: =544
+            Height: =42
+            Size: =12
+      - lblResendValidation:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(!IsMatch(Trim(txtResendTo.Text), Match.Email),
+                  "※ メールアドレスの形式が正しくありません。",
+                  ""
+              )
+            Visible: =varShowResend
+            X: =112
+            Y: =516
+            Width: =544
+            Height: =24
+            Size: =10
+            Color: =RGBA(196, 49, 75, 1)
+      - btnResendCancel:
+          Control: Classic/Button
+          Properties:
+            Text: ="キャンセル"
+            Visible: =varShowResend
+            OnSelect: =Set(varShowResend, false)
+            X: =112
+            Y: =548
+            Width: =200
+            Height: =52
+            Size: =12
+      - btnResendOk:
+          Control: Classic/Button
+          Properties:
+            Text: ="再送する"
+            Visible: =varShowResend
+            DisplayMode: |-
+              =If(IsBlank(lblResendValidation.Text) && !varBusy,
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            OnSelect: |-
+              =Set(varBusy, true);
+              Set(varShowResend, false);
+              IfError(
+                  Set(varResendResult,
+                      'YAJ-CancelFee-Resend'.Run(varSelected.ID, Trim(txtResendTo.Text))
+                  ),
+                  Set(varResendResult, Blank())
+              );
+              Set(varBusy, false);
+              If(!IsBlank(varResendResult) && varResendResult.Success,
+                  Set(varSelected, LookUp(SignatureCases, ID = varSelected.ID));
+                  Notify(
+                      "署名済みPDFを再送しました。（" & Trim(txtResendTo.Text) & "）",
+                      NotificationType.Success
+                  ),
+                  Notify(
+                      "再送に失敗しました。"
+                          & Coalesce(varResendResult.ErrorMessage, "")
+                          & "（" & Coalesce(varResendResult.ErrorCode, "E-RESEND-000") & "）",
+                      NotificationType.Error
+                  )
+              )
+            X: =336
+            Y: =548
+            Width: =320
+            Height: =52
+            Size: =13
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
+      # --- 削除の確認（管理者のみ）---
+      - recDelete:
+          Control: Rectangle
+          Properties:
+            Visible: =varShowDelete
+            X: =84
+            Y: =300
+            Width: =600
+            Height: =330
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblDeleteTitle:
+          Control: Label
+          Properties:
+            Text: ="この記録を削除します"
+            Visible: =varShowDelete
+            X: =112
+            Y: =324
+            Width: =544
+            Height: =32
+            Size: =16
+            FontWeight: =FontWeight.Semibold
+            Color: =RGBA(168, 0, 0, 1)
+      - lblDeleteBody:
+          Control: Label
+          Properties:
+            Text: |-
+              ="文書番号 " & varSelected.DocumentNo & "（" & varSelected.CustomerName & " 様）"
+              & "のリストレコード・署名画像・署名済みPDFをすべて削除します。この操作は取り消せません。" & Char(10) & Char(10)
+              & "削除の理由は監査ログに記録されます（要件定義 15.4）。"
+            Visible: =varShowDelete
+            X: =112
+            Y: =360
+            Width: =544
+            Height: =104
+            Size: =11
+      - txtDeleteReason:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="削除理由（必須）例：顧客名の誤りにより再登録"
+            Visible: =varShowDelete
+            X: =112
+            Y: =470
+            Width: =544
+            Height: =42
+            Size: =12
+      - lblDeleteValidation:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(Len(Trim(txtDeleteReason.Text)) < 5,
+                  "※ 削除理由を5文字以上で入力してください。",
+                  ""
+              )
+            Visible: =varShowDelete
+            X: =112
+            Y: =516
+            Width: =544
+            Height: =24
+            Size: =10
+            Color: =RGBA(196, 49, 75, 1)
+      - btnDeleteCancel:
+          Control: Classic/Button
+          Properties:
+            Text: ="キャンセル"
+            Visible: =varShowDelete
+            OnSelect: =Set(varShowDelete, false)
+            X: =112
+            Y: =548
+            Width: =200
+            Height: =52
+            Size: =12
+      - btnDeleteOk:
+          Control: Classic/Button
+          Properties:
+            Text: ="削除する"
+            Visible: =varShowDelete
+            DisplayMode: |-
+              =If(IsBlank(lblDeleteValidation.Text) && !varBusy,
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            OnSelect: |-
+              =Set(varBusy, true);
+              Set(varShowDelete, false);
+              IfError(
+                  Set(varDeleteResult,
+                      'YAJ-CancelFee-Delete'.Run(varSelected.ID, Trim(txtDeleteReason.Text))
+                  ),
+                  Set(varDeleteResult, Blank())
+              );
+              Set(varBusy, false);
+              If(!IsBlank(varDeleteResult) && varDeleteResult.Success,
+                  Notify("削除しました。監査ログに記録しました。", NotificationType.Success);
+                  Navigate(ListScreen, ScreenTransition.UnCover),
+                  Notify(
+                      "削除に失敗しました。（"
+                          & Coalesce(varDeleteResult.ErrorCode, "E-DELETE-000") & "）",
+                      NotificationType.Error
+                  )
+              )
+            X: =336
+            Y: =548
+            Width: =320
+            Height: =52
+            Size: =13
+            Fill: =RGBA(168, 0, 0, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
+      # --- 処理中 ---
+      - lblBusy:
+          Control: Label
+          Properties:
+            Text: ="処理中です。しばらくお待ちください。"
+            Visible: =varBusy
+            X: =84
+            Y: =470
+            Width: =600
+            Height: =84
+            Size: =14
+            Align: =Align.Center
+            Color: =RGBA(255, 255, 255, 1)

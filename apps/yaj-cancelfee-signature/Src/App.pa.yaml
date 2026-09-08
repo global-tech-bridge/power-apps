@@ -1,0 +1,96 @@
+# YAJ 整備キャンセル料 電子署名アプリ — アプリ定義
+# 要件定義書: YAJ_整備キャンセル料_電子署名PowerApp_要件定義.md
+#
+# StartScreen / OnStart は「コードの貼り付け」では取り込めません。
+# Studio の [アプリ] オブジェクト（ツリービュー最上部）を選択し、
+# StartScreen と OnStart に下記の数式を手で貼り付けてください。
+# 手順は ../README.md「Studio への取り込み方法」を参照。
+
+App:
+  Properties:
+    StartScreen: =ListScreen
+    OnStart: |-
+      =// ---- マスタをローカルコレクションへ読み込む -------------------------
+      // 組織マスタ105件・同意文面・管理者はいずれも少件数のため、
+      // 委任制限（既定500件）を回避する目的で起動時に一括取得する。
+      Concurrent(
+          ClearCollect(colOrg, Filter(OrgMaster, IsActive = true)),
+          ClearCollect(colConsent, Filter(ConsentMaster, IsActive = true)),
+          ClearCollect(colAdmin, Filter(AppAdmins, IsActive = true))
+      );
+
+      // ---- ログインユーザーと権限 -----------------------------------------
+      Set(varUserEmail, Lower(User().Email));
+      Set(varUserName, User().FullName);
+      Set(varIsAdmin, CountRows(Filter(colAdmin, Lower(UserEmail) = varUserEmail)) > 0);
+
+      // ---- 適用中の同意文面（適用開始日が過去で、終了日が未来または未設定）
+      // 複数該当する場合は適用開始日が最も新しいものを採用する。
+      Set(varConsent,
+          First(
+              Sort(
+                  Filter(colConsent,
+                      EffectiveFrom <= Now()
+                      && (IsBlank(EffectiveTo) || EffectiveTo >= Now())
+                  ),
+                  EffectiveFrom,
+                  SortOrder.Descending
+              )
+          )
+      );
+
+      // ---- ステータス（内部コードと日本語ラベルの対応表・要件定義 9章）----
+      ClearCollect(colStatus,
+          {Code: "Draft",      Label: "作成中"},
+          {Code: "Signed",     Label: "署名取得済み"},
+          {Code: "PdfCreated", Label: "PDF生成済み"},
+          {Code: "Stored",     Label: "SharePoint保存済み"},
+          {Code: "Sent",       Label: "メール送信済み"},
+          {Code: "Error",      Label: "エラー"}
+      );
+      // 一覧の絞り込み用（ラベルのみの1列テーブル。未選択＝すべて）
+      ClearCollect(colStatusOptions, ForAll(colStatus As s, {Value: s.Label}));
+
+      // ---- 整備区分（要件定義 19章-4 で正式な選択肢を確定させる）---------
+      ClearCollect(colMaintenanceType,
+          {Value: "点検整備"},
+          {Value: "一般整備"},
+          {Value: "その他"}
+      );
+
+      // ---- 組織の初期値 ---------------------------------------------------
+      // 「その利用者が最後に登録したレコードの支社・ブロック・拠点を初期値にする」
+      // （要件定義 11.2）。異動時は選択し直せば、次回からは新しい値が初期値になる。
+      Set(varLastCase,
+          First(
+              Sort(
+                  Filter(SignatureCases, OperatorEmail = varUserEmail),
+                  ID,
+                  SortOrder.Descending
+              )
+          )
+      );
+      Set(varDefaultBranch, varLastCase.BranchName);
+      Set(varDefaultBlock, varLastCase.BlockName);
+      Set(varDefaultSite, varLastCase.SiteName);
+
+      // ---- 編集中レコードの初期化 -----------------------------------------
+      // varRecordId = 0 は新規。Defaults() で型付きの空レコードを用意する。
+      Set(varRecordId, 0);
+      Set(varEdit, Defaults(SignatureCases));
+      Set(varRequestId, "");
+      Set(varSignatureBase64, "");
+
+      // ---- 一覧の絞り込み条件の初期値 -------------------------------------
+      // 支社・ブロック・拠点は「自拠点」を初期表示にする（要件定義 12章）。
+      // 未選択にすると全国が対象になる。
+      Set(varFilterStatusCode, "")
+
+EditorState:
+  ScreensOrder:
+    - ListScreen
+    - EditScreen
+    - ConsentScreen
+    - CompleteScreen
+    - ErrorScreen
+    - DetailScreen

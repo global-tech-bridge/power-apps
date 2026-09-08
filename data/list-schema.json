@@ -1,0 +1,132 @@
+{
+  "$comment": "SharePoint リスト／ライブラリのスキーマ定義。scripts/Provision-SharePoint.ps1 と scripts/check-references.py が参照する単一の定義元。列は英語名で作成し、内部名も英語に揃える（日本語名で作ると内部名が _x9867_ 形式にエスケープされ、Power Automate の OData フィルターや Word テンプレートのマッピングが読めなくなるため）。",
+  "Lists": {
+    "SignatureCases": {
+      "Description": "整備キャンセル料 同意書の署名案件（要件定義 11.1）",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "DocumentNo",          "Type": "Text",     "Indexed": true,  "Note": "文書番号 YYYYMMDD-NNN。採番はフローが行う"},
+        {"Name": "CustomerName",        "Type": "Text",     "Required": true, "Indexed": true, "Note": "顧客名"},
+        {"Name": "CustomerEmail",       "Type": "Text",     "Note": "署名済みPDFの送付先"},
+        {"Name": "CustomerPhone",       "Type": "Text",     "Note": "顧客電話番号（任意）"},
+        {"Name": "Model",               "Type": "Text",     "Note": "型式"},
+        {"Name": "SerialNo",            "Type": "Text",     "Note": "機番"},
+        {"Name": "NoSerialNo",          "Type": "Boolean",  "Default": "0", "Note": "機番なしの機体（要件定義 19章-3 の暫定対応）"},
+        {"Name": "MaintenanceType",     "Type": "Choice",   "Choices": ["点検整備", "一般整備", "その他"], "Note": "整備区分"},
+        {"Name": "Comment",             "Type": "Note",     "Note": "コメント／顧客ご用命事項"},
+        {"Name": "BranchName",          "Type": "Text",     "Indexed": true, "Note": "支社（組織マスタの部門名。docs/07-open-issues.md D-01）"},
+        {"Name": "BlockName",           "Type": "Text",     "Indexed": true, "Note": "ブロック"},
+        {"Name": "BlockCode",           "Type": "Text",     "Note": "ブロックコード"},
+        {"Name": "SiteName",            "Type": "Text",     "Indexed": true, "Note": "拠点"},
+        {"Name": "SiteCode",            "Type": "Text",     "Indexed": true, "Note": "拠点コード（変換前拠点コード）"},
+        {"Name": "Status",              "Type": "Choice",   "Choices": ["Draft", "Signed", "PdfCreated", "Stored", "Sent", "Error"], "Indexed": true, "Note": "内部コードで保持し、画面の日本語ラベルはアプリ側の colStatus で対応付ける"},
+        {"Name": "ConsentId",           "Type": "Text",     "Note": "同意文面ID"},
+        {"Name": "ConsentTitle",        "Type": "Text",     "Note": "同意文面の表示タイトル（PDFの見出しに使う）"},
+        {"Name": "ConsentVersion",      "Type": "Text",     "Note": "同意文面の版"},
+        {"Name": "ConsentTextSnapshot", "Type": "Note",     "Note": "署名時点の文面全文。マスタ改訂後も署名時の内容を再現するため"},
+        {"Name": "SignedAt",            "Type": "DateTime", "Indexed": true, "Note": "署名日時"},
+        {"Name": "SignerName",          "Type": "Text",     "Note": "署名者お名前（任意入力）"},
+        {"Name": "Operator",            "Type": "User",     "Note": "ログイン利用者"},
+        {"Name": "OperatorEmail",       "Type": "Text",     "Indexed": true, "Note": "委任可能な絞り込み用に文字列でも保持する"},
+        {"Name": "OperatorName",        "Type": "Text",     "Indexed": true, "Note": "担当者表示名"},
+        {"Name": "SignatureImageUrl",   "Type": "Text",     "Note": "SignatureImages ライブラリ内の署名PNGのURL"},
+        {"Name": "PdfUrl",              "Type": "Text",     "Note": "SignatureDocs ライブラリ内の署名済みPDFのURL"},
+        {"Name": "PdfFileName",         "Type": "Text",     "Note": "PDFファイル名（文書番号.pdf）"},
+        {"Name": "RegisteredAt",        "Type": "DateTime", "Indexed": true, "Note": "作成日。Created 列はサイトの言語で表示名が変わるため独自に持つ"},
+        {"Name": "SentAt",              "Type": "DateTime", "Note": "メール送信完了日時"},
+        {"Name": "ResendCount",         "Type": "Number",   "Default": "0", "Note": "再送回数"},
+        {"Name": "ClientRequestId",     "Type": "Text",     "Indexed": true, "Note": "冪等キー。再実行で二重採番・二重PDFを防ぐ"},
+        {"Name": "ErrorCode",           "Type": "Text",     "Note": "エラー識別子"},
+        {"Name": "ErrorMessage",        "Type": "Note",     "Note": "エラー内容"},
+        {"Name": "FlowRunId",           "Type": "Text",     "Note": "フロー実行ID（調査用）"}
+      ]
+    },
+    "OrgMaster": {
+      "Description": "組織マスタ（支社→ブロック→拠点。部門マスタ.xlsx 由来／要件定義 11.2）",
+      "Template": "GenericList",
+      "SeedCsv": "data/OrgMaster.csv",
+      "Columns": [
+        {"Name": "BranchName", "Type": "Text",    "Indexed": true},
+        {"Name": "BlockCode",  "Type": "Text"},
+        {"Name": "BlockName",  "Type": "Text",    "Indexed": true},
+        {"Name": "SiteCode",   "Type": "Text",    "Indexed": true},
+        {"Name": "SiteName",   "Type": "Text"},
+        {"Name": "IsActive",   "Type": "Boolean", "Default": "1"},
+        {"Name": "SortOrder",  "Type": "Number"}
+      ]
+    },
+    "ConsentMaster": {
+      "Description": "同意文面マスタ（要件定義 11.3）",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "ConsentId",     "Type": "Text",     "Indexed": true},
+        {"Name": "Version",       "Type": "Text"},
+        {"Name": "EffectiveFrom", "Type": "DateTime", "Indexed": true},
+        {"Name": "EffectiveTo",   "Type": "DateTime"},
+        {"Name": "IsActive",      "Type": "Boolean",  "Default": "1"},
+        {"Name": "DisplayTitle",  "Type": "Text"},
+        {"Name": "Body",          "Type": "Note"},
+        {"Name": "RevisedBy",     "Type": "Text"},
+        {"Name": "RevisedAt",     "Type": "DateTime"}
+      ]
+    },
+    "AppAdmins": {
+      "Description": "アプリ管理者（削除権限の判定に使う／要件定義 5.2）",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "UserEmail", "Type": "Text",    "Indexed": true},
+        {"Name": "UserName",  "Type": "Text"},
+        {"Name": "IsActive",  "Type": "Boolean", "Default": "1"},
+        {"Name": "Note",      "Type": "Text"}
+      ]
+    },
+    "SendLog": {
+      "Description": "メール送信履歴（初回送信・再送／要件定義 13章）",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "CaseId",       "Type": "Number",   "Indexed": true},
+        {"Name": "DocumentNo",   "Type": "Text",     "Indexed": true},
+        {"Name": "SentTo",       "Type": "Text"},
+        {"Name": "SentBy",       "Type": "Text"},
+        {"Name": "SentAt",       "Type": "DateTime", "Indexed": true},
+        {"Name": "Kind",         "Type": "Choice",   "Choices": ["Initial", "Resend"]},
+        {"Name": "Result",       "Type": "Choice",   "Choices": ["Success", "Failure"]},
+        {"Name": "ErrorMessage", "Type": "Note"}
+      ]
+    },
+    "AuditLog": {
+      "Description": "監査ログ（削除・再送・同意文面変更／要件定義 15.4）",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "Action",      "Type": "Choice",   "Choices": ["Delete", "Resend", "ConsentChange", "Other"]},
+        {"Name": "CaseId",      "Type": "Number",   "Indexed": true},
+        {"Name": "DocumentNo",  "Type": "Text",     "Indexed": true},
+        {"Name": "PerformedBy", "Type": "Text",     "Indexed": true},
+        {"Name": "PerformedAt", "Type": "DateTime", "Indexed": true},
+        {"Name": "Reason",      "Type": "Note"},
+        {"Name": "Detail",      "Type": "Note"}
+      ]
+    },
+    "DocumentNumberCounter": {
+      "Description": "文書番号の日次連番カウンタ（Title = yyyyMMdd／要件定義 8章）。フローの同時実行数を1に固定して直列化する。",
+      "Template": "GenericList",
+      "Columns": [
+        {"Name": "LastNumber", "Type": "Number", "Default": "0"}
+      ]
+    }
+  },
+  "Libraries": {
+    "SignatureDocs": {
+      "Description": "署名済みPDFの正本。通常利用者は読み取りのみ（要件定義 10章 / 17.2）"
+    },
+    "SignatureImages": {
+      "Description": "手書き署名のPNG"
+    },
+    "DocTemplates": {
+      "Description": "PDF生成に使う Word テンプレート（templates/整備キャンセル料同意書.docx）"
+    },
+    "WorkTemp": {
+      "Description": "Word→PDF 変換の中間ファイル置き場。個人 OneDrive を中継点にしないため（要件定義 15.5）。フローが処理後に削除する"
+    }
+  }
+}

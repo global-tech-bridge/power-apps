@@ -1,0 +1,437 @@
+# 一覧画面（ホーム）— 要件定義 7.1 / 12章
+# 検索・絞り込み → ギャラリー。行タップでドラフトは編集画面、確定分は詳細画面へ。
+Screens:
+  ListScreen:
+    Properties:
+      Fill: =RGBA(243, 242, 241, 1)
+    Children:
+      # ---------------- ヘッダー ----------------
+      - recHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =72
+            Fill: =RGBA(0, 120, 212, 1)
+      - lblTitle:
+          Control: Label
+          Properties:
+            Text: ="整備キャンセル料 同意書"
+            X: =24
+            Y: =14
+            Width: =440
+            Height: =30
+            Size: =17
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - lblSubTitle:
+          Control: Label
+          Properties:
+            Text: ="YAJ 中部近畿"
+            X: =24
+            Y: =42
+            Width: =440
+            Height: =20
+            Size: =10
+            Color: =RGBA(219, 235, 250, 1)
+      - lblUser:
+          Control: Label
+          Properties:
+            Text: |-
+              =varUserName & If(varIsAdmin, "（管理者）", "")
+            X: =464
+            Y: =0
+            Width: =280
+            Height: =72
+            Size: =11
+            Align: =Align.Right
+            Color: =RGBA(255, 255, 255, 1)
+
+      # ---------------- 検索・絞り込みパネル ----------------
+      - recFilter:
+          Control: Rectangle
+          Properties:
+            X: =16
+            Y: =84
+            Width: =736
+            Height: =226
+            Fill: =RGBA(255, 255, 255, 1)
+      - txtKeyword:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="文書番号・顧客名・担当者で検索（前方一致）"
+            X: =32
+            Y: =98
+            Width: =456
+            Height: =42
+            Size: =12
+      - btnNew:
+          Control: Classic/Button
+          Properties:
+            Text: ="＋ 新規作成"
+            OnSelect: |-
+              =Set(varRecordId, 0);
+              Set(varEdit, Defaults(SignatureCases));
+              Set(varRequestId, "");
+              Set(varSignatureBase64, "");
+              Navigate(EditScreen, ScreenTransition.Cover)
+            X: =504
+            Y: =98
+            Width: =232
+            Height: =42
+            Size: =13
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
+      - lblFilterOrg:
+          Control: Label
+          Properties:
+            Text: ="支社／ブロック／拠点（未選択＝全国）"
+            X: =32
+            Y: =148
+            Width: =470
+            Height: =18
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - ddFilterBranch:
+          Control: Classic/DropDown
+          Properties:
+            Items: =Sort(Distinct(colOrg, BranchName), Value)
+            Default: =varDefaultBranch
+            AllowEmptySelection: =true
+            X: =32
+            Y: =168
+            Width: =228
+            Height: =40
+            Size: =11
+      - ddFilterBlock:
+          Control: Classic/DropDown
+          Properties:
+            Items: |-
+              =Sort(
+                  Distinct(
+                      Filter(colOrg,
+                          IsBlank(ddFilterBranch.Selected.Value)
+                          || BranchName = ddFilterBranch.Selected.Value
+                      ),
+                      BlockName
+                  ),
+                  Value
+              )
+            Default: =varDefaultBlock
+            AllowEmptySelection: =true
+            X: =272
+            Y: =168
+            Width: =228
+            Height: =40
+            Size: =11
+      - ddFilterSite:
+          Control: Classic/DropDown
+          Properties:
+            Items: |-
+              =Sort(
+                  Distinct(
+                      Filter(colOrg,
+                          (IsBlank(ddFilterBranch.Selected.Value)
+                              || BranchName = ddFilterBranch.Selected.Value)
+                          && (IsBlank(ddFilterBlock.Selected.Value)
+                              || BlockName = ddFilterBlock.Selected.Value)
+                      ),
+                      SiteName
+                  ),
+                  Value
+              )
+            Default: =varDefaultSite
+            AllowEmptySelection: =true
+            X: =512
+            Y: =168
+            Width: =224
+            Height: =40
+            Size: =11
+
+      - lblFilterStatus:
+          Control: Label
+          Properties:
+            Text: ="ステータス／作成日（開始）／作成日（終了）"
+            X: =32
+            Y: =214
+            Width: =470
+            Height: =18
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - ddFilterStatus:
+          Control: Classic/DropDown
+          Properties:
+            Items: =colStatusOptions
+            Default: =""
+            AllowEmptySelection: =true
+            OnChange: |-
+              =Set(varFilterStatusCode,
+                  LookUp(colStatus, Label = ddFilterStatus.Selected.Value, Code)
+              )
+            X: =32
+            Y: =234
+            Width: =228
+            Height: =40
+            Size: =11
+      - dpFrom:
+          Control: Classic/DatePicker
+          Properties:
+            DefaultDate: =Blank()
+            Format: =DateTimeFormat.ShortDate
+            X: =272
+            Y: =234
+            Width: =228
+            Height: =40
+            Size: =11
+      - dpTo:
+          Control: Classic/DatePicker
+          Properties:
+            DefaultDate: =Blank()
+            Format: =DateTimeFormat.ShortDate
+            X: =512
+            Y: =234
+            Width: =224
+            Height: =40
+            Size: =11
+
+      - chkMineOnly:
+          Control: Classic/CheckBox
+          Properties:
+            Text: ="自分の登録分のみ"
+            Default: =false
+            X: =32
+            Y: =280
+            Width: =260
+            Height: =24
+            Size: =11
+      - btnClearFilter:
+          Control: Classic/Button
+          Properties:
+            Text: ="条件をクリア（全国表示）"
+            OnSelect: |-
+              =Reset(txtKeyword);
+              Reset(ddFilterStatus);
+              Reset(dpFrom);
+              Reset(dpTo);
+              Reset(chkMineOnly);
+              Set(varFilterStatusCode, "");
+              Set(varDefaultBranch, Blank());
+              Set(varDefaultBlock, Blank());
+              Set(varDefaultSite, Blank());
+              Reset(ddFilterBranch);
+              Reset(ddFilterBlock);
+              Reset(ddFilterSite)
+            X: =504
+            Y: =276
+            Width: =232
+            Height: =32
+            Size: =10
+            Fill: =RGBA(255, 255, 255, 1)
+            Color: =RGBA(0, 120, 212, 1)
+            BorderColor: =RGBA(0, 120, 212, 1)
+            BorderThickness: =1
+
+      # ---------------- 件数表示 ----------------
+      - lblCount:
+          Control: Label
+          Properties:
+            Text: |-
+              ="表示 " & CountRows(galCases.AllItems) & " 件"
+            X: =16
+            Y: =316
+            Width: =736
+            Height: =22
+            Size: =10
+            Align: =Align.Right
+            Color: =RGBA(96, 94, 92, 1)
+
+      # ---------------- 一覧ギャラリー ----------------
+      - galCases:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            # 絞り込みはすべて SharePoint に委任可能な演算子（= / >= / <= / StartsWith）
+            # のみで構成している。キーワードの OR 検索を含むため、
+            # アプリ設定の「データ行の制限」は 2000 に設定すること（docs/01-deployment.md）。
+            Items: |-
+              =Sort(
+                  Filter(SignatureCases,
+                      (!chkMineOnly.Value || OperatorEmail = varUserEmail),
+                      (IsBlank(ddFilterBranch.Selected.Value)
+                          || BranchName = ddFilterBranch.Selected.Value),
+                      (IsBlank(ddFilterBlock.Selected.Value)
+                          || BlockName = ddFilterBlock.Selected.Value),
+                      (IsBlank(ddFilterSite.Selected.Value)
+                          || SiteName = ddFilterSite.Selected.Value),
+                      (IsBlank(varFilterStatusCode)
+                          || Status.Value = varFilterStatusCode),
+                      (IsBlank(dpFrom.SelectedDate)
+                          || RegisteredAt >= dpFrom.SelectedDate),
+                      (IsBlank(dpTo.SelectedDate)
+                          || RegisteredAt < DateAdd(dpTo.SelectedDate, 1, TimeUnit.Days)),
+                      (IsBlank(txtKeyword.Text)
+                          || StartsWith(DocumentNo, txtKeyword.Text)
+                          || StartsWith(CustomerName, txtKeyword.Text)
+                          || StartsWith(OperatorName, txtKeyword.Text))
+                  ),
+                  ID,
+                  SortOrder.Descending
+              )
+            OnSelect: |-
+              =Set(varRecordId, ThisItem.ID);
+              Set(varEdit, ThisItem);
+              Set(varSelected, ThisItem);
+              If(ThisItem.Status.Value = "Draft",
+                  Set(varRequestId, "");
+                  Set(varSignatureBase64, "");
+                  Navigate(EditScreen, ScreenTransition.Cover),
+                  Navigate(DetailScreen, ScreenTransition.Cover)
+              )
+            TemplateSize: =112
+            TemplatePadding: =0
+            ShowScrollbar: =true
+            X: =16
+            Y: =342
+            Width: =736
+            Height: =Parent.Height - Self.Y - 16
+          Children:
+            - recRowBg:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =3
+                  Width: =Parent.TemplateWidth
+                  Height: =Parent.TemplateHeight - 6
+                  Fill: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowDocNo:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =Coalesce(ThisItem.DocumentNo, "（番号未採番）")
+                  X: =16
+                  Y: =10
+                  Width: =210
+                  Height: =26
+                  Size: =13
+                  FontWeight: =FontWeight.Semibold
+                  Color: =RGBA(0, 90, 158, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowDate:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =If(IsBlank(ThisItem.SignedAt),
+                        "作成 " & Text(ThisItem.RegisteredAt, "yyyy/mm/dd hh:mm"),
+                        "署名 " & Text(ThisItem.SignedAt, "yyyy/mm/dd hh:mm")
+                    )
+                  X: =230
+                  Y: =12
+                  Width: =230
+                  Height: =22
+                  Size: =10
+                  Color: =RGBA(96, 94, 92, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowStatus:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =LookUp(colStatus, Code = ThisItem.Status.Value, Label)
+                  X: =Parent.TemplateWidth - 188
+                  Y: =10
+                  Width: =128
+                  Height: =26
+                  Size: =10
+                  Align: =Align.Center
+                  Fill: |-
+                    =Switch(ThisItem.Status.Value,
+                        "Sent",  RGBA(223, 246, 221, 1),
+                        "Error", RGBA(253, 231, 233, 1),
+                        "Draft", RGBA(237, 235, 233, 1),
+                        RGBA(222, 235, 247, 1)
+                    )
+                  Color: |-
+                    =Switch(ThisItem.Status.Value,
+                        "Sent",  RGBA(16, 124, 16, 1),
+                        "Error", RGBA(168, 0, 0, 1),
+                        "Draft", RGBA(96, 94, 92, 1),
+                        RGBA(0, 90, 158, 1)
+                    )
+                  OnSelect: =Select(Parent)
+            - lblRowCustomer:
+                Control: Label
+                Properties:
+                  Text: =ThisItem.CustomerName
+                  X: =16
+                  Y: =38
+                  Width: =420
+                  Height: =26
+                  Size: =15
+                  FontWeight: =FontWeight.Semibold
+                  OnSelect: =Select(Parent)
+            - lblRowMachine:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =ThisItem.Model
+                    & If(IsBlank(ThisItem.SerialNo), "（機番なし）", "　機番 " & ThisItem.SerialNo)
+                  X: =440
+                  Y: =42
+                  Width: =230
+                  Height: =22
+                  Size: =11
+                  Color: =RGBA(50, 49, 48, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowOrg:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =ThisItem.BranchName & " › " & ThisItem.BlockName & " › " & ThisItem.SiteName
+                  X: =16
+                  Y: =64
+                  Width: =650
+                  Height: =20
+                  Size: =10
+                  Color: =RGBA(96, 94, 92, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowMeta:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =ThisItem.MaintenanceType.Value & "　担当 " & ThisItem.OperatorName
+                  X: =16
+                  Y: =84
+                  Width: =650
+                  Height: =20
+                  Size: =10
+                  Color: =RGBA(96, 94, 92, 1)
+                  OnSelect: =Select(Parent)
+            - lblRowChevron:
+                Control: Label
+                Properties:
+                  Text: ="›"
+                  X: =Parent.TemplateWidth - 48
+                  Y: =0
+                  Width: =32
+                  Height: =Parent.TemplateHeight
+                  Size: =22
+                  Align: =Align.Center
+                  Color: =RGBA(96, 94, 92, 1)
+                  OnSelect: =Select(Parent)
+
+      - lblEmpty:
+          Control: Label
+          Properties:
+            Text: ="該当する同意書はありません。条件を変更するか「＋ 新規作成」から登録してください。"
+            Visible: =CountRows(galCases.AllItems) = 0
+            X: =16
+            Y: =400
+            Width: =736
+            Height: =60
+            Size: =12
+            Align: =Align.Center
+            Color: =RGBA(96, 94, 92, 1)

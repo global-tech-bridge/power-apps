@@ -1,0 +1,6 @@
+.DS_Store
+pa.schema.yaml
+*.msapp
+work/
+.envrc.local
+templates/_signature-placeholder.png

@@ -1,0 +1,6 @@
+# 組織マスタCSVは Excel / SharePoint への取り込み用に BOM + CRLF で生成している。
+# Git に改行を変換させると取り込み時に文字化けや行崩れが起きるため、そのまま扱う。
+*.csv -text
+
+# .docx はバイナリ。差分を取らせない（構造は templates/build-template.py が定義元）
+*.docx binary

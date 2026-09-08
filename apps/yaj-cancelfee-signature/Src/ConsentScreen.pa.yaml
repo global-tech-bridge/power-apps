@@ -1,0 +1,437 @@
+# 同意・署名画面 — 要件定義 7.3 / 8章 / 14章
+#
+# 送信は「確認ダイアログ → タイマー → 実処理」の3段構えにしている。
+# タイマーを挟むのは、OnSelect が同期実行されるため直接呼ぶと
+# 「処理中」表示が描画される前にフロー呼び出しが始まってしまうため。
+Screens:
+  ConsentScreen:
+    Properties:
+      Fill: =RGBA(243, 242, 241, 1)
+      OnVisible: |-
+        =Set(varShowConfirm, false);
+        Set(varSubmitting, false);
+        Reset(chkConsent);
+        Reset(txtSignerName);
+        Reset(penSignature)
+    Children:
+      # ---------------- ヘッダー ----------------
+      - recHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =72
+            Fill: =RGBA(0, 120, 212, 1)
+      - btnBack:
+          Control: Classic/Button
+          Properties:
+            Text: ="‹ 入力"
+            OnSelect: =Navigate(EditScreen, ScreenTransition.UnCover)
+            X: =16
+            Y: =16
+            Width: =90
+            Height: =40
+            Size: =12
+            Fill: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            BorderThickness: =0
+      - lblTitle:
+          Control: Label
+          Properties:
+            Text: ="内容のご確認とご署名"
+            X: =116
+            Y: =14
+            Width: =400
+            Height: =30
+            Size: =17
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - lblOperatorHeader:
+          Control: Label
+          Properties:
+            Text: |-
+              ="担当 " & varUserName
+            X: =520
+            Y: =0
+            Width: =232
+            Height: =72
+            Size: =10
+            Align: =Align.Right
+            Color: =RGBA(219, 235, 250, 1)
+
+      # ---------------- 案件サマリ ----------------
+      - recSummary:
+          Control: Rectangle
+          Properties:
+            X: =16
+            Y: =84
+            Width: =736
+            Height: =58
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblSummary:
+          Control: Label
+          Properties:
+            Text: |-
+              =varEdit.CustomerName & "　様" & Char(10)
+              & varEdit.Model
+              & If(varEdit.NoSerialNo, "（機番なし）", "　機番 " & varEdit.SerialNo)
+              & "　" & varEdit.MaintenanceType.Value
+              & "　" & varEdit.BranchName & " › " & varEdit.BlockName & " › " & varEdit.SiteName
+            X: =32
+            Y: =92
+            Width: =704
+            Height: =44
+            Size: =11
+            Color: =RGBA(50, 49, 48, 1)
+
+      # ---------------- 同意文面 ----------------
+      - lblConsentTitle:
+          Control: Label
+          Properties:
+            Text: =varConsent.DisplayTitle
+            X: =16
+            Y: =150
+            Width: =560
+            Height: =26
+            Size: =13
+            FontWeight: =FontWeight.Semibold
+      - lblScrollHint:
+          Control: Label
+          Properties:
+            Text: ="▼ 枠内をスクロールして最後までご確認ください"
+            X: =576
+            Y: =152
+            Width: =176
+            Height: =22
+            Size: =9
+            Align: =Align.Right
+            Color: =RGBA(196, 49, 75, 1)
+      - txtConsentBody:
+          Control: Classic/TextInput
+          Properties:
+            # DisplayMode.View で読み取り専用にしたうえでスクロール表示する。
+            # 送信時はこのコントロールの Text をそのままスナップショットとして保存するため、
+            # 「顧客が実際に見た文面」と保存内容が必ず一致する。
+            Mode: =TextMode.MultiLine
+            DisplayMode: =DisplayMode.View
+            Default: =varConsent.Body
+            X: =16
+            Y: =180
+            Width: =736
+            Height: =330
+            Size: =11
+            Color: =RGBA(50, 49, 48, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblConsentVersion:
+          Control: Label
+          Properties:
+            Text: |-
+              ="文面ID " & varConsent.ConsentId
+              & "　版 " & varConsent.Version
+              & "　適用開始 " & Text(varConsent.EffectiveFrom, "yyyy/mm/dd")
+            X: =16
+            Y: =514
+            Width: =736
+            Height: =20
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+
+      # ---------------- 同意チェック ----------------
+      - chkConsent:
+          Control: Classic/CheckBox
+          Properties:
+            Text: ="内容を確認し同意する"
+            Default: =false
+            X: =16
+            Y: =538
+            Width: =736
+            Height: =36
+            Size: =13
+            Color: =RGBA(50, 49, 48, 1)
+
+      # ---------------- 署名 ----------------
+      - lblCapSignerName:
+          Control: Label
+          Properties:
+            # 要件定義 19章-2「署名欄に顧客の氏名テキスト入力も必要か」は未確定。
+            # 現状は任意入力として実装している（docs/07-open-issues.md D-04）。
+            Text: ="署名者お名前（任意）"
+            X: =16
+            Y: =580
+            Width: =380
+            Height: =18
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - txtSignerName:
+          Control: Classic/TextInput
+          Properties:
+            Default: =varEdit.SignerName
+            HintText: ="手書き署名の判読用にお名前を入力できます"
+            X: =16
+            Y: =598
+            Width: =380
+            Height: =40
+            Size: =12
+      - btnClearSignature:
+          Control: Classic/Button
+          Properties:
+            Text: ="署名をクリア"
+            OnSelect: =Reset(penSignature)
+            X: =576
+            Y: =598
+            Width: =176
+            Height: =40
+            Size: =12
+      - lblPenHint:
+          Control: Label
+          Properties:
+            Text: ="下の枠内に、ペンまたは指でご署名ください。"
+            X: =16
+            Y: =644
+            Width: =736
+            Height: =18
+            Size: =9
+            Color: =RGBA(96, 94, 92, 1)
+      - penSignature:
+          Control: PenInput
+          Properties:
+            X: =16
+            Y: =662
+            Width: =736
+            Height: =200
+            Color: =RGBA(32, 31, 30, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(138, 136, 134, 1)
+            BorderThickness: =1
+            ShowControls: =false
+
+      # ---------------- 入力チェックと送信 ----------------
+      - lblValidation:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(
+                  !chkConsent.Value, "※ 「内容を確認し同意する」にチェックしてください。",
+                  IsBlank(penSignature.Image), "※ 署名欄にご署名をお願いします。",
+                  IsBlank(varConsent.Body), "※ 同意文面マスタが未設定です。管理者に連絡してください。",
+                  ""
+              )
+            X: =16
+            Y: =868
+            Width: =736
+            Height: =36
+            Size: =11
+            Color: =RGBA(196, 49, 75, 1)
+      - btnSubmit:
+          Control: Classic/Button
+          Properties:
+            Text: ="同意して署名を送信"
+            DisplayMode: |-
+              =If(IsBlank(lblValidation.Text) && !varSubmitting,
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            OnSelect: =Set(varShowConfirm, true)
+            X: =16
+            Y: =910
+            Width: =490
+            Height: =54
+            Size: =15
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - btnBackToEdit:
+          Control: Classic/Button
+          Properties:
+            Text: ="‹ 入力に戻る"
+            OnSelect: =Navigate(EditScreen, ScreenTransition.UnCover)
+            X: =516
+            Y: =910
+            Width: =236
+            Height: =54
+            Size: =12
+
+      # ================ オーバーレイ（最終確認 / 処理中）================
+      - recOverlay:
+          Control: Rectangle
+          Properties:
+            Visible: =varShowConfirm || varSubmitting
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Fill: =RGBA(0, 0, 0, 0.55)
+      - recConfirm:
+          Control: Rectangle
+          Properties:
+            Visible: =varShowConfirm
+            X: =84
+            Y: =280
+            Width: =600
+            Height: =360
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblConfirmTitle:
+          Control: Label
+          Properties:
+            Text: ="この内容で送信します"
+            Visible: =varShowConfirm
+            X: =112
+            Y: =304
+            Width: =544
+            Height: =32
+            Size: =16
+            FontWeight: =FontWeight.Semibold
+      - lblConfirmBody:
+          Control: Label
+          Properties:
+            Text: |-
+              ="顧客名：" & varEdit.CustomerName & Char(10)
+              & "PDF送付先：" & varEdit.CustomerEmail & Char(10)
+              & "型式・機番：" & varEdit.Model
+                  & If(varEdit.NoSerialNo, "（機番なし）", " / " & varEdit.SerialNo) & Char(10)
+              & "整備区分：" & varEdit.MaintenanceType.Value & Char(10)
+              & "組織：" & varEdit.BranchName & " › " & varEdit.BlockName & " › " & varEdit.SiteName & Char(10)
+              & "同意文面：版 " & varConsent.Version & Char(10) & Char(10)
+              & "送信すると文書番号が採番され、署名済みPDFが上記の顧客メールアドレスと"
+              & varUserEmail & " に送信されます。送信後の内容は変更できません。"
+            Visible: =varShowConfirm
+            X: =112
+            Y: =342
+            Width: =544
+            Height: =196
+            Size: =11
+            Color: =RGBA(50, 49, 48, 1)
+      - btnConfirmCancel:
+          Control: Classic/Button
+          Properties:
+            Text: ="修正する"
+            Visible: =varShowConfirm
+            OnSelect: =Set(varShowConfirm, false)
+            X: =112
+            Y: =552
+            Width: =200
+            Height: =52
+            Size: =12
+      - btnConfirmOk:
+          Control: Classic/Button
+          Properties:
+            Text: ="送信する"
+            Visible: =varShowConfirm
+            # ここではフラグを立てるだけ。実処理は tmrSubmit.OnTimerEnd。
+            OnSelect: |-
+              =Set(varShowConfirm, false);
+              Set(varSubmitting, true)
+            X: =336
+            Y: =552
+            Width: =320
+            Height: =52
+            Size: =14
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+      - recProcessing:
+          Control: Rectangle
+          Properties:
+            Visible: =varSubmitting
+            X: =84
+            Y: =380
+            Width: =600
+            Height: =200
+            Fill: =RGBA(255, 255, 255, 1)
+      - lblProcessing:
+          Control: Label
+          Properties:
+            Text: |-
+              ="送信処理中です。" & Char(10) & Char(10)
+              & "署名内容の保存 → 文書番号の採番 → PDFの作成 → SharePointへの保存 → メール送信"
+              & "を順に実行しています。完了するまでこの画面を閉じたり、端末を操作しないでください。"
+            Visible: =varSubmitting
+            X: =112
+            Y: =404
+            Width: =544
+            Height: =152
+            Size: =12
+            Align: =Align.Center
+            Color: =RGBA(50, 49, 48, 1)
+      - tmrSubmit:
+          Control: Timer
+          Properties:
+            # 「処理中」オーバーレイを描画させてから実処理に入るための遅延。
+            Visible: =false
+            AutoStart: =false
+            Repeat: =false
+            Duration: =400
+            Start: =varSubmitting
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            OnTimerEnd: |-
+              =// 1) 冪等キー。再実行でも同じ値を使うことで二重採番・二重PDFを防ぐ。
+              If(IsBlank(varRequestId), Set(varRequestId, Text(GUID())));
+
+              // 2) 署名画像を base64 データURIとして保持する。
+              //    エラー画面から再実行する際にもこの値を使う。
+              Set(varSignatureBase64,
+                  Substitute(JSON(penSignature.Image, JSONFormat.IncludeBinaryData), """", "")
+              );
+
+              // 3) 署名時点のスナップショット（文面・署名日時）を先に確定保存する。
+              IfError(
+                  Set(varEdit,
+                      Patch(SignatureCases,
+                          LookUp(SignatureCases, ID = varRecordId),
+                          {
+                              Status: {Value: "Signed"},
+                              SignedAt: Now(),
+                              SignerName: Trim(txtSignerName.Text),
+                              ConsentId: varConsent.ConsentId,
+                              ConsentTitle: varConsent.DisplayTitle,
+                              ConsentVersion: varConsent.Version,
+                              ConsentTextSnapshot: txtConsentBody.Text,
+                              ClientRequestId: varRequestId,
+                              ErrorCode: "",
+                              ErrorMessage: ""
+                          }
+                      )
+                  );
+                  Set(varSaveError, ""),
+                  Set(varSaveError, "E-SAVE-002");
+                  Set(varSaveErrorDetail, FirstError.Message)
+              );
+
+              If(!IsBlank(varSaveError),
+                  // 保存できていない状態では完了扱いにしない（要件定義 14章）
+                  Set(varSubmitting, false);
+                  Set(varErrorCode, varSaveError);
+                  Set(varErrorMessage, "署名内容の保存に失敗しました。通信状態を確認して、もう一度お試しください。");
+                  Set(varFlowRunId, "");
+                  Navigate(ErrorScreen, ScreenTransition.Fade),
+
+                  // 4) 文書番号の採番・PDF作成・SharePoint保存・メール送信をフローへ委譲
+                  IfError(
+                      Set(varFlowResult,
+                          'YAJ-CancelFee-Submit'.Run(varRecordId, varRequestId, varSignatureBase64)
+                      ),
+                      Set(varFlowResult, Blank());
+                      Set(varSaveErrorDetail, FirstError.Message)
+                  );
+                  Set(varSubmitting, false);
+                  If(!IsBlank(varFlowResult) && varFlowResult.Success,
+                      // 全処理成功。ここだけが完了画面への唯一の経路。
+                      Set(varSignatureBase64, "");
+                      Set(varCompleted, LookUp(SignatureCases, ID = varRecordId));
+                      Navigate(CompleteScreen, ScreenTransition.Fade),
+                      Set(varErrorCode,
+                          Coalesce(varFlowResult.ErrorCode, "E-FLOW-000")
+                      );
+                      Set(varErrorMessage,
+                          Coalesce(varFlowResult.ErrorMessage,
+                              "PDFの作成またはメール送信に失敗しました。"
+                          )
+                      );
+                      Set(varFlowRunId, Coalesce(varFlowResult.RunId, ""));
+                      Navigate(ErrorScreen, ScreenTransition.Fade)
+                  )
+              )
