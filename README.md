@@ -60,7 +60,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 
 | 順 | やること | 見るドキュメント | 目安 |
 |---:|---|---|---|
-| 0 | **着手前の確認**（Premium ライセンスと MFA 条件付きアクセス。**ここを飛ばすと作り直しになる**） | [01 デプロイ手順](docs/01-deployment.md) の「0. 前提と準備」 | 30分 |
+| 0 | **着手前の確認**（Premium ライセンスと MFA 条件付きアクセス。**ここを飛ばすと作り直しになる**） | [09 環境確認シート](docs/09-environment-checklist.md) ＋ [01 デプロイ手順](docs/01-deployment.md) の「0. 前提と準備」 | 30分 |
 | 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | [08 手順](docs/08-manual-setup.md) Part 1 ＋ [02 データ設計](docs/02-sharepoint-schema.md) | 30〜45分 |
 | 2 | 初期データ（組織マスタ105件・確認文面・管理者・テンプレート） | [08 手順](docs/08-manual-setup.md) Part 2 ＋ [data/import/](data/import/) | 10分 |
 | 3 | Power Automate フロー3つ | [flows/](flows/) の各 `README.md` と `expressions.md` | 90〜120分 |
@@ -92,6 +92,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した69件のテストケース |
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
 | [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
+| [09 環境確認シート](docs/09-environment-checklist.md) | **展開先テナントに確認すべき項目**（ライセンス・DLP・MFA・SharePoint・メール・端末）と、テスト環境での再現方法 |
 
 ## 本番運用の前に必ず決めること
 
