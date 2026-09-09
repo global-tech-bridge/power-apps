@@ -10,15 +10,74 @@
 | 項目 | 内容 |
 |---|---|
 | Power Apps 環境 | 既定環境（要件定義 2章）。ソリューション環境を使う場合は「補遺A」参照 |
-| ライセンス | Power Apps（Microsoft 365 付属で可）、Office 365 Outlook、**Word Online (Business)** |
+| ライセンス | **Power Apps Premium**（または Power Automate Premium）が必要。理由は下記 |
 | SharePoint | 専用サイトを1つ新規作成（既存サイトへの混在は避ける） |
 | アカウント | 構築用アカウント。**将来的にはサービスアカウントへ移す**（要件定義 15.5） |
 
-> **ライセンスの確認事項**
-> `Word Online (Business)` コネクタの「Microsoft Word テンプレートの入力」は
-> 標準コネクタだが、テナントの DLP ポリシーでブロックされていることがある。
-> 着手前に Power Automate で1つテストフローを作り、このアクションが追加できるか
-> 確認しておくこと（要件定義 19章-13）。
+### ⚠ ライセンスの確認事項（要件定義 19章-13）
+
+**`Word Online (Business)` は Premium コネクタである。**
+[公式コネクタ リファレンス](https://learn.microsoft.com/ja-jp/connectors/wordonlinebusiness/)
+の表で、Power Apps / Power Automate ともに Class が **Premium** と明記されている。
+
+したがって **Microsoft 365 に付属する Power Apps / Power Automate の
+seeded ライセンスでは、PDF生成のフローが動かない。** 標準コネクタしか使えないため。
+
+必要なライセンスは次のいずれか。
+
+| 選択肢 | 月額（参考） | 備考 |
+|---|---|---|
+| **Power Apps Premium** | $20/ユーザー | アプリから起動するフロー（in context）の Premium コネクタもカバーされる。本アプリの3フローはすべて Power Apps トリガーなのでこれで足りる想定 |
+| **Power Automate Premium** | $15/ユーザー | フロー側だけを Premium にする場合 |
+| 試用版 | 無料 | Power Automate は90日、Power Apps は30日。**まず検証だけならこれで足りる** |
+
+> ライセンスの解釈は金額に直結するため、**発注前に必ず調達窓口／Microsoft の
+> ライセンス窓口で確認すること。** 特に「in context」の判定は
+> [ライセンス FAQ](https://learn.microsoft.com/ja-jp/power-platform/admin/powerapps-flow-licensing-faq)
+> の記述に依拠している。
+
+### ⚠ MFA 条件付きアクセスとの非互換
+
+公式コネクタ リファレンスの既知の問題に次の記載がある。
+
+> If a Multi-factor Authentication (MFA) conditional access policy is enabled,
+> the Populate a Microsoft Word template action cannot be used.
+
+**MFA の条件付きアクセス ポリシーが有効なテナントでは、
+「Microsoft Word テンプレートの入力」アクションが使えない。**
+企業テナントでは MFA 条件付きアクセスは一般的なため、
+**着手前にこれを確認すること。** 使えない場合は下記の代替方式に切り替える。
+
+### 代替方式: 標準コネクタだけでPDFを作る
+
+Premium が使えない、または MFA 条件付きアクセスで動かない場合。
+
+SharePoint コネクタの**「ファイルの変換」は標準**で、`.docx` / `.doc` / `.html`
+などを PDF に変換できる。したがって Word テンプレートを使わず、
+フロー内で HTML を組み立てて `.doc` として保存し、それを変換する経路が取れる。
+これは要件定義 10.1 で共有されていた「中間ファイルを `.doc` 形式にする案」そのもの。
+
+| | Word テンプレート方式（現在の実装） | HTML→.doc 方式（代替） |
+|---|---|---|
+| ライセンス | **Premium 必要** | 標準のみで可 |
+| MFA 条件付きアクセス | **非対応の可能性** | 影響なし |
+| 日本語の文字化け | 起きにくい | **起きやすい**（要件定義 10.1 で実際に発生） |
+| レイアウトの作り込み | Word で自由 | HTML/CSS の範囲 |
+| 実装の変更量 | — | フローの `Populate_template` と `Create_temp_docx` を差し替え |
+
+**どちらを採るかは業務側の判断**（ライセンス費用 vs 文字化けリスク）。
+判断が必要な事項として `docs/07-open-issues.md` 19章-13 に記録している。
+
+### 着手前にやる確認
+
+Power Automate で捨てフローを1つ作り、次を確認する。
+
+1. **「Microsoft Word テンプレートの入力」アクションを追加できるか**
+   （Premium ライセンスまたは試用版が有効か、DLP でブロックされていないか）
+2. **そのアクションが実際に成功するか**（MFA 条件付きアクセスの影響がないか）
+3. SharePoint「ファイルの変換」で PDF が作れるか
+
+**この3点が通らないまま Part 1 以降に進むと、リスト構築をやり直すことになる。**
 
 ### ローカルで必要なもの（任意）
 

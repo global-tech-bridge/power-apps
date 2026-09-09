@@ -14,7 +14,8 @@
 |---|---|
 | フロー名 | `YAJ-CancelFee-Submit` |
 | トリガー | Power Apps (V2) |
-| 必要な接続 | SharePoint、Word Online (Business)、Office 365 Outlook |
+| 必要な接続 | SharePoint、**Word Online (Business)（Premium）**、Office 365 Outlook |
+| 必要なライセンス | Power Apps Premium または Power Automate Premium（[理由](../../docs/01-deployment.md)） |
 | 所有者 | 個人ではなくサービスアカウント（要件定義 15.5） |
 
 ### ⚠ 同時実行数を必ず 1 にする
