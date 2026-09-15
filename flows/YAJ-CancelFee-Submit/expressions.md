@@ -119,10 +119,12 @@ empty(coalesce(outputs('Get_case')?['body/PdfUrl'],''))
 concat(variables('varDocumentNo'),'.docx')
 ```
 
-**E20** — 中間 .docx のファイルID（変換元／削除対象）
+**E20** — 中間 .docx のファイルID（削除対象）
 ```
-outputs('Create_temp_docx')?['body/Id']
+outputs('Create_temp_docx')?['body/{Identifier}']
 ```
+変換元の指定は Word Online (Business) のファイル ピッカーで行うため、
+式ではなく画面で `WorkTemp` の該当ファイルを選ぶ。
 
 **E21** — PDFのファイル名（作成時・メール添付名の両方で使う）
 ```

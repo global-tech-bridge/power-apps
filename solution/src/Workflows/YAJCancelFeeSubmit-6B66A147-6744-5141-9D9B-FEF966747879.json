@@ -1,0 +1,972 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_office365_b17d3e9c63"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_onedriveforbusiness_47cdddf275"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_sharepointonline_7b847770e9"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "title": "ItemID",
+                  "type": "number",
+                  "x-ms-content-hint": "NUMBER",
+                  "x-ms-dynamically-added": true
+                },
+                "text": {
+                  "title": "RequestId",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_1": {
+                  "title": "SignatureImage",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "number",
+                "text",
+                "text_1"
+              ]
+            }
+          },
+          "runtimeConfiguration": {
+            "concurrency": {
+              "runs": 1
+            }
+          }
+        }
+      },
+      "actions": {
+        "Init_varDocumentNo": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varDocumentNo",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "Init_varPdfUrl": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varPdfUrl",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varDocumentNo": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Init_varSignatureBase64": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSignatureBase64",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varPdfUrl": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Init_varSignatureUrl": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSignatureUrl",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varSignatureBase64": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Try": {
+          "type": "Scope",
+          "actions": {
+            "Get_case": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {}
+            },
+            "Set_DocumentNo_existing": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varDocumentNo",
+                "value": "@coalesce(outputs('Get_case')?['body/DocumentNo'],'')"
+              },
+              "runAfter": {
+                "Get_case": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Need_number": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@empty(variables('varDocumentNo'))",
+                  true
+                ]
+              },
+              "actions": {
+                "Compose_DateKey": {
+                  "type": "Compose",
+                  "inputs": "@formatDateTime(convertTimeZone(utcNow(),'UTC','Tokyo Standard Time'),'yyyyMMdd')",
+                  "runAfter": {}
+                },
+                "Get_counter": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "DocumentNumberCounter",
+                      "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
+                      "$top": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Compose_DateKey": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Counter_missing": {
+                  "type": "If",
+                  "expression": {
+                    "equals": [
+                      "@length(outputs('Get_counter')?['body/value'])",
+                      0
+                    ]
+                  },
+                  "actions": {
+                    "Create_counter": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "PostItem",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                          "table": "DocumentNumberCounter",
+                          "item/Title": "@{outputs('Compose_DateKey')}",
+                          "item/LastNumber": 0
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      },
+                      "runAfter": {}
+                    }
+                  },
+                  "runAfter": {
+                    "Get_counter": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_counter_again": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "DocumentNumberCounter",
+                      "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
+                      "$top": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Counter_missing": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_Next": {
+                  "type": "Compose",
+                  "inputs": "@add(int(first(outputs('Get_counter_again')?['body/value'])?['LastNumber']),1)",
+                  "runAfter": {
+                    "Get_counter_again": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Update_counter": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PatchItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "DocumentNumberCounter",
+                      "id": "@first(outputs('Get_counter_again')?['body/value'])?['ID']",
+                      "item/Title": "@{outputs('Compose_DateKey')}",
+                      "item/LastNumber": "@outputs('Compose_Next')"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Compose_Next": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Set_DocumentNo": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varDocumentNo",
+                    "value": "@concat(outputs('Compose_DateKey'),'-',formatNumber(outputs('Compose_Next'),'000'))"
+                  },
+                  "runAfter": {
+                    "Update_counter": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Set_DocumentNo_existing": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Update_case_number": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']",
+                  "item/Title": "@{variables('varDocumentNo')}",
+                  "item/DocumentNo": "@{variables('varDocumentNo')}",
+                  "item/Status/Value": "Signed",
+                  "item/ClientRequestId": "@{triggerBody()?['text']}",
+                  "item/PdfFileName": "@{variables('varDocumentNo')}.pdf"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Need_number": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Has_new_signature": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@empty(triggerBody()?['text_1'])",
+                  false
+                ]
+              },
+              "actions": {
+                "Set_SignatureBase64": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varSignatureBase64",
+                    "value": "@last(split(triggerBody()?['text_1'],'base64,'))"
+                  },
+                  "runAfter": {}
+                },
+                "Create_signature_png": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "folderPath": "/SignatureImages",
+                      "name": "@{variables('varDocumentNo')}.png",
+                      "body": "@base64ToBinary(variables('varSignatureBase64'))"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Set_SignatureBase64": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Set_SignatureUrl": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varSignatureUrl",
+                    "value": "@outputs('Create_signature_png')?['body/{Link}']"
+                  },
+                  "runAfter": {
+                    "Create_signature_png": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Update_case_number": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Get_existing_png": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_sharepointonline",
+                        "operationId": "GetFileContentByPath",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                      },
+                      "parameters": {
+                        "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                        "path": "/SignatureImages/@{variables('varDocumentNo')}.png",
+                        "inferContentType": true
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    },
+                    "runAfter": {}
+                  },
+                  "Set_SignatureBase64_existing": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varSignatureBase64",
+                      "value": "@base64(body('Get_existing_png'))"
+                    },
+                    "runAfter": {
+                      "Get_existing_png": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Set_SignatureUrl_existing": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varSignatureUrl",
+                      "value": "@coalesce(outputs('Get_case')?['body/SignatureImageUrl'],'')"
+                    },
+                    "runAfter": {
+                      "Set_SignatureBase64_existing": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "Update_case_signature": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']",
+                  "item/SignatureImageUrl": "@{variables('varSignatureUrl')}"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Has_new_signature": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Need_pdf": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@empty(coalesce(outputs('Get_case')?['body/PdfUrl'],''))",
+                  true
+                ]
+              },
+              "actions": {
+                "Compose_Html": {
+                  "type": "Compose",
+                  "inputs": "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:w=\"urn:schemas-microsoft-com:office:word\" xmlns=\"http://www.w3.org/TR/REC-html40\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--><style>@page{size:A4 portrait;margin:2.2cm 2.2cm 1.8cm 2.2cm;}body{font-family:\"Yu Gothic\",\"MS Gothic\",\"Hiragino Kaku Gothic ProN\",sans-serif;font-size:10.5pt;line-height:1.5;}.no{text-align:right;font-size:9pt;}.to{font-size:11pt;margin-bottom:10pt;}.from{text-align:right;font-size:10pt;line-height:1.3;}.title{text-align:center;font-size:13.5pt;font-weight:bold;margin:14pt 0;}.body{font-size:10pt;line-height:1.55;}.sec{font-size:11pt;font-weight:bold;margin:14pt 0 4pt 0;}table.k{border-collapse:collapse;width:100%;font-size:10pt;}table.k td{border:0.5pt solid #808080;padding:4pt 6pt;vertical-align:top;}table.k td.l{width:3.6cm;font-weight:bold;background:#f2f2f2;}.sign{height:3.4cm;}.sign img{height:3.2cm;}.foot{font-size:8pt;color:#605e5c;margin-top:10pt;}</style></head><body><div class=\"no\">文書番号 <b>@{variables('varDocumentNo')}</b></div><div class=\"to\">@{replace(replace(replace(coalesce(outputs('Get_case')?['body/CustomerName'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}　様</div><div class=\"from\">ヤンマーアグリジャパン株式会社<br>中部近畿支社　@{replace(replace(replace(coalesce(outputs('Get_case')?['body/BranchName'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}　@{replace(replace(replace(coalesce(outputs('Get_case')?['body/BlockName'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}　@{replace(replace(replace(coalesce(outputs('Get_case')?['body/SiteName'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}<br>担当　@{replace(replace(replace(coalesce(outputs('Get_case')?['body/OperatorName'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}</div><div class=\"title\">@{replace(replace(replace(coalesce(outputs('Get_case')?['body/ConsentTitle'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}</div><div class=\"body\">@{replace(replace(replace(replace(replace(coalesce(outputs('Get_case')?['body/ConsentTextSnapshot'],''),'&','&amp;'),'<','&lt;'),'>','&gt;'),decodeUriComponent('%0D'),''),decodeUriComponent('%0A'),'<br>')}</div><div class=\"sec\">確認欄</div><table class=\"k\"><tr><td class=\"l\">型式</td><td>@{replace(replace(replace(coalesce(outputs('Get_case')?['body/Model'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}</td></tr><tr><td class=\"l\">機番</td><td>@{if(equals(outputs('Get_case')?['body/NoSerialNo'],true),'（機番なしの機体）',replace(replace(replace(coalesce(outputs('Get_case')?['body/SerialNo'],''),'&','&amp;'),'<','&lt;'),'>','&gt;'))}</td></tr><tr><td class=\"l\">整備区分</td><td>@{replace(replace(replace(coalesce(outputs('Get_case')?['body/MaintenanceType/Value'],''),'&','&amp;'),'<','&lt;'),'>','&gt;')}</td></tr><tr><td class=\"l\">ご用命事項</td><td>@{replace(replace(replace(replace(replace(coalesce(coalesce(outputs('Get_case')?['body/Comment'],'（記載なし）'),''),'&','&amp;'),'<','&lt;'),'>','&gt;'),decodeUriComponent('%0D'),''),decodeUriComponent('%0A'),'<br>')}</td></tr><tr><td class=\"l\">お名前</td><td>@{replace(replace(replace(coalesce(coalesce(outputs('Get_case')?['body/SignerName'],'（記名なし）'),''),'&','&amp;'),'<','&lt;'),'>','&gt;')}</td></tr><tr><td class=\"l\">日付</td><td>@{formatDateTime(convertTimeZone(outputs('Get_case')?['body/SignedAt'],'UTC','Tokyo Standard Time'),'yyyy年MM月dd日 HH:mm')}</td></tr><tr><td class=\"l\">ご署名</td><td class=\"sign\"><img src=\"data:image/png;base64,@{variables('varSignatureBase64')}\"></td></tr></table><div class=\"foot\">本書はヤンマーアグリジャパン株式会社 中部近畿支社の電子署名アプリで作成された電子文書です。この確認書のPDFが正本として保管されます。（確認文面 版 @{outputs('Get_case')?['body/ConsentVersion']}）</div></body></html>",
+                  "runAfter": {}
+                },
+                "Create_temp_doc": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "CreateFile",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                    },
+                    "parameters": {
+                      "folderPath": "/YAJ-CancelFee-Temp",
+                      "name": "@{variables('varDocumentNo')}.doc",
+                      "body": "@{concat(decodeUriComponent('%EF%BB%BF'),outputs('Compose_Html'))}"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Compose_Html": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Wait_for_file": {
+                  "type": "Wait",
+                  "inputs": {
+                    "interval": {
+                      "count": 15,
+                      "unit": "Second"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_temp_doc": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Convert_to_pdf": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "ConvertFileByPath",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                    },
+                    "parameters": {
+                      "path": "/YAJ-CancelFee-Temp/@{variables('varDocumentNo')}.doc",
+                      "type": "pdf"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Wait_for_file": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_pdf": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "folderPath": "/SignatureDocs",
+                      "name": "@{variables('varDocumentNo')}.pdf",
+                      "body": "@body('Convert_to_pdf')"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Convert_to_pdf": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Set_PdfUrl": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varPdfUrl",
+                    "value": "@outputs('Create_pdf')?['body/{Link}']"
+                  },
+                  "runAfter": {
+                    "Create_pdf": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Update_case_pdf": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PatchItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "SignatureCases",
+                      "id": "@triggerBody()?['number']",
+                      "item/Status/Value": "Stored",
+                      "item/PdfUrl": "@{variables('varPdfUrl')}"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Set_PdfUrl": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Delete_temp_doc": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "DeleteFile",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                    },
+                    "parameters": {
+                      "id": "@outputs('Create_temp_doc')?['body/Id']"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Update_case_pdf": [
+                      "Succeeded",
+                      "Failed",
+                      "Skipped"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Update_case_signature": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Set_PdfUrl_existing": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varPdfUrl",
+                      "value": "@coalesce(outputs('Get_case')?['body/PdfUrl'],'')"
+                    },
+                    "runAfter": {}
+                  }
+                }
+              }
+            },
+            "Get_pdf_content": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "GetFileContentByPath",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "path": "/SignatureDocs/@{variables('varDocumentNo')}.pdf",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Need_pdf": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Not_sent_yet": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@outputs('Get_case')?['body/Status/Value']",
+                  "Sent"
+                ]
+              },
+              "actions": {},
+              "runAfter": {
+                "Get_pdf_content": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Send_email": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_office365",
+                        "operationId": "SendEmailV2",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                      },
+                      "parameters": {
+                        "emailMessage/To": "@{outputs('Get_case')?['body/CustomerEmail']};@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "emailMessage/Subject": "【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書（文書番号 @{variables('varDocumentNo')}）",
+                        "emailMessage/Body": "<p>@{outputs('Get_case')?['body/CustomerName']} 様</p><p>いつもお世話になっております。ヤンマーアグリジャパン @{outputs('Get_case')?['body/SiteName']} です。<br>このたびは、分解・診断を伴う整備お見積り後のキャンセル料についてご確認・ご署名をいただき、ありがとうございました。</p><p>ご署名いただいた確認書をPDFで添付いたします。内容をご確認のうえ、控えとして保管をお願いいたします。</p><table><tr><td>文書番号</td><td>@{variables('varDocumentNo')}</td></tr><tr><td>署名日時</td><td>@{formatDateTime(convertTimeZone(outputs('Get_case')?['body/SignedAt'],'UTC','Tokyo Standard Time'),'yyyy年MM月dd日 HH:mm')}</td></tr><tr><td>型式・機番</td><td>@{outputs('Get_case')?['body/Model']} / @{if(equals(outputs('Get_case')?['body/NoSerialNo'],true),'機番なし',coalesce(outputs('Get_case')?['body/SerialNo'],''))}</td></tr><tr><td>整備区分</td><td>@{outputs('Get_case')?['body/MaintenanceType/Value']}</td></tr><tr><td>担当者</td><td>@{outputs('Get_case')?['body/OperatorName']}</td></tr></table><p>本メールの内容にお心当たりがない場合、またご不明な点がある場合は、担当者までご連絡ください。</p><p>ヤンマーアグリジャパン株式会社</p>",
+                        "emailMessage/Attachments": [
+                          {
+                            "Name": "@{variables('varDocumentNo')}.pdf",
+                            "ContentBytes": "@body('Get_pdf_content')"
+                          }
+                        ],
+                        "emailMessage/Importance": "Normal"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    },
+                    "runAfter": {}
+                  },
+                  "Update_case_sent": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_sharepointonline",
+                        "operationId": "PatchItem",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                      },
+                      "parameters": {
+                        "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                        "table": "SignatureCases",
+                        "id": "@triggerBody()?['number']",
+                        "item/Status/Value": "Sent",
+                        "item/SentAt": "@{utcNow()}",
+                        "item/ErrorCode": "",
+                        "item/ErrorMessage": "",
+                        "item/FlowRunId": ""
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    },
+                    "runAfter": {
+                      "Send_email": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Create_sendlog": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_sharepointonline",
+                        "operationId": "PostItem",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                      },
+                      "parameters": {
+                        "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                        "table": "SendLog",
+                        "item/Title": "@{variables('varDocumentNo')}",
+                        "item/CaseId": "@triggerBody()?['number']",
+                        "item/DocumentNo": "@{variables('varDocumentNo')}",
+                        "item/SentTo": "@{outputs('Get_case')?['body/CustomerEmail']};@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "item/SentBy": "@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "item/SentAt": "@{utcNow()}",
+                        "item/Kind/Value": "Initial",
+                        "item/Result/Value": "Success"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    },
+                    "runAfter": {
+                      "Update_case_sent": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Init_varSignatureUrl": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Catch": {
+          "type": "Scope",
+          "actions": {
+            "Compose_FailedResult": {
+              "type": "Compose",
+              "inputs": "@first(where(result('Try'),or(equals(item()?['status'],'Failed'),equals(item()?['status'],'TimedOut'))))",
+              "runAfter": {}
+            },
+            "Compose_FailedAction": {
+              "type": "Compose",
+              "inputs": "@coalesce(outputs('Compose_FailedResult')?['name'],'Unknown')",
+              "runAfter": {
+                "Compose_FailedResult": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_ErrorDetail": {
+              "type": "Compose",
+              "inputs": "@substring(string(coalesce(outputs('Compose_FailedResult')?['error'],'')),0,min(1800,length(string(coalesce(outputs('Compose_FailedResult')?['error'],'')))))",
+              "runAfter": {
+                "Compose_FailedAction": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_ErrorCode": {
+              "type": "Compose",
+              "inputs": "@if(startsWith(outputs('Compose_FailedAction'),'Get_case'),'E-FLOW-010',if(or(startsWith(outputs('Compose_FailedAction'),'Get_counter'),startsWith(outputs('Compose_FailedAction'),'Create_counter'),startsWith(outputs('Compose_FailedAction'),'Update_counter'),startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',if(or(startsWith(outputs('Compose_FailedAction'),'Create_signature_png'),startsWith(outputs('Compose_FailedAction'),'Get_existing_png'),startsWith(outputs('Compose_FailedAction'),'Update_case_signature')),'E-FLOW-030',if(or(startsWith(outputs('Compose_FailedAction'),'Populate_template'),startsWith(outputs('Compose_FailedAction'),'Compose_Html'),startsWith(outputs('Compose_FailedAction'),'Create_temp_doc'),startsWith(outputs('Compose_FailedAction'),'Convert_to_pdf')),'E-FLOW-040',if(or(startsWith(outputs('Compose_FailedAction'),'Create_pdf'),startsWith(outputs('Compose_FailedAction'),'Update_case_pdf'),startsWith(outputs('Compose_FailedAction'),'Get_pdf_content')),'E-FLOW-050',if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),startsWith(outputs('Compose_FailedAction'),'Update_case_sent'),startsWith(outputs('Compose_FailedAction'),'Create_sendlog')),'E-FLOW-060','E-FLOW-000')))))))",
+              "runAfter": {
+                "Compose_ErrorDetail": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_UserMessage": {
+              "type": "Compose",
+              "inputs": "@if(equals(outputs('Compose_ErrorCode'),'E-FLOW-020'),'文書番号の採番に失敗しました。時間をおいて、もう一度送信してください。',if(equals(outputs('Compose_ErrorCode'),'E-FLOW-030'),'署名画像の保存に失敗しました。もう一度送信してください。',if(equals(outputs('Compose_ErrorCode'),'E-FLOW-040'),'確認書PDFの作成に失敗しました。管理者に連絡してください。',if(equals(outputs('Compose_ErrorCode'),'E-FLOW-050'),'確認書PDFの保存に失敗しました。もう一度送信してください。',if(equals(outputs('Compose_ErrorCode'),'E-FLOW-060'),'PDFのメール送信に失敗しました。顧客メールアドレスを確認して、もう一度送信してください。','処理中にエラーが発生しました。もう一度送信してください。')))))",
+              "runAfter": {
+                "Compose_ErrorCode": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Update_case_error": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']",
+                  "item/Status/Value": "Error",
+                  "item/ErrorCode": "@{outputs('Compose_ErrorCode')}",
+                  "item/ErrorMessage": "@{outputs('Compose_ErrorDetail')}",
+                  "item/FlowRunId": "@{workflow()['run']['name']}"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Compose_UserMessage": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Respond_failure": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "Success": false,
+                  "DocumentNo": "@{variables('varDocumentNo')}",
+                  "PdfUrl": "@{variables('varPdfUrl')}",
+                  "Status": "Error",
+                  "ErrorCode": "@{outputs('Compose_ErrorCode')}",
+                  "ErrorMessage": "@{outputs('Compose_UserMessage')}",
+                  "RunId": "@{workflow()['run']['name']}"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Success": {
+                      "title": "Success",
+                      "type": "boolean",
+                      "x-ms-dynamically-added": true
+                    },
+                    "DocumentNo": {
+                      "title": "DocumentNo",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "PdfUrl": {
+                      "title": "PdfUrl",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "Status": {
+                      "title": "Status",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorCode": {
+                      "title": "ErrorCode",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorMessage": {
+                      "title": "ErrorMessage",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "RunId": {
+                      "title": "RunId",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Update_case_error": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Respond_success": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "Success": true,
+              "DocumentNo": "@{variables('varDocumentNo')}",
+              "PdfUrl": "@{variables('varPdfUrl')}",
+              "Status": "Sent",
+              "ErrorCode": "",
+              "ErrorMessage": "",
+              "RunId": "@{workflow()['run']['name']}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Success": {
+                  "title": "Success",
+                  "type": "boolean",
+                  "x-ms-dynamically-added": true
+                },
+                "DocumentNo": {
+                  "title": "DocumentNo",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "PdfUrl": {
+                  "title": "PdfUrl",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "Status": {
+                  "title": "Status",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorCode": {
+                  "title": "ErrorCode",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorMessage": {
+                  "title": "ErrorMessage",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "RunId": {
+                  "title": "RunId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "1.0.0.0"
+}

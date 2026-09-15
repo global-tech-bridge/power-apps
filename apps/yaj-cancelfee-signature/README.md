@@ -142,18 +142,20 @@ pac canvas unpack --msapp Base.msapp --sources ./work --layout SourceCode
 pac canvas pack --msapp YajCancelFeeSignature.msapp --sources ./work --layout SourceCode
 ```
 
-### macOS で pac CLI がクラッシュする場合
+### macOS での pac CLI
 
-pac 2.6.x〜2.8.x には macOS で全コマンドが `System.NullReferenceException`
-（RuntimeBroker）で落ちる既知の不具合がある
+pac **2.11.2** は macOS で正常に動作することを確認済み（`solution init` /
+`pack` / `unpack` を実行して検証）。
+
+過去に pac 2.6.x〜2.8.x で全コマンドが `System.NullReferenceException`
+（RuntimeBroker）で落ちる不具合があった
 （[powerplatform-build-tools#1352](https://github.com/microsoft/powerplatform-build-tools/issues/1352)）。
-回避策は 2.5.1 へのダウングレード。
+その版に当たった場合のみ、2.5.1 へのダウングレードか最新版への更新で回避する。
 
 ```bash
-dotnet tool uninstall -g microsoft.powerapps.cli.tool
-dotnet tool install -g microsoft.powerapps.cli.tool --version 2.5.1
+dotnet tool update -g microsoft.powerapps.cli.tool
 ```
 
-ただし 2.5.1 の `pac canvas validate` は旧スキーマ準拠のため、本リポジトリの
-v3.0 YAML に対しては誤検知する。スキーマ検証は上記の
-`scripts/validate-pa-yaml.py`（公式 v3.0 スキーマ + jsonschema）で行うこと。
+なお `pac canvas validate` は旧スキーマ準拠で本リポジトリの v3.0 YAML を
+誤検知することがある。スキーマ検証は上記の `scripts/validate-pa-yaml.py`
+（公式 v3.0 スキーマ + jsonschema）で行うこと。

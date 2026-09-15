@@ -131,10 +131,17 @@ PDFがまだ無いときだけ作る。**再実行時の二重PDF生成を防ぐ
    - 差し込み欄は下の「6. テンプレート差し込み表」のとおり
 2. `Create_temp_docx` — SharePoint「ファイルの作成」
    - フォルダー パス: `/WorkTemp` ／ ファイル名: `E19` ／ コンテンツ: `Populate_template` の本文
-3. `Convert_to_pdf` — SharePoint「ファイルの変換」
-   - ファイル: `E20`（`Create_temp_docx` の Id）／ ターゲットの種類: `PDF`
+3. `Convert_to_pdf` — **Word Online (Business)「Word 文書を PDF に変換」**
+   - 場所: 対象の SharePoint サイト／ドキュメント ライブラリ: `WorkTemp`
+   - ファイル: `Create_temp_docx` が作ったファイル
    - この方式なら中間ファイルが本物の .docx なので、HTML経由で起きていた
      日本語の文字化けは発生しない（要件定義 10.1）
+
+   > **SharePoint コネクタに「ファイルの変換」は存在しない。**
+   > [公式リファレンス](https://learn.microsoft.com/ja-jp/connectors/sharepointonline/)
+   > に変換アクションは無い。変換できるのは
+   > **Word Online (Business) の `GetFilePDF`**（Premium）か、
+   > **OneDrive for Business の `ConvertFile` / `ConvertFileByPath`**（標準）のみ。
 4. `Create_pdf` — SharePoint「ファイルの作成」
    - フォルダー パス: `/SignatureDocs` ／ ファイル名: `E21` ／ コンテンツ: `Convert_to_pdf` の本文
 5. `Set_PdfUrl` — 変数の設定: `varPdfUrl` ← `E22`

@@ -1,0 +1,375 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_office365_b17d3e9c63"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_sharepointonline_7b847770e9"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "title": "ItemID",
+                  "type": "number",
+                  "x-ms-content-hint": "NUMBER",
+                  "x-ms-dynamically-added": true
+                },
+                "text": {
+                  "title": "ToEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "number",
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Try": {
+          "type": "Scope",
+          "actions": {
+            "Get_case": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {}
+            },
+            "Pdf_exists": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@empty(coalesce(outputs('Get_case')?['body/PdfUrl'],''))",
+                  false
+                ]
+              },
+              "actions": {
+                "Get_pdf_content": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetFileContentByPath",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "path": "/SignatureDocs/@{outputs('Get_case')?['body/DocumentNo']}.pdf",
+                      "inferContentType": true
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {}
+                },
+                "Send_email": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@{triggerBody()?['text']}",
+                      "emailMessage/Subject": "【再送】【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書（文書番号 @{outputs('Get_case')?['body/DocumentNo']}）",
+                      "emailMessage/Body": "<p>@{outputs('Get_case')?['body/CustomerName']} 様</p><p>本メールは、先にお送りした確認書の再送です。</p><p>ご署名いただいた確認書をPDFで添付いたします。内容をご確認のうえ、控えとして保管をお願いいたします。</p><p>文書番号 @{outputs('Get_case')?['body/DocumentNo']}</p><p>ヤンマーアグリジャパン株式会社</p>",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "@{outputs('Get_case')?['body/DocumentNo']}.pdf",
+                          "ContentBytes": "@body('Get_pdf_content')"
+                        }
+                      ]
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Get_pdf_content": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Update_case": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PatchItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "SignatureCases",
+                      "id": "@triggerBody()?['number']",
+                      "item/SentAt": "@{utcNow()}",
+                      "item/ResendCount": "@add(int(coalesce(outputs('Get_case')?['body/ResendCount'],0)),1)"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Send_email": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_sendlog": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "SendLog",
+                      "item/Title": "@{outputs('Get_case')?['body/DocumentNo']}",
+                      "item/CaseId": "@triggerBody()?['number']",
+                      "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
+                      "item/SentTo": "@{triggerBody()?['text']}",
+                      "item/SentAt": "@{utcNow()}",
+                      "item/Kind/Value": "Resend",
+                      "item/Result/Value": "Success"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Update_case": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_auditlog": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                      "table": "AuditLog",
+                      "item/Title": "@{outputs('Get_case')?['body/DocumentNo']}",
+                      "item/Action/Value": "Resend",
+                      "item/CaseId": "@triggerBody()?['number']",
+                      "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
+                      "item/PerformedAt": "@{utcNow()}",
+                      "item/Reason": "PDF再送",
+                      "item/Detail": "送信先: @{triggerBody()?['text']}"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runAfter": {
+                    "Create_sendlog": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_case": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Terminate_no_pdf": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Failed",
+                      "runError": {
+                        "code": "E-RESEND-010",
+                        "message": "保存済みPDFがありません"
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {}
+        },
+        "Catch": {
+          "type": "Scope",
+          "actions": {
+            "Compose_FailedResult": {
+              "type": "Compose",
+              "inputs": "@first(where(result('Try'),or(equals(item()?['status'],'Failed'),equals(item()?['status'],'TimedOut'))))",
+              "runAfter": {}
+            },
+            "Create_sendlog_failure": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SendLog",
+                  "item/Title": "RESEND-FAILED",
+                  "item/CaseId": "@triggerBody()?['number']",
+                  "item/SentTo": "@{triggerBody()?['text']}",
+                  "item/SentAt": "@{utcNow()}",
+                  "item/Kind/Value": "Resend",
+                  "item/Result/Value": "Failure",
+                  "item/ErrorMessage": "@{string(coalesce(outputs('Compose_FailedResult')?['error'],''))}"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Compose_FailedResult": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Respond_failure": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "Success": false,
+                  "ErrorCode": "E-RESEND-020",
+                  "ErrorMessage": "再送に失敗しました。宛先を確認してください。",
+                  "RunId": "@{workflow()['run']['name']}"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Success": {
+                      "title": "Success",
+                      "type": "boolean",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorCode": {
+                      "title": "ErrorCode",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorMessage": {
+                      "title": "ErrorMessage",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "RunId": {
+                      "title": "RunId",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Create_sendlog_failure": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Respond_success": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "Success": true,
+              "ErrorCode": "",
+              "ErrorMessage": "",
+              "RunId": "@{workflow()['run']['name']}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Success": {
+                  "title": "Success",
+                  "type": "boolean",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorCode": {
+                  "title": "ErrorCode",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorMessage": {
+                  "title": "ErrorMessage",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "RunId": {
+                  "title": "RunId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "1.0.0.0"
+}

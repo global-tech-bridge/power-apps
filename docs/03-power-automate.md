@@ -84,32 +84,49 @@ Power Apps だけでは次ができないため、3工程をフローに委譲�
 **HTML を経由しない**経路を採っている。
 
 ```
-Word テンプレート（DocTemplates/整備キャンセル料確認書.docx）
-   │  Word Online (Business)「Microsoft Word テンプレートの入力」
-   │  ・テキスト18欄をコンテンツ コントロールへ差し込み
-   │  ・署名PNGを画像コンテンツ コントロールへ差し込み
+フロー内で確認書のHTMLを組み立てる（Compose_Html）
+   │  ・元資料の書簡形式（宛名・差出人・表題・本文・確認欄）を CSS で再現
+   │  ・@page で A4縦、font-family で日本語フォントを指定
+   │  ・署名PNGは data URI で埋め込む
    ▼
-中間 .docx（WorkTemp/<文書番号>.docx）
-   │  SharePoint「ファイルの変換」（ターゲット: PDF）
+中間 .doc（OneDrive/YAJ-CancelFee-Temp/<文書番号>.doc）
+   │  ・先頭に UTF-8 BOM を付ける。付けないと Word が文字コードを
+   │    取り違えて日本語が化ける（要件定義 10.1 の事象）
+   │  ・作成直後の変換は Bad gateway になることがあるため15秒待つ
+   ▼
+   │  OneDrive for Business「ファイルの変換」(ConvertFileByPath, type=pdf)
+   │  ※ SharePoint コネクタに変換アクションは存在しない。
+   │    変換できるのは OneDrive（標準）か Word Online（Premium）のみ
    ▼
 署名済みPDF（SignatureDocs/<文書番号>.pdf） ← 正本
    │
-   └─ 中間 .docx はフローが削除する
+   └─ 中間 .doc はフローが削除する
 ```
 
-> ⚠ **`Word Online (Business)` は Premium コネクタ**であり、Microsoft 365 付属の
-> seeded ライセンスでは使えない。また MFA 条件付きアクセスが有効なテナントでは
-> 「Microsoft Word テンプレートの入力」が動かないという既知の問題がある。
-> ライセンス要件・代替方式・着手前の確認手順は
-> [01 デプロイ手順](01-deployment.md) の「0. 前提と準備」を参照。
+> 中間ファイルが OneDrive に置かれるため、**必ずサービスアカウントの OneDrive
+> を使う**こと。個人アカウントのままだと担当者の異動・退職で経路が壊れる
+> （要件定義 15.5）。
+
+> **2026-09-16 変更**: Word テンプレート方式から **HTML→.doc 方式**に切り替えた。
+> `Word Online (Business)` が Premium コネクタであり、利用者全員に
+> Power Apps Premium が必要になること、および MFA 条件付きアクセス有効時に
+> 動かない既知の問題があるため。現在の既定は標準コネクタのみで動く。
+> 両方式の比較と切り替え方は [10 CLIデプロイ](10-cli-deployment.md) を参照。
 
 この構成にした理由。
 
-- 中間ファイルが本物の `.docx` なので、フォント情報が保持され文字化けしない
-- **個人 OneDrive を中継点にしない**。中間ファイルは SharePoint の `WorkTemp`
-  ライブラリに置くため、担当者の異動・退職で経路が壊れない（要件定義 15.5）
-- テンプレートは `templates/build-template.py` から再生成できるので、
-  レイアウトの変更履歴が Git で追える（.docx はバイナリで差分が読めないため）
+- **標準コネクタだけで完結する**ので追加ライセンスが要らない。
+  利用者全員分の Power Apps Premium（人数 × $20/月）が不要になる
+- MFA 条件付きアクセスの影響を受けない
+- **CLI デプロイを完全に自動化できる**。Word テンプレート方式は
+  ファイル指定に内部IDを要求するため、インポート後に画面で選び直す必要があった
+- HTMLの組み立ては `scripts/flow_definitions.py` の `build_confirmation_html()`
+  にあり、変更履歴が Git で追える。`scripts/preview-document.py` で
+  テナント無しに出来上がりを確認できる
+
+Word テンプレート方式も `solution/config.json` の `pdfMode` で選べる状態で残してある。
+Premium ライセンスが確保でき、MFA 条件付きアクセスの問題が無いと確認できた場合は、
+そちらのほうがレイアウトの自由度が高い。
 
 ## 設計方針5: 文書番号の採番（要件定義 8章）
 

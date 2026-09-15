@@ -91,7 +91,7 @@ python3 scripts/build-org-master.py 部門マスタ.xlsx data/OrgMaster.csv
 |---|---|
 | `Populate_template` | `DocTemplates` にテンプレートが無い／コンテンツ コントロール名が変わった。`templates/build-template.py` で再生成してアップロードし直す |
 | `Populate_template`（画像欄） | 署名画像の base64 が壊れている。`SignatureImages` のPNGが開けるか確認 |
-| `Convert_to_pdf` | Word Online (Business) の接続切れ、または DLP ポリシーでブロック。接続を作り直す |
+| `Convert_to_pdf` | Word Online (Business) の接続切れ、Premium ライセンス失効、または DLP ポリシーでブロック。接続を作り直す |
 | PDFが豆腐（□）になる | テンプレートのフォントが変換サーバに無い。`build-template.py` の `JP_FONT` を `MS Gothic` / `Meiryo` に変えて再生成 |
 
 ### 4-3. 同じ文書番号が2件できた

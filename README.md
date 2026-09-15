@@ -31,8 +31,8 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
              ├─ Resend … 保存済みPDFの再送（作り直さない）
              └─ Delete … レコード・画像・PDFの削除と監査記録
                                 │
-                    Word テンプレート → 中間.docx → PDF
-                    （HTML を経由しないので日本語が文字化けしない）
+                    HTML組み立て → 中間.doc → OneDriveで変換 → PDF
+                    （標準コネクタのみ。追加ライセンス不要）
 ```
 
 ## ディレクトリ
@@ -45,7 +45,8 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [`data/`](data/) | SharePoint スキーマ定義（JSON）と初期データ（組織マスタ・確認文面） |
 | [`data/import/`](data/import/) | **画面から取り込むためのインポート用ファイル**。`schema/` が列の一括作成用、直下が初期データ用 |
 | [`templates/`](templates/) | PDF生成用 Word テンプレートと、その生成スクリプト |
-| [`scripts/`](scripts/) | SharePoint 構築スクリプトと、ソースの検証スクリプト |
+| [`solution/`](solution/) | **pac CLI でインポートするソリューション**（フロー3つ）。`config.json` だけ編集する |
+| [`scripts/`](scripts/) | SharePoint 構築・ソリューション生成・各種検証スクリプト |
 
 ## 構築の進め方
 
@@ -63,7 +64,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | 0 | **着手前の確認**（Premium ライセンスと MFA 条件付きアクセス。**ここを飛ばすと作り直しになる**） | [09 環境確認シート](docs/09-environment-checklist.md) ＋ [01 デプロイ手順](docs/01-deployment.md) の「0. 前提と準備」 | 30分 |
 | 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | [08 手順](docs/08-manual-setup.md) Part 1 ＋ [02 データ設計](docs/02-sharepoint-schema.md) | 30〜45分 |
 | 2 | 初期データ（組織マスタ105件・確認文面・管理者・テンプレート） | [08 手順](docs/08-manual-setup.md) Part 2 ＋ [data/import/](data/import/) | 10分 |
-| 3 | Power Automate フロー3つ | [flows/](flows/) の各 `README.md` と `expressions.md` | 90〜120分 |
+| 3 | Power Automate フロー3つ | **[10 CLIデプロイ](docs/10-cli-deployment.md)**（`./scripts/deploy.sh`）／画面で作る場合は [flows/](flows/) | 15分／90〜120分 |
 | 4 | キャンバスアプリの取り込み | [08 手順](docs/08-manual-setup.md) Part 4 ＋ [paste/](apps/yaj-cancelfee-signature/paste/) | 40〜60分 |
 | 5 | 動作確認 | [06 テスト仕様書](docs/06-test-spec.md) | 60分 |
 | 6 | 引き継ぎ | [01 デプロイ手順](docs/01-deployment.md) の「6. 引き継ぎ」 | 30分 |
@@ -92,6 +93,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した69件のテストケース |
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
 | [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
+| [10 CLIデプロイ](docs/10-cli-deployment.md) | **pac CLI でフロー3つをまとめてインポートする**。画面で1アクションずつ作る代わり |
 | [09 環境確認シート](docs/09-environment-checklist.md) | **展開先テナントに確認すべき項目**（ライセンス・DLP・MFA・SharePoint・メール・端末）と、テスト環境での再現方法 |
 
 ## 本番運用の前に必ず決めること
@@ -107,10 +109,11 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
    所管部門に確認する必要がある（要件定義16章）
 3. **署名欄の過不足** — 元資料の署名欄は 型式／ご用命事項／日付／ご署名 の4つ。
    本実装は要件定義10章に合わせて機番・整備区分・お名前を加えた7行にしている（D-16）
-4. **PDF生成のライセンス** — 現在の実装は `Word Online (Business)`（**Premium コネクタ**）を
-   使うため、**Power Apps Premium または Power Automate Premium が必要**。
-   Microsoft 365 付属の seeded ライセンスでは動かない。費用をかけない方針なら
-   標準コネクタだけで作る方式に切り替える改修が必要（19章-13）
+4. **PDF生成の日本語表示** — 2026-09-16 に HTML→.doc 方式へ切り替えた。
+   標準コネクタのみで動き追加ライセンスは不要になったが、
+   **日本語が文字化けしないことの実機確認が未了**。
+   `python3 scripts/preview-document.py` で出る `preview.doc` を
+   Word で開いて崩れないか確認したうえで、実環境で検証すること（19章-13）
 5. **記録・PDF・署名画像の保管期間** — 決まるまで削除しない運用にする
 6. **メール送信元アカウント** — 顧客に見えるアドレス。個人アカウントのままにしない
 7. **「支社」の定義** — 提供された `部門マスタ.xlsx` に `支社` 列がなく、
@@ -141,6 +144,9 @@ python3 scripts/check-template-fields.py
 
 # インポート用ファイルが list-schema.json とずれていないか
 python3 scripts/check-import-files.py
+
+# フロー定義（CLIデプロイ用ソリューション）の静的検査
+python3 scripts/build-solution.py && python3 scripts/check-solution.py
 ```
 
 生成物を作り直す場合。

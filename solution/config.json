@@ -1,0 +1,44 @@
+{
+  "$comment": "CLI デプロイの設定。siteUrl と templateFile の3つのIDは環境ごとに異なるため、scripts/resolve-template-ids.sh で取得して埋める。",
+  "solution": {
+    "uniqueName": "YAJCancelFeeSignature",
+    "displayName": "YAJ 整備キャンセル料 確認書",
+    "version": "1.0.0.0",
+    "publisherUniqueName": "gtb",
+    "publisherDisplayName": "Global Tech Bridge",
+    "publisherPrefix": "gtb",
+    "optionValuePrefix": "47705"
+  },
+  "sharePoint": {
+    "siteUrl": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+    "lists": {
+      "signatureCases": "SignatureCases",
+      "documentNumberCounter": "DocumentNumberCounter",
+      "sendLog": "SendLog",
+      "auditLog": "AuditLog"
+    },
+    "libraries": {
+      "signatureDocs": "SignatureDocs",
+      "signatureImages": "SignatureImages",
+      "workTemp": "WorkTemp",
+      "docTemplates": "DocTemplates"
+    }
+  },
+  "wordTemplate": {
+    "$comment": "Word Online (Business) のファイル選択は表示名ではなく内部IDを要求する。scripts/resolve-template-ids.sh で解決する。",
+    "fileName": "整備キャンセル料確認書.docx",
+    "source": "SITE_URL_PLACEHOLDER",
+    "driveId": "DRIVE_ID_PLACEHOLDER",
+    "fileId": "FILE_ID_PLACEHOLDER"
+  },
+  "mail": {
+    "subjectPrefix": "【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書",
+    "companyName": "ヤンマーアグリジャパン株式会社"
+  },
+  "pdfMode": "html",
+  "$pdfMode_comment": "html = HTML を .doc として保存し OneDrive for Business（標準コネクタ）で PDF 変換。追加ライセンス不要。 wordTemplate = Word テンプレート方式。Word Online (Business)（Premium）が必要で、MFA 条件付きアクセス有効時は動かない。",
+  "oneDrive": {
+    "$comment": "中間 .doc の置き場。接続に使うアカウントの OneDrive。個人アカウントではなくサービスアカウントを使うこと（要件定義 15.5）。",
+    "tempFolder": "/YAJ-CancelFee-Temp"
+  }
+}

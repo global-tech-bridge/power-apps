@@ -1,0 +1,268 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "gtb_sharepointonline_7b847770e9"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "title": "ItemID",
+                  "type": "number",
+                  "x-ms-content-hint": "NUMBER",
+                  "x-ms-dynamically-added": true
+                },
+                "text": {
+                  "title": "Reason",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "number",
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Try": {
+          "type": "Scope",
+          "actions": {
+            "Get_case": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {}
+            },
+            "Create_auditlog": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "AuditLog",
+                  "item/Title": "@{coalesce(outputs('Get_case')?['body/DocumentNo'],concat('ID-',string(triggerBody()?['number'])))}",
+                  "item/Action/Value": "Delete",
+                  "item/CaseId": "@triggerBody()?['number']",
+                  "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
+                  "item/PerformedAt": "@{utcNow()}",
+                  "item/Reason": "@{triggerBody()?['text']}",
+                  "item/Detail": "@{concat('顧客名: ',coalesce(outputs('Get_case')?['body/CustomerName'],''),' / ステータス: ',coalesce(outputs('Get_case')?['body/Status/Value'],''),' / 署名日時: ',coalesce(string(outputs('Get_case')?['body/SignedAt']),''),' / PDF: ',coalesce(outputs('Get_case')?['body/PdfUrl'],'なし'))}"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Get_case": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Delete_pdf": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "DeleteFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "id": "/SignatureDocs/@{outputs('Get_case')?['body/DocumentNo']}.pdf"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Create_auditlog": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Delete_signature": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "DeleteFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "id": "/SignatureImages/@{outputs('Get_case')?['body/DocumentNo']}.png"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Delete_pdf": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              }
+            },
+            "Delete_case": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "DeleteItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
+                  "table": "SignatureCases",
+                  "id": "@triggerBody()?['number']"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Delete_signature": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              }
+            }
+          },
+          "runAfter": {}
+        },
+        "Catch": {
+          "type": "Scope",
+          "actions": {
+            "Respond_failure": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "Success": false,
+                  "ErrorCode": "E-DELETE-010",
+                  "ErrorMessage": "削除に失敗しました。管理者に連絡してください。",
+                  "RunId": "@{workflow()['run']['name']}"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Success": {
+                      "title": "Success",
+                      "type": "boolean",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorCode": {
+                      "title": "ErrorCode",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "ErrorMessage": {
+                      "title": "ErrorMessage",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    },
+                    "RunId": {
+                      "title": "RunId",
+                      "type": "string",
+                      "x-ms-dynamically-added": true
+                    }
+                  }
+                }
+              },
+              "runAfter": {}
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Respond_success": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "Success": true,
+              "ErrorCode": "",
+              "ErrorMessage": "",
+              "RunId": "@{workflow()['run']['name']}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Success": {
+                  "title": "Success",
+                  "type": "boolean",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorCode": {
+                  "title": "ErrorCode",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "ErrorMessage": {
+                  "title": "ErrorMessage",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                },
+                "RunId": {
+                  "title": "RunId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "1.0.0.0"
+}

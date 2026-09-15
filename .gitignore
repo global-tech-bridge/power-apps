@@ -4,3 +4,8 @@ pa.schema.yaml
 work/
 .envrc.local
 templates/_signature-placeholder.png
+
+# CLI デプロイの生成物
+solution/*.zip
+solution/deploy-settings.json
+scripts/__pycache__/

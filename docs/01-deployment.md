@@ -52,10 +52,16 @@ seeded ライセンスでは、PDF生成のフローが動かない。** 標準�
 
 Premium が使えない、または MFA 条件付きアクセスで動かない場合。
 
-SharePoint コネクタの**「ファイルの変換」は標準**で、`.docx` / `.doc` / `.html`
-などを PDF に変換できる。したがって Word テンプレートを使わず、
-フロー内で HTML を組み立てて `.doc` として保存し、それを変換する経路が取れる。
+**OneDrive for Business コネクタは標準**で、`ConvertFile` / `ConvertFileByPath`
+アクションを持つ。したがって Word テンプレートを使わず、フロー内で HTML を
+組み立てて `.doc` として保存し、それを変換する経路が取れる。
 これは要件定義 10.1 で共有されていた「中間ファイルを `.doc` 形式にする案」そのもの。
+
+> **SharePoint コネクタに変換アクションは無い**（公式リファレンスで確認済み）。
+> 変換できるのは Word Online (Business)（Premium）か
+> OneDrive for Business（標準）のどちらか。
+> 後者を使う場合、中間ファイルの置き場が OneDrive になるため、
+> **必ずサービスアカウントの OneDrive を使う**こと（要件定義 15.5）。
 
 | | Word テンプレート方式（現在の実装） | HTML→.doc 方式（代替） |
 |---|---|---|
@@ -75,7 +81,8 @@ Power Automate で捨てフローを1つ作り、次を確認する。
 1. **「Microsoft Word テンプレートの入力」アクションを追加できるか**
    （Premium ライセンスまたは試用版が有効か、DLP でブロックされていないか）
 2. **そのアクションが実際に成功するか**（MFA 条件付きアクセスの影響がないか）
-3. SharePoint「ファイルの変換」で PDF が作れるか
+3. Word Online (Business)「Word 文書を PDF に変換」で PDF が作れるか
+   （Premium が使えない場合は OneDrive for Business「ファイルの変換」で代替可能か）
 
 **この3点が通らないまま Part 1 以降に進むと、リスト構築をやり直すことになる。**
 

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Entities />
+  <Roles />
+  <Workflows />
+  <FieldSecurityProfiles />
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <CustomControls />
+  <SolutionPluginAssemblies />
+  <EntityDataProviders />
+  <connectionreferences>
+    <connectionreference connectionreferencelogicalname="gtb_office365_b17d3e9c63">
+      <connectionreferencedisplayname>gtb_office365_b17d3e9c63</connectionreferencedisplayname>
+      <connectionreferencelogicalname>gtb_office365_b17d3e9c63</connectionreferencelogicalname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="gtb_onedriveforbusiness_47cdddf275">
+      <connectionreferencedisplayname>gtb_onedriveforbusiness_47cdddf275</connectionreferencedisplayname>
+      <connectionreferencelogicalname>gtb_onedriveforbusiness_47cdddf275</connectionreferencelogicalname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="gtb_sharepointonline_7b847770e9">
+      <connectionreferencedisplayname>gtb_sharepointonline_7b847770e9</connectionreferencedisplayname>
+      <connectionreferencelogicalname>gtb_sharepointonline_7b847770e9</connectionreferencelogicalname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_sharepointonline</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+  </connectionreferences>
+  <Languages>
+    <Language>1041</Language>
+  </Languages>
+</ImportExportXml>
