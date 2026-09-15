@@ -21,6 +21,8 @@ SRC = ROOT / "solution/src"
 TPL = ROOT / "templates/整備キャンセル料確認書.docx"
 CFG = json.loads((ROOT / "solution/config.json").read_text(encoding="utf-8"))
 MODE = CFG.get("pdfMode", "html")
+# 配布状態（siteUrl が既定値のまま）かどうか
+UNCONFIGURED = "CONTOSO" in CFG["sharePoint"]["siteUrl"]
 
 problems = []
 
@@ -44,8 +46,11 @@ for wf in sorted(SRC.glob("Workflows/*.json")):
     blob = json.dumps(doc, ensure_ascii=False)
 
     # --- 1. プレースホルダ ---
-    for ph in re.findall(r"[A-Z_]*PLACEHOLDER|CONTOSO", blob):
-        problems.append(f"[{label}] 未解決のプレースホルダ: {ph}")
+    # config.json が既定値のままなら「まだ設定していない」だけなので
+    # エラーにはしない。一部だけ設定済みのときは取りこぼしなので止める。
+    if not UNCONFIGURED:
+        for ph in sorted(set(re.findall(r"[A-Z_]*PLACEHOLDER|CONTOSO", blob))):
+            problems.append(f"[{label}] 未解決のプレースホルダ: {ph}")
 
     # --- 2 & 3. アクション参照 ---
     all_names = set()
@@ -114,6 +119,9 @@ for wf in sorted(SRC.glob("Workflows/*.json")):
 
 n = len(list(SRC.glob("Workflows/*.json")))
 print(f"フロー定義 {n} 件を検査しました（PDF生成方式: {MODE}）")
+if UNCONFIGURED:
+    print("  ※ solution/config.json が配布状態です。"
+          "デプロイ前に sharePoint.siteUrl を実環境のURLに変更してください。")
 if problems:
     for p in sorted(set(problems)):
         print("✗", p)
