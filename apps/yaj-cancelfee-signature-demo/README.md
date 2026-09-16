@@ -20,10 +20,14 @@
 4. `Screen1` を `ListScreen` に改名し、空の画面を5つ追加して改名する
    `EditScreen` `ConsentScreen` `CompleteScreen` `ErrorScreen` `DetailScreen`
    - **名前は一字一句このとおりに。** `Navigate()` が画面名を直接参照している
-5. ツリー ビュー最上部の **アプリ** を選択し
-   - `StartScreen` に `ListScreen`
-   - `OnStart` に [`paste/App-OnStart.txt`](paste/App-OnStart.txt) の中身を全部貼る
-6. **アプリ** を右クリック → **OnStart を実行**
+5. ツリー ビュー最上部の **アプリ** を選択し、**数式バー左のドロップダウン**から
+   - `StartScreen` を選んで `ListScreen` と入力
+   - `OnStart` を選んで [`paste/App-OnStart.txt`](paste/App-OnStart.txt) の中身を全部貼る
+   - `OnStart` がドロップダウンに無い場合は
+     **設定 → 全般 → 「`App.OnStart` プロパティを有効にします」** をオンにする
+   - `StartScreen` が設定できない場合は、`ListScreen` をツリーの一番上に
+     ドラッグすれば同じ結果になる
+6. **アプリ** にマウスを合わせ → **…** → **OnStart を実行**
 7. [`paste/README.md`](paste/README.md) の順に、各画面へ
    `<画面名>.controls.yaml` を **コードの貼り付け**
 8. 各画面の `Fill` / `OnVisible` を `<画面名>.properties.md` のとおりに手で入力
