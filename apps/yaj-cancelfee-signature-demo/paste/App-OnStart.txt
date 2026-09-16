@@ -1,0 +1,246 @@
+// ============================================================
+      // デモ版 — 外部接続なし。データはすべてこの OnStart で作る。
+      // SharePoint リスト／ドキュメント ライブラリ／Power Automate には
+      // 一切つながない。アプリを閉じるとデータは消える。
+      // 本番版: apps/yaj-cancelfee-signature/
+      // ============================================================
+      Set(varIsDemo, true);
+
+      // ---- ログインユーザー -----------------------------------------------
+      Set(varUserEmail, Lower(User().Email));
+      Set(varUserName, User().FullName);
+      // デモでは削除ボタンも見せたいので、常に管理者として扱う
+      Set(varIsAdmin, true);
+      ClearCollect(colAdmin, {UserEmail: varUserEmail, IsActive: true});
+
+      // ---- 組織マスタ（本番は105拠点。デモは抜粋）-------------------------
+      ClearCollect(colOrg,
+          {BranchName: "営業部", BlockCode: "EAO13W", BlockName: "福井ブロック", SiteCode: "EAO131", SiteName: "勝山"},
+          {BranchName: "営業部", BlockCode: "EAO13W", BlockName: "福井ブロック", SiteCode: "EAO132", SiteName: "大野"},
+          {BranchName: "営業部", BlockCode: "EAO13W", BlockName: "福井ブロック", SiteCode: "EAO133", SiteName: "鯖江"},
+          {BranchName: "営業部", BlockCode: "EAO13W", BlockName: "福井ブロック", SiteCode: "EAO134", SiteName: "福井"},
+          {BranchName: "営業部", BlockCode: "EAO16A", BlockName: "愛知ブロック", SiteCode: "EAO161", SiteName: "稲沢"},
+          {BranchName: "営業部", BlockCode: "EAO16A", BlockName: "愛知ブロック", SiteCode: "EAO164", SiteName: "江南"},
+          {BranchName: "営業部", BlockCode: "EAO16A", BlockName: "愛知ブロック", SiteCode: "EAO165", SiteName: "安城"},
+          {BranchName: "営業部", BlockCode: "EAO1BI", BlockName: "兵庫ブロック", SiteCode: "EAO1B4", SiteName: "篠山"},
+          {BranchName: "営業部", BlockCode: "EAO1BI", BlockName: "兵庫ブロック", SiteCode: "EAO1B5", SiteName: "三田"},
+          {BranchName: "営業部", BlockCode: "EAO1BI", BlockName: "兵庫ブロック", SiteCode: "EAO1BA", SiteName: "三木"},
+          {BranchName: "販売部", BlockCode: "EAO2ZZ", BlockName: "販売部（ブロック未設定）", SiteCode: "EAO231", SiteName: "販売（福井）"},
+          {BranchName: "販売部", BlockCode: "EAO2ZZ", BlockName: "販売部（ブロック未設定）", SiteCode: "EAO261", SiteName: "販売（愛知）"},
+          {BranchName: "販売部", BlockCode: "EAO2ZZ", BlockName: "販売部（ブロック未設定）", SiteCode: "EAO2B3", SiteName: "販売（兵庫南）"},
+          {BranchName: "系統推進部", BlockCode: "EAO3ZZ", BlockName: "系統推進部（ブロック未設定）", SiteCode: "EAO331", SiteName: "系統中近Ｇ（福井）"},
+          {BranchName: "系統推進部", BlockCode: "EAO3ZZ", BlockName: "系統推進部（ブロック未設定）", SiteCode: "EAO3B1", SiteName: "系統中近Ｇ（兵庫）"}
+      );
+
+      // ---- 確認文面（元資料 v1.0 をそのまま埋め込み）----------------------
+      Set(varConsentTitle, "分解・診断を伴う整備お見積り後のキャンセル料について");
+      Set(varConsentBody,
+          "拝啓 時下益々ご清栄のこととお慶び申し上げます。" & Char(10) & "平素は弊社ならびにヤンマー製品に格別のご愛顧を賜り厚く御礼申し上げます。" & Char(10) & "" & Char(10)
+              & "このたびは、弊社メンテナンスサービスをご用命いただき、誠にありがとうございます。お客様により良いサービスを提供するため、メンテナンスサービスに関する重要なご案内をさせていただきます。" & Char(10) & "" & Char(10) & "農業機械の点検整備や故障修理において、正確な御見積を作成するためには、外観からは確認できない部位を実際に分解し診断を行う必要がございます。それらの分解・診断作業を伴う御見積をご提示させていただく場合、御見積の結果キャンセルとなった場合でも一定の費用が発生いたしますことを、あらかじめご理解いただきたく存じます。" & Char(10)
+              & "" & Char(10) & "分解診断を伴う御見積作成に際し、分解・診断にかかる費用は以下の通りです。" & Char(10) & "" & Char(10)
+              & "【キャンセルに伴う費用】" & Char(10) & "" & Char(10) & "■ 点検整備" & Char(10)
+              & "　・分解・組戻しを行う場合" & Char(10) & "　　　基本点検調整料を頂戴します" & Char(10) & "　　　整備工場へ引き上げて行う場合、引取配送料を別途頂戴します" & Char(10)
+              & "　・組戻しせずそのままお返しする場合" & Char(10) & "　　　基本点検調整料の半額を頂戴します" & Char(10) & "　　　整備工場へ引き上げて行う場合、引取配送料を別途頂戴します" & Char(10)
+              & "" & Char(10) & "■ 故障修理" & Char(10) & "　・分解・組戻しを行う場合" & Char(10)
+              & "　　　分解・診断・組戻しにかかった工賃" & Char(10) & "　　　組戻しにオイルなど再利用不能品がある場合はその部品代も頂戴します" & Char(10) & "　・組戻しせずそのままお返しする場合" & Char(10)
+              & "　　　分解・診断にかかった工賃" & Char(10) & "" & Char(10) & "■ 洗浄作業" & Char(10)
+              & "　　点検・修理に伴い、事前に洗浄を行わなければ分解・診断ができず" & Char(10) & "　　事前に洗浄作業を必要とする場合は、洗浄料を別途頂戴します。" & Char(10) & "" & Char(10)
+              & "お客様にご満足いただけるサービスを提供するため、引き続き努力してまいりますので、何卒ご理解とご協力のほどよろしくお願い申し上げます。" & Char(10) & "" & Char(10) & "敬具" & Char(10)
+              & "" & Char(10) & "私は上記内容について確認いたしました。"
+      );
+      ClearCollect(colConsent,
+          {
+              ConsentId: "CANCELFEE-001",
+              Version: "1.0",
+              DisplayTitle: varConsentTitle,
+              Body: varConsentBody,
+              EffectiveFrom: DateAdd(Now(), -30, TimeUnit.Days),
+              EffectiveTo: Blank(),
+              IsActive: true
+          }
+      );
+      Set(varConsent, First(colConsent));
+
+      // ---- ステータス -----------------------------------------------------
+      ClearCollect(colStatus,
+          {Code: "Draft",      Label: "作成中"},
+          {Code: "Signed",     Label: "署名取得済み"},
+          {Code: "PdfCreated", Label: "PDF生成済み"},
+          {Code: "Stored",     Label: "SharePoint保存済み"},
+          {Code: "Sent",       Label: "メール送信済み"},
+          {Code: "Error",      Label: "エラー"}
+      );
+      ClearCollect(colStatusOptions, ForAll(colStatus As s, {Value: s.Label}));
+
+      // ---- 整備区分 -------------------------------------------------------
+      ClearCollect(colMaintenanceType,
+          {Value: "点検整備"},
+          {Value: "一般整備"},
+          {Value: "その他"}
+      );
+
+      // ---- サンプル案件 ---------------------------------------------------
+      ClearCollect(colCases,
+          {
+              ID: 1, DocumentNo: "20260914-001",
+              CustomerName: "田中農産 株式会社", CustomerEmail: "tanaka@example.co.jp", CustomerPhone: "0776-00-0001",
+              Model: "YT5113", SerialNo: "12345", NoSerialNo: false,
+              MaintenanceType: {Value: "点検整備"}, Comment: "エンジンの掛かりが悪い。始動時に白煙が出る。",
+              BranchName: "営業部", BlockName: "福井ブロック", BlockCode: "", SiteName: "福井", SiteCode: "",
+              Status: {Value: "Sent"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -2, TimeUnit.Days),
+              SignedAt: DateAdd(Now(), -2, TimeUnit.Days),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "demo", PdfFileName: "20260914-001.pdf",
+              SentAt: DateAdd(Now(), -2, TimeUnit.Days),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "",
+              ErrorMessage: "",
+              FlowRunId: ""
+          },
+          {
+              ID: 2, DocumentNo: "20260915-001",
+              CustomerName: "山本 太郎", CustomerEmail: "yamamoto@example.co.jp", CustomerPhone: "0587-00-0002",
+              Model: "EG438", SerialNo: "88213", NoSerialNo: false,
+              MaintenanceType: {Value: "一般整備"}, Comment: "刈取部から異音。稲刈り前に見てほしい。",
+              BranchName: "営業部", BlockName: "愛知ブロック", BlockCode: "", SiteName: "稲沢", SiteCode: "",
+              Status: {Value: "Sent"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -1, TimeUnit.Days),
+              SignedAt: DateAdd(Now(), -1, TimeUnit.Days),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "demo", PdfFileName: "20260915-001.pdf",
+              SentAt: DateAdd(Now(), -1, TimeUnit.Days),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "",
+              ErrorMessage: "",
+              FlowRunId: ""
+          },
+          {
+              ID: 3, DocumentNo: "20260915-002",
+              CustomerName: "佐藤牧場", CustomerEmail: "sato@example.co.jp", CustomerPhone: "",
+              Model: "YT225", SerialNo: "55012", NoSerialNo: false,
+              MaintenanceType: {Value: "点検整備"}, Comment: "走行不良。ミッションの分解確認を希望。",
+              BranchName: "営業部", BlockName: "兵庫ブロック", BlockCode: "", SiteName: "三木", SiteCode: "",
+              Status: {Value: "Error"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -1, TimeUnit.Days),
+              SignedAt: DateAdd(Now(), -1, TimeUnit.Days),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "", PdfFileName: "20260915-002.pdf",
+              SentAt: Blank(),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "E-FLOW-060",
+              ErrorMessage: "デモ用のエラー例です。",
+              FlowRunId: ""
+          },
+          {
+              ID: 4, DocumentNo: "20260916-001",
+              CustomerName: "有限会社 鈴木ファーム", CustomerEmail: "suzuki@example.co.jp", CustomerPhone: "0776-00-0003",
+              Model: "RT250", SerialNo: "", NoSerialNo: true,
+              MaintenanceType: {Value: "その他"}, Comment: "機番プレートが判読できない。",
+              BranchName: "販売部", BlockName: "販売部（ブロック未設定）", BlockCode: "", SiteName: "販売（福井）", SiteCode: "",
+              Status: {Value: "Sent"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -0, TimeUnit.Days),
+              SignedAt: DateAdd(Now(), -0, TimeUnit.Days),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "demo", PdfFileName: "20260916-001.pdf",
+              SentAt: DateAdd(Now(), -0, TimeUnit.Days),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "",
+              ErrorMessage: "",
+              FlowRunId: ""
+          },
+          {
+              ID: 5, DocumentNo: "",
+              CustomerName: "中村 花子", CustomerEmail: "nakamura@example.co.jp", CustomerPhone: "",
+              Model: "YT347", SerialNo: "70118", NoSerialNo: false,
+              MaintenanceType: {Value: "一般整備"}, Comment: "オイル漏れの疑い。訪問前に下書きだけ作成。",
+              BranchName: "営業部", BlockName: "福井ブロック", BlockCode: "", SiteName: "鯖江", SiteCode: "",
+              Status: {Value: "Draft"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -0, TimeUnit.Days),
+              SignedAt: Blank(),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "", PdfFileName: ".pdf",
+              SentAt: Blank(),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "",
+              ErrorMessage: "",
+              FlowRunId: ""
+          },
+          {
+              ID: 6, DocumentNo: "",
+              CustomerName: "大西 農園", CustomerEmail: "", CustomerPhone: "",
+              Model: "AG6114", SerialNo: "24007", NoSerialNo: false,
+              MaintenanceType: {Value: "点検整備"}, Comment: "",
+              BranchName: "営業部", BlockName: "兵庫ブロック", BlockCode: "", SiteName: "篠山", SiteCode: "",
+              Status: {Value: "Draft"},
+              ConsentId: "CANCELFEE-001", ConsentTitle: varConsentTitle,
+              ConsentVersion: "1.0", ConsentTextSnapshot: varConsentBody,
+              RegisteredAt: DateAdd(Now(), -0, TimeUnit.Days),
+              SignedAt: Blank(),
+              SignerName: "",
+              OperatorEmail: varUserEmail, OperatorName: varUserName,
+              SignatureImageUrl: "", PdfUrl: "", PdfFileName: ".pdf",
+              SentAt: Blank(),
+              ResendCount: 0, ClientRequestId: "",
+              ErrorCode: "",
+              ErrorMessage: "",
+              FlowRunId: ""
+          }
+      );
+      Set(varNextCaseId, CountRows(colCases) + 1);
+
+      // ---- 空レコードの雛形 ----------------------------------------------
+      // 本番は Defaults(SignatureCases)。コレクションには Defaults が使えないため、
+      // 同じ形の空レコードを1つ作って使い回す。
+      Set(recBlankCase,
+          Patch(First(colCases),
+              {
+                  ID: 0, DocumentNo: "", CustomerName: "", CustomerEmail: "",
+                  CustomerPhone: "", Model: "", SerialNo: "", NoSerialNo: false,
+                  MaintenanceType: {Value: "点検整備"}, Comment: "",
+                  BranchName: "", BlockName: "", BlockCode: "",
+                  SiteName: "", SiteCode: "",
+                  Status: {Value: "Draft"},
+                  ConsentId: "", ConsentTitle: "", ConsentVersion: "",
+                  ConsentTextSnapshot: "",
+                  RegisteredAt: Blank(), SignedAt: Blank(), SignerName: "",
+                  OperatorEmail: varUserEmail, OperatorName: varUserName,
+                  SignatureImageUrl: "", PdfUrl: "", PdfFileName: "",
+                  SentAt: Blank(), ResendCount: 0, ClientRequestId: "",
+                  ErrorCode: "", ErrorMessage: "", FlowRunId: ""
+              }
+          )
+      );
+
+      // ---- 組織の初期値 ---------------------------------------------------
+      Set(varLastCase,
+          First(Sort(Filter(colCases, OperatorEmail = varUserEmail), ID, SortOrder.Descending))
+      );
+      Set(varDefaultBranch, varLastCase.BranchName);
+      Set(varDefaultBlock, varLastCase.BlockName);
+      Set(varDefaultSite, varLastCase.SiteName);
+
+      // ---- 編集中レコード -------------------------------------------------
+      Set(varRecordId, 0);
+      Set(varEdit, recBlankCase);
+      Set(varRequestId, "");
+      Set(varSignatureBase64, "");
+      Set(varFilterStatusCode, "");
+
+      // ---- デモ用: 次の送信でエラー画面を見せるかどうか --------------------
+      Set(varDemoForceError, false)

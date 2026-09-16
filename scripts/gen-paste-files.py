@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Studio の「コードの貼り付け」にそのまま貼れる断片を Src/*.pa.yaml から生成する。
 
-    python3 scripts/gen-paste-files.py
+    python3 scripts/gen-paste-files.py [pa.schema.yaml] [アプリのディレクトリ]
 
 pac CLI が使えない環境では、Studio の コピー/貼り付けのコード 機能で取り込む。
 この機能は「コントロールの並び（YAML のシーケンス）」を受け取るため、
@@ -19,8 +19,9 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-SRC = Path("apps/yaj-cancelfee-signature/Src")
-DST = Path("apps/yaj-cancelfee-signature/paste")
+APP = Path(sys.argv[2] if len(sys.argv) > 2 else "apps/yaj-cancelfee-signature")
+SRC = APP / "Src"
+DST = APP / "paste"
 DST.mkdir(parents=True, exist_ok=True)
 
 INDENT = 6  # "      - ctrl:" の 6 文字

@@ -40,6 +40,7 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | パス | 内容 |
 |---|---|
 | [`apps/yaj-cancelfee-signature/`](apps/yaj-cancelfee-signature/) | キャンバスアプリのソース（pa.yaml v3.0 / Power Fx） |
+| [`apps/yaj-cancelfee-signature-demo/`](apps/yaj-cancelfee-signature-demo/) | **画面遷移確認用のデモ版**。外部接続なしで動く。本番ソースから自動生成 |
 | [`flows/`](flows/) | Power Automate フロー3つの作成手順と貼り付ける式 |
 | [`docs/`](docs/) | 設計書・デプロイ手順・権限・運用・テスト仕様・未確定事項 |
 | [`data/`](data/) | SharePoint スキーマ定義（JSON）と初期データ（組織マスタ・確認文面） |
@@ -47,6 +48,16 @@ Power Apps キャンバスアプリ（タブレット縦 768×1024・6画面）
 | [`templates/`](templates/) | PDF生成用 Word テンプレートと、その生成スクリプト |
 | [`solution/`](solution/) | **pac CLI でインポートするソリューション**（フロー3つ）。`config.json` だけ編集する |
 | [`scripts/`](scripts/) | SharePoint 構築・ソリューション生成・各種検証スクリプト |
+
+## まず画面だけ見せたい場合
+
+クライアントに**画面遷移と操作感だけ**を確認してもらうなら、
+SharePoint もフローも作らずに動く**デモ版**がある。
+
+**→ [apps/yaj-cancelfee-signature-demo/](apps/yaj-cancelfee-signature-demo/)（取り込み15〜20分）**
+
+データはすべてアプリ内のコレクション。組織マスタ15拠点・確認文面の全文・
+サンプル案件6件をベタ書きで持っている。エラー画面も切り替えて見せられる。
 
 ## 構築の進め方
 
@@ -138,6 +149,13 @@ python3 scripts/check-references.py
 
 # タブレット縦（768×1024）にすべてのコントロールが収まっているか
 python3 scripts/check-layout.py
+
+# 数式の括弧と引用符の対応
+python3 scripts/check-formula-balance.py apps/yaj-cancelfee-signature/Src
+
+# デモ版（本番ソースから生成し、同じ検査を通す）
+python3 scripts/build-demo-app.py
+python3 scripts/check-references.py apps/yaj-cancelfee-signature-demo/Src
 
 # Word テンプレートの差し込み欄とフロー手順書の差し込み表が一致しているか
 python3 scripts/check-template-fields.py
