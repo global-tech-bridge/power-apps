@@ -12,13 +12,15 @@ import sys
 import zipfile
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 TPL = Path("templates/整備キャンセル料確認書.docx")
 SPEC = Path("flows/YAJ-CancelFee-Submit/README.md")
 
 xml = zipfile.ZipFile(TPL).read("word/document.xml").decode()
 tpl_fields = set(re.findall(r'<w:alias w:val="([^"]+)"', xml))
 
-spec = SPEC.read_text()
+spec = SPEC.read_text(encoding="utf-8")
 start = spec.index("## 7. テンプレート差し込み表")
 end = spec.index("## 8. メール本文")
 doc_fields = set(re.findall(r"^\| `([A-Za-z]+)` \|", spec[start:end], re.M))

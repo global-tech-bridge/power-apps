@@ -11,15 +11,15 @@
 既に ConnectionId が入っているものは上書きしない。
 """
 import json
-import subprocess
 import sys
 from pathlib import Path
+
+import yajcli
 
 ENV = sys.argv[1] if len(sys.argv) > 1 else sys.exit("環境URLを指定してください")
 SETTINGS = Path(sys.argv[2] if len(sys.argv) > 2 else "solution/deploy-settings.json")
 
-out = subprocess.run(["pac", "connection", "list", "--environment", ENV],
-                     capture_output=True, text=True).stdout
+_, out = yajcli.run(["pac", "connection", "list", "--environment", ENV])
 conns = []
 for line in out.splitlines():
     parts = line.split()

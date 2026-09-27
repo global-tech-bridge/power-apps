@@ -13,7 +13,6 @@ Dataverse Web API で workflow の statecode を 1（アクティブ）にする
 認証は Azure CLI（AZURE_CONFIG_DIR の設定に従う）。
 """
 import json
-import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -22,10 +21,9 @@ import urllib.request
 ORG = (sys.argv[1] if len(sys.argv) > 1 else sys.exit("環境URLを指定してください")).rstrip("/")
 PREFIX = "YAJ-CancelFee-"
 
-token = subprocess.check_output(
-    ["az", "account", "get-access-token", "--resource", ORG, "--query", "accessToken", "-o", "tsv"],
-    text=True,
-).strip()
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
+token = yajcli.az_token(ORG) or sys.exit("Azure CLI で Dataverse のトークンを取れません。az login をやり直してください")
 
 
 def call(method, path, body=None):

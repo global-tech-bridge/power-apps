@@ -64,7 +64,8 @@ SharePoint もフローも作らずに動く**デモ版**がある。
 **ヤンマー様の本番環境に入れるときは
 [docs/11-production-deployment.md](docs/11-production-deployment.md)**（CLI 中心・管理者権限なし）。
 最初に `scripts/preflight.py` を流すと、この PC とアカウントで何ができるか・
-IT 部門に何を依頼すべきかが分かる。
+IT 部門に何を依頼すべきかが分かる。**スクリプトは Windows（PowerShell）と Mac の両方で動く**
+（Windows では `python scripts\deploy.py <環境URL>` のように実行する。bash は不要）。
 
 **CLI（`pac` / PnP.PowerShell）が使えない場合は
 [docs/08-manual-setup.md](docs/08-manual-setup.md) 1本で完結する。**
@@ -157,6 +158,9 @@ python3 scripts/check-layout.py
 
 # 文字やチェックボックスがコントロールからはみ出しそうな箇所（概算）
 python3 scripts/check-text-fit.py
+
+# Windows でも動く書き方か（文字コードの指定、az.cmd の呼び方、bash を使っていないか）
+python3 scripts/check-portability.py
 
 # 数式の括弧と引用符の対応
 python3 scripts/check-formula-balance.py apps/yaj-cancelfee-signature/Src

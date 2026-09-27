@@ -22,6 +22,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 SRC = Path("data/OrgMaster.csv")
 DST = Path("data/import")
 DST.mkdir(parents=True, exist_ok=True)

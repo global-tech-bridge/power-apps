@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """デプロイの前に、この PC とアカウントで何ができるかを一括で確かめる。
 
-    YAJ_CONFIG=solution/config.local.yanmar.json python3 scripts/preflight.py https://<組織>.crm7.dynamics.com
+    python scripts/preflight.py https://<組織>.crm7.dynamics.com
+    （設定ファイルは環境変数 YAJ_CONFIG で指定する。docs/11 の 2-2）
 
 管理者権限が無い前提で、つまずく箇所を先に見つけるためのもの。何も作らない・変えない。
 
@@ -26,6 +27,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import yajcli
+
 ROOT = Path(__file__).resolve().parent.parent
 ENV = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else sys.exit(__doc__)
 CFG_PATH = Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json"))
@@ -48,11 +51,8 @@ def ng(item, msg, todo=""):
 
 
 def run(cmd):
-    try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-        return p.returncode, p.stdout + p.stderr
-    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-        return 1, str(e)
+    # Windows の az.cmd も見つけて呼ぶ。出力は UTF-8 / cp932 のどちらでも読む
+    return yajcli.run(cmd, timeout=180)
 
 
 def http(url, token):
@@ -71,14 +71,13 @@ def http(url, token):
 
 
 def az_token(resource):
-    code, out = run(["az", "account", "get-access-token", "--resource", resource,
-                     "--query", "accessToken", "-o", "tsv"])
-    return out.strip() if code == 0 and out.strip() and " " not in out.strip() else None
+    return yajcli.az_token(resource)
 
 
 # ---- 1. ツール --------------------------------------------------------------
-for tool, hint in [("pac", "dotnet tool install -g microsoft.powerapps.cli.tool"),
-                   ("az", "brew install azure-cli")]:
+WIN = yajcli.IS_WINDOWS
+for tool, hint in [("pac", "docs/11 の 2-1（Windows: Power Platform Tools の VS Code 拡張か MSI。Mac: dotnet tool install -g microsoft.powerapps.cli.tool）"),
+                   ("az", "docs/11 の 2-1（Windows: Azure CLI の ZIP 版なら PC の管理者権限は不要。Mac: brew install azure-cli）")]:
     if shutil.which(tool):
         code, out = run([tool, "--version"] if tool == "az" else [tool, "help"])
         ver = next((l for l in out.splitlines() if "Version" in l or l.startswith("azure-cli")), "").strip()
@@ -92,14 +91,15 @@ for mod in ["yaml", "jsonschema", "openpyxl"]:
     except ImportError:
         missing.append(mod)
 if missing:
-    ng("ツール", "Python のモジュールが足りません: " + ", ".join(missing), "pip3 install pyyaml jsonschema openpyxl python-docx")
+    ng("ツール", "Python のモジュールが足りません: " + ", ".join(missing),
+       ("python -m pip install --user" if WIN else "pip3 install") + " pyyaml jsonschema openpyxl python-docx")
 else:
     ok("ツール", "Python のモジュール（pyyaml / jsonschema / openpyxl）")
 
 # ---- 2. 設定 ----------------------------------------------------------------
 site_url = ""
 if not CFG_PATH.exists():
-    ng("設定", f"{CFG_PATH} がありません", "cp solution/config.json solution/config.local.yanmar.json して siteUrl を直す")
+    ng("設定", f"{CFG_PATH} がありません", "solution/config.json を config.local.yanmar.json としてコピーし、siteUrl を直す（docs/11 の 2-4）")
 else:
     cfg = json.loads(CFG_PATH.read_text(encoding="utf-8"))
     site_url = cfg["sharePoint"]["siteUrl"].rstrip("/")
@@ -210,7 +210,7 @@ else:
 tok_file = CRED / "graph-sites-token.json"
 sites_tok = None
 if tok_file.exists():
-    t = json.loads(tok_file.read_text())
+    t = json.loads(tok_file.read_text(encoding="utf-8"))
     if t.get("expires_at", 0) > time.time() + 60:
         sites_tok = t["access_token"]
 if sp_host:
@@ -230,7 +230,7 @@ if sp_host:
                 ok("SharePoint", "リスト7つ・ライブラリ4つがそろっています")
         else:
             warn("SharePoint", "リストの有無は未確認（Sites.Manage.All のトークンが無い）",
-                 "python3 scripts/graph-device-login.py <テナント>（禁止されていれば --browser）")
+                 "scripts/graph-device-login.py <テナント> を実行する（device code が禁止されていれば --browser）")
     elif st in (401, 403):
         warn("SharePoint", f"サイトを読めません（HTTP {st}）。サイトのメンバーでないか、トークンの権限が足りません",
              "サイトの所有者に追加してもらう。Graph のトークンを取り直す")

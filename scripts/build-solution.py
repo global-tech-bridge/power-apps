@@ -25,6 +25,8 @@ from xml.sax.saxutils import escape
 sys.path.insert(0, str(Path(__file__).parent))
 import flow_definitions as fd  # noqa: E402
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 ROOT = Path(__file__).resolve().parent.parent
 # YAJ_CONFIG で別の設定ファイルを指定できる（テスト用テナントなど）。
 # 既定の solution/config.json は Yanmar 向けの配布状態を保つ。

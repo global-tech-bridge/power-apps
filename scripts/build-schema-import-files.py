@@ -32,7 +32,9 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-SCHEMA = json.loads(Path("data/list-schema.json").read_text())
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
+SCHEMA = json.loads(Path("data/list-schema.json").read_text(encoding="utf-8"))
 DST = Path("data/import/schema")
 DST.mkdir(parents=True, exist_ok=True)
 
@@ -212,7 +214,7 @@ for name, reason in EXCLUDE.items():
 summary.append("")
 
 readme = readme[:11] + [""] + summary + readme[11:]
-(DST / "README.md").write_text("\n".join(readme))
+(DST / "README.md").write_text("\n".join(readme), encoding="utf-8")
 
 print(f"{DST}/ に {len(summary_rows)} ファイル")
 for name, ncols, nskip, nrows, nfix in summary_rows:

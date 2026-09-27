@@ -33,7 +33,7 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CFG = json.loads(Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json")).read_text())
+CFG = json.loads(Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json")).read_text(encoding="utf-8"))
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 ENV_ID = args[0] if args else sys.exit("環境IDを指定してください")
 OUT = Path(args[1] if len(args) > 1 else "/tmp/yaj-e2e")
@@ -46,13 +46,13 @@ FLOW_API = f"https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/en
 
 
 def az(resource):
-    return subprocess.check_output(["az", "account", "get-access-token", "--resource", resource,
-                                    "--query", "accessToken", "-o", "tsv"], text=True).strip()
+    import yajcli  # Windows の az.cmd も見つけて呼ぶ
+    return yajcli.az_token(resource) or sys.exit(f"Azure CLI で {resource} のトークンを取れません。az login をやり直してください")
 
 
 def sites_token():
     f = Path.home() / ".cliauth/yanmar/graph-sites-token.json"
-    t = json.loads(f.read_text())
+    t = json.loads(f.read_text(encoding="utf-8"))
     if t["expires_at"] < time.time() + 120:
         sys.exit("Sites 用トークンの期限切れ。scripts/graph-device-login.py で取り直してください")
     return t["access_token"]
@@ -121,7 +121,7 @@ if REUSE:
     item_id = REUSE
 else:
     step("テスト案件を作成します（テスト太郎・顧客メールなし）")
-    consent = (ROOT / "data/consent/ConsentText_v1.0.txt").read_text().split("\n")
+    consent = (ROOT / "data/consent/ConsentText_v1.0.txt").read_text(encoding="utf-8").split("\n")
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     status, item = http("POST", f"{GRAPH}/sites/{site_id}/lists/{lists['SignatureCases']}/items", ST, {"fields": {
         "Title": "（作成中）",
@@ -155,7 +155,7 @@ else:
 step("送信フローの一時コピー（手動実行版）を作ります")
 DV = az(ORG)
 src = next((ROOT / "solution/src/Workflows").glob("*Submit*.json"))
-wf = json.loads(src.read_text())
+wf = json.loads(src.read_text(encoding="utf-8"))
 d = wf["properties"]["definition"]
 d["triggers"]["manual"]["kind"] = "Button"
 # Flow API の実行 API は本文を捨てるため、必須入力のある手動実行フローは入力付きで
@@ -272,7 +272,7 @@ try:
         if ap.get("status") in ("Failed", "TimedOut"):
             err = ap.get("error", {})
             print(f"    ✗ {a['name']}: {err.get('code', '')} {str(err.get('message', ''))[:300]}")
-    (OUT / "run.json").write_text(json.dumps(acts, ensure_ascii=False, indent=2))
+    (OUT / "run.json").write_text(json.dumps(acts, ensure_ascii=False, indent=2), encoding="utf-8")
 finally:
     cleanup()
 
@@ -310,17 +310,27 @@ pdf_path = OUT / f"{doc_no}.pdf"
 pdf_path.write_bytes(pdf)
 print(f"    {pdf_path}（{len(pdf):,} バイト）")
 
-text = subprocess.run(["pdftotext", "-layout", str(pdf_path), "-"], capture_output=True, text=True).stdout
-(OUT / f"{doc_no}.txt").write_text(text)
+# pdftotext / pdftoppm（poppler）は任意。Windows に無ければ、PDF を開いて目で確かめる
+import shutil  # noqa: E402
+
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+if shutil.which("pdftotext"):
+    text = subprocess.run([shutil.which("pdftotext"), "-layout", str(pdf_path), "-"],
+                          capture_output=True).stdout.decode("utf-8", errors="replace")
+else:
+    text = ""
+    print("    （pdftotext が無いため本文の確認を飛ばします。PDF を開いて確かめてください）")
+(OUT / f"{doc_no}.txt").write_text(text, encoding="utf-8")
 checks = {
     "文書番号": doc_no, "宛名": "テスト太郎", "表題": "分解・診断を伴う整備お見積り後のキャンセル料について",
     "拝啓": "拝啓", "費用一覧": "点検整備", "確認文": "私は上記内容について確認いたしました",
     "型式": "YT5113", "機番": "99999", "拠点": "福井ブロック", "確認欄": "確認欄",
 }
-for k, needle in checks.items():
+for k, needle in (checks.items() if text else []):
     print(f"    {'✓' if needle in text.replace(' ', '') or needle in text else '✗'} 本文に「{k}」")
 mojibake = sum(text.count(c) for c in ("□", "�", "縺", "繧"))
-print(f"    {'✓' if mojibake == 0 else '✗'} 文字化けの痕跡 {mojibake} 文字")
+if text:
+    print(f"    {'✓' if mojibake == 0 else '✗'} 文字化けの痕跡 {mojibake} 文字")
 
 try:
     from pypdf import PdfReader
@@ -330,8 +340,9 @@ try:
 except Exception as e:
     print(f"    画像の確認に失敗: {e}")
 
-subprocess.run(["pdftoppm", "-png", "-r", "70", str(pdf_path), str(OUT / doc_no)],
-               capture_output=True)
+if shutil.which("pdftoppm"):
+    subprocess.run([shutil.which("pdftoppm"), "-png", "-r", "70", str(pdf_path), str(OUT / doc_no)],
+                   capture_output=True)
 pngs = sorted(OUT.glob(f"{doc_no}*.png"))
 for p in pngs:
     print(f"    ページ画像: {p}")

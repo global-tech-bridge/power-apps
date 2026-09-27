@@ -7,7 +7,9 @@
 import json
 from pathlib import Path
 
-schema = json.loads(Path("data/list-schema.json").read_text())
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
+schema = json.loads(Path("data/list-schema.json").read_text(encoding="utf-8"))
 out = Path("docs/02-sharepoint-schema.md")
 
 # 画面の「列の作成」で選ぶ種類の名前
@@ -130,5 +132,5 @@ lines += [
     "",
 ]
 
-out.write_text("\n".join(lines) + "\n")
+out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(f"{out}: {len(lines)} 行")

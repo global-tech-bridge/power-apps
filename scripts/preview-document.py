@@ -20,6 +20,8 @@ import sys
 import zlib
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/tmp")
 # YAJ_CONFIG で別の設定ファイルを指定できる（テスト用テナントなど）。
@@ -30,7 +32,7 @@ CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 if CFG.get("pdfMode") != "html":
     sys.exit("pdfMode が html ではありません。プレビューは HTML→.doc 方式のときだけ作れます。")
 
-wf = json.loads(next((ROOT / "solution/src/Workflows").glob("*Submit*.json")).read_text())
+wf = json.loads(next((ROOT / "solution/src/Workflows").glob("*Submit*.json")).read_text(encoding="utf-8"))
 html = wf["properties"]["definition"]["actions"]["Try"]["actions"]["Need_pdf"]["actions"][
     "Compose_Html"
 ]["inputs"]

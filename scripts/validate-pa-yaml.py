@@ -11,13 +11,15 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-schema = yaml.safe_load(Path(sys.argv[1]).read_text())
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
+schema = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
 validator = jsonschema.Draft7Validator(schema)
 
 # 画面をまたいだ参照の検証用に、全ファイルの画面名とコントロール名を集める
 failed = 0
 for path in (Path(p) for p in sys.argv[2:]):
-    doc = yaml.safe_load(path.read_text())
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     errors = sorted(validator.iter_errors(doc), key=lambda e: list(e.path))
     if errors:
         failed += 1

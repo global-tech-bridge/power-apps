@@ -18,6 +18,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 ROOT = Path(__file__).resolve().parent.parent
 CFG = json.loads(Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json")).read_text(encoding="utf-8"))
 SITE_URL = CFG["sharePoint"]["siteUrl"]
@@ -29,7 +31,7 @@ src = Path(sys.argv[1])
 dst = src.with_suffix(".pdf")
 
 tok_file = Path(os.environ.get("YAJ_CRED_HOME", Path.home() / ".cliauth/yanmar")) / "graph-sites-token.json"
-tok = json.loads(tok_file.read_text())
+tok = json.loads(tok_file.read_text(encoding="utf-8"))
 if tok["expires_at"] < time.time() + 60:
     sys.exit("Graph のトークンが期限切れです: python3 scripts/graph-device-login.py <テナント>")
 G = "https://graph.microsoft.com/v1.0"

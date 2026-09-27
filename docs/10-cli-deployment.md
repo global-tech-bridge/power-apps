@@ -2,6 +2,7 @@
 
 > **ヤンマー様の本番環境に入れるときの手順は [11 本番環境へのデプロイ](11-production-deployment.md)**。
 > この文書は、各コマンドのしくみと、テスト用テナントで判明したことの記録。
+> コマンドは Mac の表記（`./scripts/deploy.sh`）で書いている。**Windows では `python scripts\deploy.py`・`python scripts\deploy-app.py`**（中身は同じ）。
 
 Power Automate のフローを画面で1アクションずつ作るのは手間が大きい（3フローで90〜120分）。
 `pac` CLI を使えば、**ソリューションとしてまとめてインポート**できる。

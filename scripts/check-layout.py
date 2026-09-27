@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 SCREEN_W, SCREEN_H = 768, 1024
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "apps/yaj-cancelfee-signature/Src")
 
@@ -40,7 +42,7 @@ def walk(children, screen, rows, depth=0):
 
 rows = []
 for path in sorted(SRC.glob("*.pa.yaml")):
-    doc = yaml.safe_load(path.read_text())
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     for screen, body in (doc.get("Screens") or {}).items():
         walk(body.get("Children"), screen, rows)
 

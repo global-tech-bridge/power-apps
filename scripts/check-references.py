@@ -16,6 +16,8 @@ from pathlib import Path
 
 import yaml
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "apps/yaj-cancelfee-signature/Src")
 SCHEMA = Path(sys.argv[2] if len(sys.argv) > 2 else "data/list-schema.json")
 
@@ -55,7 +57,7 @@ def control_names(node, out):
                     control_names(body.get("Children"), out)
 
 
-docs = {p: yaml.safe_load(p.read_text()) for p in sorted(SRC.glob("*.pa.yaml"))}
+docs = {p: yaml.safe_load(p.read_text(encoding="utf-8")) for p in sorted(SRC.glob("*.pa.yaml"))}
 
 screens = set()
 per_screen_controls = {}
@@ -119,7 +121,7 @@ for ref in sorted(set(NAVIGATE.findall(blob))):
 
 # --- 5. SharePoint 列 ---
 if SCHEMA.exists():
-    schema = json.loads(SCHEMA.read_text())
+    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     known = {
         lst: {c["Name"] for c in cols["Columns"]} | {
             "ID", "Title", "Created", "Modified", "Author", "Editor"

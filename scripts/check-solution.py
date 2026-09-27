@@ -17,6 +17,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "solution/src"
 TPL = ROOT / "templates/整備キャンセル料確認書.docx"

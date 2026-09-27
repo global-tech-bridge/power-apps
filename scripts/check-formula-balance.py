@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "apps/yaj-cancelfee-signature/Src")
 
 PAIRS = {")": "(", "]": "[", "}": "{"}

@@ -32,6 +32,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 ROOT = Path(__file__).resolve().parent.parent
 CFG_PATH = Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json"))
 CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
@@ -52,10 +54,9 @@ def info(msg):
 
 
 def az_token():
-    return subprocess.check_output(
-        ["az", "account", "get-access-token", "--resource", "https://graph.microsoft.com",
-         "--query", "accessToken", "-o", "tsv"], text=True
-    ).strip()
+    import yajcli  # Windows の az.cmd も見つけて呼ぶ
+    return yajcli.az_token("https://graph.microsoft.com") or sys.exit(
+        "Azure CLI で Graph のトークンを取れません。az login --tenant <テナント> --allow-no-subscriptions")
 
 
 def sites_token():
@@ -67,7 +68,7 @@ def sites_token():
     f = Path(os.environ.get("YAJ_CRED_HOME", Path.home() / ".cliauth/yanmar")) / "graph-sites-token.json"
     if not f.exists():
         return None
-    t = json.loads(f.read_text())
+    t = json.loads(f.read_text(encoding="utf-8"))
     if t.get("expires_at", 0) < time.time() + 120:
         print("  ⚠ Sites 用トークンの期限が切れています。graph-device-login.py で取り直してください。")
         return None

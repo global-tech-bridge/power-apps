@@ -38,6 +38,8 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 CLIENT_ID = "14d82eec-204b-4c2f-b7e8-296a70dab67e"   # Microsoft Graph Command Line Tools
 SCOPES = "https://graph.microsoft.com/Sites.Manage.All https://graph.microsoft.com/User.Read"
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -62,7 +64,7 @@ def save(tok):
         "access_token": tok["access_token"],
         "expires_at": int(time.time()) + int(tok.get("expires_in", 3600)),
         "scope": tok.get("scope", ""),
-    }))
+    }), encoding="utf-8")
     os.chmod(OUT, 0o600)
     print(f"取得しました（権限: {tok.get('scope', '')}）", flush=True)
     print(f"保存先: {OUT}", flush=True)
@@ -125,7 +127,7 @@ def browser():
     print("ブラウザーでサインインしてください（開かない場合は次の URL を開く）:", flush=True)
     print(url, flush=True)
     if "--no-open" not in sys.argv:
-        webbrowser.open(url)
+        webbrowser.open(url, encoding="utf-8")
     deadline = time.time() + 600
     while not result and time.time() < deadline:
         time.sleep(0.5)

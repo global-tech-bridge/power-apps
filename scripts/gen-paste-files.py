@@ -19,6 +19,8 @@ from pathlib import Path
 import jsonschema
 import yaml
 
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
 APP = Path(sys.argv[2] if len(sys.argv) > 2 else "apps/yaj-cancelfee-signature")
 SRC = APP / "Src"
 DST = APP / "paste"
@@ -42,15 +44,15 @@ def dedent(lines, n=INDENT):
 schema = None
 schema_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("pa.schema.yaml")
 if schema_path.exists():
-    schema = yaml.safe_load(schema_path.read_text())
+    schema = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
 
 # ---------------------------------------------------------------------------
 # App.pa.yaml → OnStart の数式だけを取り出す
 # ---------------------------------------------------------------------------
-app_doc = yaml.safe_load((SRC / "App.pa.yaml").read_text())
+app_doc = yaml.safe_load((SRC / "App.pa.yaml").read_text(encoding="utf-8"))
 onstart = app_doc["App"]["Properties"]["OnStart"]
 assert onstart.startswith("=")
-(DST / "App-OnStart.txt").write_text(onstart[1:].lstrip("\n"))
+(DST / "App-OnStart.txt").write_text(onstart[1:].lstrip("\n"), encoding="utf-8")
 print("App-OnStart.txt")
 
 # ---------------------------------------------------------------------------
@@ -58,17 +60,17 @@ print("App-OnStart.txt")
 # ---------------------------------------------------------------------------
 # 画面の並び順は _EditorState.pa.yaml（Studio と同じ置き場所）。古い版は App.pa.yaml にあった
 editor_state = SRC / "_EditorState.pa.yaml"
-state_doc = yaml.safe_load(editor_state.read_text()) if editor_state.exists() else app_doc
+state_doc = yaml.safe_load(editor_state.read_text(encoding="utf-8")) if editor_state.exists() else app_doc
 order = (state_doc or {}).get("EditorState", {}).get("ScreensOrder", [])
 summary = []
 
 for path in sorted(SRC.glob("*.pa.yaml")):
-    doc = yaml.safe_load(path.read_text())
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     if "Screens" not in doc:
         continue
     (screen, body), = doc["Screens"].items()
 
-    lines = path.read_text().split("\n")
+    lines = path.read_text(encoding="utf-8").split("\n")
     i_props = next((i for i, l in enumerate(lines) if l == "    Properties:"), None)
     i_children = next((i for i, l in enumerate(lines) if l == "    Children:"), None)
     if i_children is None:
@@ -89,7 +91,7 @@ for path in sorted(SRC.glob("*.pa.yaml")):
         )
 
     out = DST / f"{screen}.controls.yaml"
-    out.write_text(text)
+    out.write_text(text, encoding="utf-8")
 
     # --- 画面自身のプロパティ ---
     props = body.get("Properties") or {}
@@ -106,7 +108,7 @@ for path in sorted(SRC.glob("*.pa.yaml")):
         # 先頭の = は Studio の数式バーでは不要
         v = value[1:] if isinstance(value, str) and value.startswith("=") else value
         md += [f"## {name}", "", "```", str(v).rstrip(), "```", ""]
-    (DST / f"{screen}.properties.md").write_text("\n".join(md))
+    (DST / f"{screen}.properties.md").write_text("\n".join(md), encoding="utf-8")
 
     summary.append((screen, len(parsed), list(props)))
     print(f"{out.name}  ({len(parsed)} controls)   {screen}.properties.md")
@@ -126,5 +128,5 @@ idx += ["", "アプリ自身（ツリー ビュー最上部の **アプリ**）�
         "| プロパティ | 値 |", "|---|---|",
         "| `StartScreen` | `ListScreen` |",
         "| `OnStart` | `App-OnStart.txt` の内容をそのまま貼る |", ""]
-(DST / "README.md").write_text("\n".join(idx))
+(DST / "README.md").write_text("\n".join(idx), encoding="utf-8")
 print("README.md")

@@ -21,7 +21,9 @@ from pathlib import Path
 
 import openpyxl
 
-SCHEMA = json.loads(Path("data/list-schema.json").read_text())
+import yajcli  # noqa: E402,F401  Windows でも出力を UTF-8 にする（✓ などは cp932 に無い）
+
+SCHEMA = json.loads(Path("data/list-schema.json").read_text(encoding="utf-8"))
 IMPORT = Path("data/import")
 MARKER = "★取込後に削除★"
 SKIP_TYPES = {"User"}
