@@ -121,6 +121,9 @@ python3 scripts/check-references.py
 # タブレット縦（768×1024）に収まっているか
 python3 scripts/check-layout.py
 
+# 文字やチェックボックスがコントロールからはみ出しそうな箇所（概算）
+python3 scripts/check-text-fit.py
+
 # Word テンプレートとフロー手順書の差し込み欄の一致
 python3 scripts/check-template-fields.py
 

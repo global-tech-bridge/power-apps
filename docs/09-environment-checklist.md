@@ -92,7 +92,7 @@ Premium コネクタを使うフローに接続していればアプリ利用者
 
 | # | 質問 | 回答 | 何が変わるか |
 |---:|---|---|---|
-| C-1 | **Power Platform の DLP ポリシー**の内容。SharePoint / Office 365 Outlook / Word Online (Business) がそれぞれ Business / Non-Business / Blocked のどれに分類されているか | | 同じグループに入っていないコネクタは同一フローで併用できない。3つとも同じ分類に入っている必要がある |
+| C-1 | **Power Platform の DLP ポリシー**の内容。SharePoint / OneDrive for Business / Office 365 Outlook / **Office 365 ユーザー**（Word テンプレート方式なら Word Online (Business) も）がそれぞれ Business / Non-Business / Blocked のどれに分類されているか | | 同じグループに入っていないコネクタは、同じフロー・同じアプリで併用できない。フローは SharePoint・OneDrive・Outlook、アプリは SharePoint・Office 365 ユーザー（担当者の表示名の取得）を使うので、すべて同じ分類に入っている必要がある |
 | C-2 | **MFA の条件付きアクセス ポリシー**が Power Platform に適用されているか | | 適用されていると「Microsoft Word テンプレートの入力」が使えない既知の問題がある（A-2 で実機確認） |
 | C-3 | **既定環境**が使えるか。それとも専用環境を新規作成する方針か | | 要件定義2章は既定環境が前提。専用環境なら Dataverse 容量とソリューション運用の検討が必要 |
 | C-4 | Managed Environment / 環境ルーティングが有効か | | 有効だと共有先の制限や Premium ライセンス必須化が入る |

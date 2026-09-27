@@ -105,10 +105,11 @@ Screens:
           Control: Label
           Properties:
             Text: ="▼ 枠内をスクロールして最後までご確認ください"
+            # 幅が狭く2行に折り返すので、本文の枠の上端までの2行分の高さを取る
             X: =576
-            Y: =152
+            Y: =144
             Width: =176
-            Height: =22
+            Height: =36
             Size: =9
             Align: =Align.Right
             Color: =RGBA(196, 49, 75, 1)

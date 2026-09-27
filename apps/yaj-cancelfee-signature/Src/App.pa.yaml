@@ -23,7 +23,12 @@ App:
 
       // ---- ログインユーザーと権限 -----------------------------------------
       Set(varUserEmail, Lower(User().Email));
-      Set(varUserName, User().FullName);
+      // 表示名はディレクトリ（Entra ID）の displayName を使う。User().FullName は
+      // 「名 姓」の順に組み立てられ、日本語の氏名が「孝行 遠藤」のように逆になる（2026-09-28 確認）。
+      // Office 365 ユーザー コネクタが使えないときだけ User().FullName に戻す。
+      Set(varUserName,
+          Coalesce(IfError(Office365Users.MyProfileV2().displayName, Blank()), User().FullName)
+      );
       Set(varIsAdmin, CountRows(Filter(colAdmin, Lower(UserEmail) = varUserEmail)) > 0);
 
       // ---- 適用中の確認文面（適用開始日が過去で、終了日が未来または未設定）

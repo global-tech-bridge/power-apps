@@ -408,7 +408,10 @@ Part 4 に進むと、問題の切り分けが楽になる。
 3. 同じ手順で、**ライブラリ `SignatureImages`** にもチェックを入れて **接続**
    （詳細画面の手書き署名は、このライブラリの `'{Thumbnail}'` で表示する。
    無いと `DetailScreen` で「SignatureImages が見つかりません」になる）
-4. 左メニューの **…** → **Power Automate** → **フローの追加** → 3つのフローを追加
+4. **データの追加** → **Office 365 ユーザー**（Office 365 Users）→ **接続**
+   （担当者名をディレクトリの表示名「姓 名」で取るため。`User().FullName` は
+   「名 姓」の順に組み立てられ、「孝行 遠藤」のように逆になる。標準コネクタで追加ライセンスは不要）
+5. 左メニューの **…** → **Power Automate** → **フローの追加** → 3つのフローを追加
    （以前の Studio では「データの追加」の検索で出た。2026-09 時点ではこちら）
 
    `YAJ-CancelFee-Submit` `YAJ-CancelFee-Resend` `YAJ-CancelFee-Delete`

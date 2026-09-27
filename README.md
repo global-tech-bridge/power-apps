@@ -149,6 +149,9 @@ python3 scripts/check-references.py
 # タブレット縦（768×1024）にすべてのコントロールが収まっているか
 python3 scripts/check-layout.py
 
+# 文字やチェックボックスがコントロールからはみ出しそうな箇所（概算）
+python3 scripts/check-text-fit.py
+
 # 数式の括弧と引用符の対応
 python3 scripts/check-formula-balance.py apps/yaj-cancelfee-signature/Src
 

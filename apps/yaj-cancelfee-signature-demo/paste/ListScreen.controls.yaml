@@ -258,6 +258,8 @@
       Y: =292
       Width: =260
       Height: =24
+      # 四角の既定は 32px で、高さ 24px だと下が切れる
+      CheckboxSize: =20
       Size: =11
 - chkDemoError:
     Control: Classic/CheckBox
@@ -271,6 +273,7 @@
       Y: =292
       Width: =290
       Height: =24
+      CheckboxSize: =20
       Size: =10
       Color: =RGBA(196, 49, 75, 1)
 - btnClearFilter:

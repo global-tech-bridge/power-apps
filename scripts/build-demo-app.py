@@ -425,6 +425,7 @@ DEMO_ERROR_CHECKBOX = """      - chkDemoError:
             Y: =292
             Width: =290
             Height: =24
+            CheckboxSize: =20
             Size: =10
             Color: =RGBA(196, 49, 75, 1)
 """
@@ -546,7 +547,7 @@ def main():
 
         # デモ版に残ってはいけない参照
         for forbidden in ("SignatureCases", "OrgMaster", "ConsentMaster", "AppAdmins",
-                          "SendLog", "AuditLog", "DocumentNumberCounter", "SignatureImages",
+                          "SendLog", "AuditLog", "DocumentNumberCounter", "SignatureImages", "Office365Users",
                           "YAJ-CancelFee-", "SPListExpandedUser"):
             if forbidden in text:
                 for line_no, line in enumerate(text.split("\n"), 1):

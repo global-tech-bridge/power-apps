@@ -373,7 +373,8 @@ YAJ_CONFIG=solution/config.local.json ./scripts/deploy.sh https://yajcancelfeete
 1. Studio で**空のアプリ**（タブレット）を作り、[08 手順](08-manual-setup.md) の 4-1 の設定
    （縦向き・4:3 = 768×1024、データ行の制限 2000）を行う
 2. 4-2 のとおりデータソースを追加する
-   （リスト7つ、**ライブラリ `SignatureImages`**、フロー3つ）
+   （リスト7つ、**ライブラリ `SignatureImages`**、**Office 365 ユーザー**、フロー3つ）。
+   `deploy-app.sh` は、土台にこれらがそろっていないと止まる
 3. **保存して公開する**（画面やコントロールは作らなくてよい。次の手順で入る）。
    `pac canvas download` は**最後に公開した版**を取ってくるので、保存だけでは土台に反映されない。
    後からデータソースを足したときも、必ず公開まで行う

@@ -224,6 +224,8 @@
       Y: =372
       Width: =228
       Height: =24
+      # 四角の既定は 32px で、高さ 24px だと下が切れる
+      CheckboxSize: =20
       Size: =10
 - lblCapCommentEdit:
     Control: Label

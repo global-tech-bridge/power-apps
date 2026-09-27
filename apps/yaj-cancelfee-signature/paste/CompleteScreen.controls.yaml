@@ -86,9 +86,9 @@
             varCompleted.OperatorEmail & "（顧客メールアドレス未登録）",
             varCompleted.CustomerEmail & " ／ " & varCompleted.OperatorEmail)
       X: =112
-      Y: =584
+      Y: =580
       Width: =544
-      Height: =40
+      Height: =38
       Size: =10
       Color: =RGBA(96, 94, 92, 1)
 - lblPdfNote:
@@ -98,10 +98,11 @@
         =If(IsBlank(varCompleted.CustomerEmail),
             "お客様のメールアドレスが未登録のため、担当者宛にのみ送付しました。控えは印刷してお渡しください。",
             "お客様の控えはメールに添付したPDFをご確認ください。")
+      # 未登録時の文言は2行になるので、2行分の高さを取る（カードの下端は 664）
       X: =112
-      Y: =624
+      Y: =618
       Width: =544
-      Height: =24
+      Height: =42
       Size: =10
       Color: =RGBA(96, 94, 92, 1)
 

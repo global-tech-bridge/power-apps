@@ -56,6 +56,7 @@ info "アプリの定義を検査します"
 python3 scripts/check-references.py "$APP_SRC"
 python3 scripts/check-formula-balance.py >/dev/null
 python3 scripts/check-layout.py >/dev/null
+python3 scripts/check-text-fit.py "$APP_SRC"
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/yaj-app.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
@@ -65,6 +66,29 @@ info "環境のアプリをダウンロードします: $APP_NAME"
 pac canvas download --environment "$ENVIRONMENT" --name "$APP_NAME" \
   --file-name "$WORK/base.msapp" >/dev/null
 pac canvas unpack --msapp "$WORK/base.msapp" --sources "$WORK/src" --layout SourceCode >/dev/null
+
+# 土台（最後に公開した版）に、数式が使うデータソースがそろっているか。
+# 足りないと Studio で「Name isn't valid」になる。Studio で追加して「公開」まで行うこと。
+python3 - "$WORK/src" <<'PY'
+import json, sys, zipfile
+from pathlib import Path
+
+REQUIRED = [
+    "SignatureCases", "OrgMaster", "ConsentMaster", "AppAdmins", "SignatureImages",
+    "Office365Users", "YAJ-CancelFee-Submit", "YAJ-CancelFee-Resend", "YAJ-CancelFee-Delete",
+]
+msapr = next(Path(sys.argv[1]).glob("*.msapr"))
+with zipfile.ZipFile(msapr) as z:
+    name = next(n for n in z.namelist() if n.replace("\\", "/").endswith("References/DataSources.json"))
+    ds = json.loads(z.read(name))["DataSources"]
+have = {d.get("Name") for d in ds}
+missing = [r for r in REQUIRED if r not in have]
+if missing:
+    sys.exit("土台のアプリにデータソースが足りません: " + ", ".join(missing)
+             + "\n  Studio で追加して保存し、「公開」まで行ってから再実行してください。"
+             + "\n  （あるもの: " + ", ".join(sorted(n for n in have if n)) + "）")
+print("    データソース: そろっています（" + str(len(REQUIRED)) + " 件）")
+PY
 
 # ---- 4. Src を差し替えて再パック --------------------------------------------
 info "画面と数式をリポジトリの内容に差し替えます"
