@@ -31,33 +31,49 @@ empty(variables('varDocumentNo'))
 formatDateTime(convertTimeZone(utcNow(),'UTC','Tokyo Standard Time'),'yyyyMMdd')
 ```
 
-**E4** — カウンタ取得のフィルター クエリ（式ではなくテキスト欄に入力）
+**E4** — この案件の台帳の行を探すフィルター クエリ（テキスト欄に入力）
 ```
-Title eq '@{outputs('Compose_DateKey')}'
-```
-
-**E5** — カウンタ行が無いか（条件）: 左辺に下の式、「次の値に等しい」、右辺 `true`
-```
-equals(length(outputs('Get_counter')?['body/value']),0)
+CaseId eq @{triggerBody()?['number']}
 ```
 
-**E6** — 次の連番
+**E5** — 台帳の行がまだ無いか（条件）: 左辺に下の式、「次の値に等しい」、右辺 `true`
 ```
-add(int(first(outputs('Get_counter_again')?['body/value'])?['LastNumber']),1)
-```
-
-**E7** — 更新するカウンタ行のID
-```
-first(outputs('Get_counter_again')?['body/value'])?['ID']
+equals(length(outputs('Get_existing_claim')?['body/value']),0)
 ```
 
-**E8** — 文書番号 `20260909-001`
+**E6a** — 追加した行のID（初回）
 ```
-concat(outputs('Compose_DateKey'),'-',formatNumber(outputs('Compose_Next'),'000'))
+outputs('Create_claim')?['body/ID']
 ```
-`formatNumber` が使えない環境では次の式でも同じ結果になる（999件/日まで）。
+
+**E6b** — 既存の行のID（再実行）
 ```
-concat(outputs('Compose_DateKey'),'-',substring(concat('000',string(outputs('Compose_Next'))),sub(length(concat('000',string(outputs('Compose_Next')))),3),3))
+first(outputs('Get_existing_claim')?['body/value'])?['ID']
+```
+
+**E6c** — 既存の行の日付（再実行）
+```
+first(outputs('Get_existing_claim')?['body/value'])?['Title']
+```
+
+**E7** — 同じ日付で自分以前の行を取るフィルター クエリ（テキスト欄に入力）
+```
+Title eq '@{variables('varClaimDate')}' and ID le @{variables('varClaimId')}
+```
+
+**E7b** — 自分の連番（取れた件数）
+```
+length(outputs('Get_claims')?['body/value'])
+```
+
+**E8** — 文書番号 `20260927-001`
+```
+concat(variables('varClaimDate'),'-',formatNumber(variables('varSeq'),'000'))
+```
+
+**E1b** — SharePoint「項目の更新」に渡す `Title`（必須列）
+```
+coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')
 ```
 
 **E9** — PDFファイル名（レコードの `PdfFileName` 列に入れる）
@@ -191,15 +207,16 @@ coalesce(outputs('Compose_FailedResult')?['name'],'Unknown')
 substring(string(coalesce(outputs('Compose_FailedResult')?['error'],'')),0,min(1800,length(string(coalesce(outputs('Compose_FailedResult')?['error'],'')))))
 ```
 
-**E32** — エラーコード（どこで失敗したかを分類する）
+**E32** — エラーコード（どこで失敗したかを分類する）。`if` が6段なので、末尾の閉じ括弧は**6個**
+（以前の版は7個で、フローを有効化する時点で構文エラーになっていた）
 ```
 if(startsWith(outputs('Compose_FailedAction'),'Get_case'),'E-FLOW-010',
-if(or(startsWith(outputs('Compose_FailedAction'),'Get_counter'),startsWith(outputs('Compose_FailedAction'),'Create_counter'),startsWith(outputs('Compose_FailedAction'),'Update_counter'),startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',
+if(or(startsWith(outputs('Compose_FailedAction'),'Get_existing_claim'),startsWith(outputs('Compose_FailedAction'),'Create_claim'),startsWith(outputs('Compose_FailedAction'),'Get_claims'),startsWith(outputs('Compose_FailedAction'),'Update_claim'),startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',
 if(or(startsWith(outputs('Compose_FailedAction'),'Create_signature_png'),startsWith(outputs('Compose_FailedAction'),'Get_existing_png'),startsWith(outputs('Compose_FailedAction'),'Update_case_signature')),'E-FLOW-030',
-if(or(startsWith(outputs('Compose_FailedAction'),'Populate_template'),startsWith(outputs('Compose_FailedAction'),'Create_temp_docx'),startsWith(outputs('Compose_FailedAction'),'Convert_to_pdf')),'E-FLOW-040',
+if(or(startsWith(outputs('Compose_FailedAction'),'Populate_template'),startsWith(outputs('Compose_FailedAction'),'Compose_Html'),startsWith(outputs('Compose_FailedAction'),'Create_temp_doc'),startsWith(outputs('Compose_FailedAction'),'Convert_to_pdf')),'E-FLOW-040',
 if(or(startsWith(outputs('Compose_FailedAction'),'Create_pdf'),startsWith(outputs('Compose_FailedAction'),'Update_case_pdf'),startsWith(outputs('Compose_FailedAction'),'Get_pdf_content')),'E-FLOW-050',
 if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),startsWith(outputs('Compose_FailedAction'),'Update_case_sent'),startsWith(outputs('Compose_FailedAction'),'Create_sendlog')),'E-FLOW-060',
-'E-FLOW-000')))))))
+'E-FLOW-000'))))))
 ```
 
 **E33** — 利用者向けメッセージ（内部例外や個人情報を含めない）

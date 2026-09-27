@@ -42,6 +42,81 @@ def walk_actions(actions, scope_path=""):
             yield from walk_actions(action["else"]["actions"], f"{scope_path}/{name}/else")
 
 
+def _expr_segments(value):
+    """文字列から Workflow 式の部分を取り出す。
+
+    "@expr"  → 全体が式
+    "..@{expr}.." → @{ } の中が式（'...' 内の } は無視する）
+    """
+    if value.startswith("@") and not value.startswith("@{") and not value.startswith("@@"):
+        yield value[1:]
+        return
+    i = 0
+    while True:
+        j = value.find("@{", i)
+        if j < 0:
+            return
+        k, depth, in_str = j + 2, 1, False
+        while k < len(value):
+            c = value[k]
+            if in_str:
+                if c == "'":
+                    if k + 1 < len(value) and value[k + 1] == "'":
+                        k += 2
+                        continue
+                    in_str = False
+            elif c == "'":
+                in_str = True
+            elif c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            k += 1
+        yield value[j + 2:k]
+        i = k + 1
+
+
+def _expr_balance(expr):
+    """括弧の対応を見る。'...'（'' はエスケープ）の中は数えない。"""
+    pairs = {")": "(", "]": "["}
+    stack, in_str, i = [], False, 0
+    while i < len(expr):
+        c = expr[i]
+        if in_str:
+            if c == "'":
+                if i + 1 < len(expr) and expr[i + 1] == "'":
+                    i += 2
+                    continue
+                in_str = False
+        elif c == "'":
+            in_str = True
+        elif c in "([":
+            stack.append(c)
+        elif c in ")]":
+            if not stack or stack[-1] != pairs[c]:
+                return f"対応しない '{c}'（{i}文字目付近）"
+            stack.pop()
+        i += 1
+    if in_str:
+        return "閉じていない引用符"
+    if stack:
+        return f"閉じられていない '{stack[-1]}' が {len(stack)} 個"
+    return None
+
+
+def _walk_strings(node, path=""):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from _walk_strings(v, f"{path}/{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _walk_strings(v, f"{path}[{i}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
 for wf in sorted(SRC.glob("Workflows/*.json")):
     doc = json.loads(wf.read_text(encoding="utf-8"))
     props = doc["properties"]
@@ -72,6 +147,43 @@ for wf in sorted(SRC.glob("Workflows/*.json")):
     for ref in set(re.findall(r"(?:outputs|body)\('([^']+)'\)", blob)):
         if ref not in all_names:
             problems.append(f"[{label}] 式が参照する '{ref}' というアクションが存在しない")
+
+    # --- 3b. 式の括弧の対応 ---
+    # 閉じ括弧が1つ多い式は、インポートは通るがフローをオンにする時点で
+    # 「Unable to parse template language expression」で弾かれる（実環境で確認）。
+    for where, value in _walk_strings(definition):
+        for expr in _expr_segments(value):
+            err = _expr_balance(expr)
+            if err:
+                action = where.split("/inputs")[0].split("/")[-1]
+                problems.append(f"[{label}] {action}: 式の括弧 — {err}: {expr[:80]}…")
+
+    # --- 3c. SharePoint の項目の更新・作成にはリストの必須列をすべて渡す ---
+    # 「項目の更新」も含め、コネクタは必須列（Title と Required の列）を毎回要求する。
+    # 渡さないとフローをオンにする時点で
+    # 「missing required property 'item/Title'」「'item/CustomerName'」で弾かれる（実環境で確認）。
+    list_schema = json.loads((ROOT / "data/list-schema.json").read_text(encoding="utf-8"))["Lists"]
+    for _, actions in walk_actions(definition["actions"]):
+        for name, action in actions.items():
+            inputs = action.get("inputs")
+            host = inputs.get("host") or {} if isinstance(inputs, dict) else {}
+            if host.get("connectionName") == "shared_sharepointonline" and \
+                    host.get("operationId") in ("PatchItem", "PostItem"):
+                params = inputs.get("parameters", {})
+                table = params.get("table")
+                required = ["Title"] + [c["Name"] for c in list_schema.get(table, {}).get("Columns", [])
+                                        if c.get("Required")]
+                for col in required:
+                    if f"item/{col}" not in params:
+                        problems.append(f"[{label}] {name}: {host['operationId']}（{table}）に必須列 item/{col} が無い")
+
+    # --- 3d. 同時実行制御と同期の「応答」は併用できない ---
+    # フローをオンにする時点で InvalidConcurrencyConfiguration で弾かれる（実環境で確認）。
+    has_response = any(a.get("type") == "Response"
+                       for _, acts in walk_actions(definition["actions"]) for a in acts.values())
+    for tname, trig in definition.get("triggers", {}).items():
+        if has_response and trig.get("runtimeConfiguration", {}).get("concurrency"):
+            problems.append(f"[{label}] トリガー {tname}: 同時実行制御は同期の応答アクションと併用できない")
 
     # --- 4. 接続参照 ---
     declared = {v["connection"]["connectionReferenceLogicalName"]

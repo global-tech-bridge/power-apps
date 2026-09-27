@@ -264,67 +264,94 @@ def submit_flow(cfg):
 
     doc_no = "@{variables('varDocumentNo')}"
 
-    # --- 採番（E3〜E8）-----------------------------------------------------
+    # --- 採番（要件定義 8章）---------------------------------------------
+    # 当初はトリガーの同時実行数を1にして直列化する設計だったが、
+    # Power Automate は「同時実行制御」と、アプリへ同期で結果を返す「応答」
+    # アクションを併用できない（フローをオンにする時点で
+    # InvalidConcurrencyConfiguration で弾かれる。実環境で確認）。
+    #
+    # そこで採番台帳（DocumentNumberCounter）に1件1行を追加し、
+    # 「同じ日付で自分の行ID以下の行が何件あるか」を連番にする。
+    # SharePoint の項目IDは追加順に重複なく振られるので、同時に送信されても
+    # 番号は必ず別になる。ロックも待ち合わせも要らない。
+    # 再実行時は CaseId で自分の行を探して再利用する（欠番は出ても重複は出ない）。
+    counter = lists["documentNumberCounter"]
     numbering = {
         "Compose_DateKey": compose(
             "@formatDateTime(convertTimeZone(utcNow(),'UTC','Tokyo Standard Time'),'yyyyMMdd')"
         ),
-        "Get_counter": sp(
+        "Get_existing_claim": sp(
             "GetItems",
             {
                 "dataset": site,
-                "table": lists["documentNumberCounter"],
-                "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
+                "table": counter,
+                "$filter": f"CaseId eq @{{{ITEM_ID[1:]}}}",
                 "$top": 1,
             },
             after("Compose_DateKey"),
         ),
-        "Counter_missing": if_(
-            {"equals": ["@length(outputs('Get_counter')?['body/value'])", 0]},
+        "Claim_missing": if_(
+            {"equals": ["@length(outputs('Get_existing_claim')?['body/value'])", 0]},
             {
-                "Create_counter": sp(
+                "Create_claim": sp(
                     "PostItem",
                     {
                         "dataset": site,
-                        "table": lists["documentNumberCounter"],
+                        "table": counter,
                         "item/Title": "@{outputs('Compose_DateKey')}",
+                        "item/CaseId": ITEM_ID,
                         "item/LastNumber": 0,
                     },
-                )
+                ),
+                "Set_ClaimId_new": set_var(
+                    "varClaimId", "@outputs('Create_claim')?['body/ID']", after("Create_claim")
+                ),
+                "Set_ClaimDate_new": set_var(
+                    "varClaimDate", "@{outputs('Compose_DateKey')}", after("Set_ClaimId_new")
+                ),
             },
-            run_after=after("Get_counter"),
+            {
+                "Set_ClaimId_existing": set_var(
+                    "varClaimId",
+                    "@first(outputs('Get_existing_claim')?['body/value'])?['ID']",
+                ),
+                "Set_ClaimDate_existing": set_var(
+                    "varClaimDate",
+                    "@{first(outputs('Get_existing_claim')?['body/value'])?['Title']}",
+                    after("Set_ClaimId_existing"),
+                ),
+            },
+            run_after=after("Get_existing_claim"),
         ),
-        # カウンタを必ず存在させてから読み直す。分岐ごとに次の番号を組み立てると
-        # 式が二重になり、片方を直し忘れる事故が起きるため。
-        "Get_counter_again": sp(
+        # 同じ日付で自分以前（ID が自分以下）の行数 = 自分の連番
+        "Get_claims": sp(
             "GetItems",
             {
                 "dataset": site,
-                "table": lists["documentNumberCounter"],
-                "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
-                "$top": 1,
+                "table": counter,
+                "$filter": "Title eq '@{variables('varClaimDate')}' and ID le @{variables('varClaimId')}",
+                "$top": 5000,
             },
-            after("Counter_missing"),
+            after("Claim_missing"),
         ),
-        "Compose_Next": compose(
-            "@add(int(first(outputs('Get_counter_again')?['body/value'])?['LastNumber']),1)",
-            after("Get_counter_again"),
+        "Set_Seq": set_var(
+            "varSeq", "@length(outputs('Get_claims')?['body/value'])", after("Get_claims")
         ),
-        "Update_counter": sp(
+        "Update_claim": sp(
             "PatchItem",
             {
                 "dataset": site,
-                "table": lists["documentNumberCounter"],
-                "id": "@first(outputs('Get_counter_again')?['body/value'])?['ID']",
-                "item/Title": "@{outputs('Compose_DateKey')}",
-                "item/LastNumber": "@outputs('Compose_Next')",
+                "table": counter,
+                "id": "@variables('varClaimId')",
+                "item/Title": "@{variables('varClaimDate')}",
+                "item/LastNumber": "@variables('varSeq')",
             },
-            after("Compose_Next"),
+            after("Set_Seq"),
         ),
         "Set_DocumentNo": set_var(
             "varDocumentNo",
-            "@concat(outputs('Compose_DateKey'),'-',formatNumber(outputs('Compose_Next'),'000'))",
-            after("Update_counter"),
+            "@concat(variables('varClaimDate'),'-',formatNumber(variables('varSeq'),'000'))",
+            after("Update_claim"),
         ),
     }
 
@@ -445,6 +472,8 @@ def submit_flow(cfg):
                 "dataset": site,
                 "table": cases,
                 "id": ITEM_ID,
+                "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/Status/Value": "Stored",
                 "item/PdfUrl": "@{variables('varPdfUrl')}",
             },
@@ -512,6 +541,8 @@ def submit_flow(cfg):
                 "dataset": site,
                 "table": cases,
                 "id": ITEM_ID,
+                "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/Status/Value": "Stored",
                 "item/PdfUrl": "@{variables('varPdfUrl')}",
             },
@@ -577,6 +608,8 @@ def submit_flow(cfg):
                 "dataset": site,
                 "table": cases,
                 "id": ITEM_ID,
+                "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/Status/Value": "Sent",
                 "item/SentAt": "@{utcNow()}",
                 "item/ErrorCode": "",
@@ -624,6 +657,7 @@ def submit_flow(cfg):
                 "table": cases,
                 "id": ITEM_ID,
                 "item/Title": doc_no,
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/DocumentNo": doc_no,
                 "item/Status/Value": "Signed",
                 "item/ClientRequestId": f"@{{{REQUEST_ID[1:]}}}",
@@ -643,6 +677,8 @@ def submit_flow(cfg):
                 "dataset": site,
                 "table": cases,
                 "id": ITEM_ID,
+                "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/SignatureImageUrl": "@{variables('varSignatureUrl')}",
             },
             after("Has_new_signature"),
@@ -680,9 +716,10 @@ def submit_flow(cfg):
     )
     error_code = (
         "@if(startsWith(outputs('Compose_FailedAction'),'Get_case'),'E-FLOW-010',"
-        "if(or(startsWith(outputs('Compose_FailedAction'),'Get_counter'),"
-        "startsWith(outputs('Compose_FailedAction'),'Create_counter'),"
-        "startsWith(outputs('Compose_FailedAction'),'Update_counter'),"
+        "if(or(startsWith(outputs('Compose_FailedAction'),'Get_existing_claim'),"
+        "startsWith(outputs('Compose_FailedAction'),'Create_claim'),"
+        "startsWith(outputs('Compose_FailedAction'),'Get_claims'),"
+        "startsWith(outputs('Compose_FailedAction'),'Update_claim'),"
         "startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',"
         "if(or(startsWith(outputs('Compose_FailedAction'),'Create_signature_png'),"
         "startsWith(outputs('Compose_FailedAction'),'Get_existing_png'),"
@@ -697,7 +734,7 @@ def submit_flow(cfg):
         "if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),"
         "startsWith(outputs('Compose_FailedAction'),'Update_case_sent'),"
         "startsWith(outputs('Compose_FailedAction'),'Create_sendlog')),'E-FLOW-060',"
-        "'E-FLOW-000')))))))"
+        "'E-FLOW-000'))))))"
     )
     user_message = (
         "@if(equals(outputs('Compose_ErrorCode'),'E-FLOW-020'),"
@@ -732,6 +769,8 @@ def submit_flow(cfg):
                 "dataset": site,
                 "table": cases,
                 "id": ITEM_ID,
+                "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/Status/Value": "Error",
                 "item/ErrorCode": "@{outputs('Compose_ErrorCode')}",
                 "item/ErrorMessage": "@{outputs('Compose_ErrorDetail')}",
@@ -750,7 +789,8 @@ def submit_flow(cfg):
                 "ErrorMessage": "@{outputs('Compose_UserMessage')}",
                 "RunId": "@{workflow()['run']['name']}",
             },
-            after("Update_case_error"),
+            # 記録の更新に失敗しても、アプリには必ず失敗を返す（応答が無いとアプリが待ち続ける）
+            after("Update_case_error", status=("Succeeded", "Failed", "Skipped", "TimedOut")),
         ),
     }
 
@@ -762,7 +802,6 @@ def submit_flow(cfg):
                     ("text", "RequestId", "string"),
                     ("text_1", "SignatureImage", "string"),
                 ],
-                concurrency=1,
             )
         },
         "actions": {
@@ -775,7 +814,10 @@ def submit_flow(cfg):
             "Init_varSignatureUrl": init_var(
                 "varSignatureUrl", "string", "", after("Init_varSignatureBase64")
             ),
-            "Try": scope(try_actions, after("Init_varSignatureUrl")),
+            "Init_varClaimId": init_var("varClaimId", "integer", 0, after("Init_varSignatureUrl")),
+            "Init_varClaimDate": init_var("varClaimDate", "string", "", after("Init_varClaimId")),
+            "Init_varSeq": init_var("varSeq", "integer", 0, after("Init_varClaimDate")),
+            "Try": scope(try_actions, after("Init_varSeq")),
             "Catch": scope(catch_actions, after("Try", status=FAILED)),
             "Respond_success": respond(
                 RESPONSE_SCHEMA,
@@ -865,6 +907,8 @@ def resend_flow(cfg):
                         "dataset": site,
                         "table": cases,
                         "id": ITEM_ID,
+                        "item/Title": "@{coalesce(outputs('Get_case')?['body/Title'],outputs('Get_case')?['body/DocumentNo'],'（作成中）')}",
+                        "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                         "item/SentAt": "@{utcNow()}",
                         "item/ResendCount":
                             "@add(int(coalesce(outputs('Get_case')?['body/ResendCount'],0)),1)",

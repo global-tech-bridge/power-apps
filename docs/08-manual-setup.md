@@ -10,7 +10,7 @@
 
 | 工程 | 内容 | 目安 |
 |---|---|---|
-| Part 1 | SharePoint リスト7つ（**計70列**）とライブラリ4つ | 30〜45分（方法A）／60〜90分（方法B） |
+| Part 1 | SharePoint リスト7つ（**計71列**）とライブラリ4つ | 30〜45分（方法A）／60〜90分（方法B） |
 | Part 2 | 初期データの投入（組織マスタ・確認文面・管理者・テンプレート） | 10分 |
 | Part 3 | Power Automate フロー3つ | 90〜120分 |
 | Part 4 | Power Apps の取り込み（6画面・197コントロール） | 40〜60分 |
@@ -32,7 +32,7 @@ Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 
 ## 1-2. リストと列を作る
 
-作る対象は次の7リスト・計70列。**列名・リスト名は英語のまま**にする（理由は後述）。
+作る対象は次の7リスト・計71列。**列名・リスト名は英語のまま**にする（理由は後述）。
 
 | # | リスト名 | 列数 | 用途 |
 |---:|---|---:|---|
@@ -42,7 +42,7 @@ Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 | 4 | `AppAdmins` | 4 | 管理者 |
 | 5 | `SendLog` | 8 | メール送信履歴 |
 | 6 | `AuditLog` | 7 | 監査ログ |
-| 7 | `DocumentNumberCounter` | 1 | 文書番号の採番カウンタ |
+| 7 | `DocumentNumberCounter` | 2 | 文書番号の採番台帳 |
 
 作り方は2通りある。**方法Aを推奨する。**
 
@@ -51,8 +51,8 @@ Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 ### 方法A（推奨）: Excel から取り込んで列をまとめて作る
 
 SharePoint の **＋新規 → リスト → Excel から** は、取り込んだ表のヘッダーから列を作る。
-これを使うと、70列のうち **68列がウィザードで作られ、手作業は2列だけ**になる
-（`SignatureCases.Operator` と `DocumentNumberCounter.LastNumber`）。
+これを使うと、71列のうち **68列がウィザードで作られ、手作業は3列だけ**になる
+（`SignatureCases.Operator` と `DocumentNumberCounter` の `CaseId` / `LastNumber`）。
 
 取り込み用のファイルは [`data/import/`](../data/import/) に用意してある。
 
@@ -64,7 +64,7 @@ SharePoint の **＋新規 → リスト → Excel から** は、取り込ん�
 | 4 | `AppAdmins` | [`data/import/schema/AppAdmins.xlsx`](../data/import/schema/AppAdmins.xlsx) | 4列。サンプル行1件 |
 | 5 | `SendLog` | [`data/import/schema/SendLog.xlsx`](../data/import/schema/SendLog.xlsx) | 8列。サンプル行2件 |
 | 6 | `AuditLog` | [`data/import/schema/AuditLog.xlsx`](../data/import/schema/AuditLog.xlsx) | 7列。サンプル行4件 |
-| 7 | `DocumentNumberCounter` | （なし） | 作る列が `LastNumber`（数値）1つだけなので、空白のリストから手で作る |
+| 7 | `DocumentNumberCounter` | （なし） | 作る列が `CaseId`・`LastNumber`（どちらも数値）の2つだけなので、空白のリストから手で作る。`CaseId` にはインデックスを付ける |
 
 #### 手順（1リストにつき同じ操作）
 
@@ -172,7 +172,7 @@ Power Apps 側のラベルで与えているので、SharePoint 側を日本語�
 ## 1-4. インデックスを設定する
 
 [02 SharePoint データ設計](02-sharepoint-schema.md) の表で「索引」が ○ の列。
-全部で25列ある。
+全部で26列ある。
 
 | リスト | 索引を作る列 |
 |---|---|
@@ -182,6 +182,7 @@ Power Apps 側のラベルで与えているので、SharePoint 側を日本語�
 | `AppAdmins`（1） | `UserEmail` |
 | `SendLog`（3） | `CaseId` `DocumentNo` `SentAt` |
 | `AuditLog`（4） | `CaseId` `DocumentNo` `PerformedBy` `PerformedAt` |
+| `DocumentNumberCounter`（1） | `CaseId` |
 
 1. リスト → 右上の **⚙** → **リストの設定**
 2. **インデックスされた列** → **新しいインデックスの作成**
@@ -353,9 +354,10 @@ Power Automate の「Microsoft Word テンプレートの入力」がこの名�
 
 ## 特に間違えやすい2点
 
-1. **`YAJ-CancelFee-Submit` の同時実行数を 1 にする**
-   トリガーの […] → 設定 → 同時実行制御をオン → 並列度 **1**。
-   これをしないと、同時に2人が送信したときに同じ文書番号が振られる
+1. **`YAJ-CancelFee-Submit` のトリガーに同時実行制御を設定しない**
+   同時実行制御は、アプリへ結果を返す「応答」アクションと併用できず、
+   フローを保存・有効化する時点でエラーになる。採番の重複は、採番台帳方式
+   （[flows/YAJ-CancelFee-Submit/README.md](../flows/YAJ-CancelFee-Submit/README.md) 4.3）で防いでいる
 2. **`Catch` スコープの実行条件**
    `Catch` の […] → 実行条件の構成 で「に失敗した」「がタイムアウトした」
    「がスキップされた」の3つにチェック。既定（成功時のみ）のままだと

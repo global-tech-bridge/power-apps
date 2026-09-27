@@ -75,11 +75,6 @@
                 "text_1"
               ]
             }
-          },
-          "runtimeConfiguration": {
-            "concurrency": {
-              "runs": 1
-            }
           }
         }
       },
@@ -148,6 +143,57 @@
             ]
           }
         },
+        "Init_varClaimId": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varClaimId",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varSignatureUrl": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Init_varClaimDate": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varClaimDate",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varClaimId": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Init_varSeq": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSeq",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varClaimDate": [
+              "Succeeded"
+            ]
+          }
+        },
         "Try": {
           "type": "Scope",
           "actions": {
@@ -194,7 +240,7 @@
                   "inputs": "@formatDateTime(convertTimeZone(utcNow(),'UTC','Tokyo Standard Time'),'yyyyMMdd')",
                   "runAfter": {}
                 },
-                "Get_counter": {
+                "Get_existing_claim": {
                   "type": "OpenApiConnection",
                   "inputs": {
                     "host": {
@@ -205,7 +251,7 @@
                     "parameters": {
                       "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                       "table": "DocumentNumberCounter",
-                      "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
+                      "$filter": "CaseId eq @{triggerBody()?['number']}",
                       "$top": 1
                     },
                     "authentication": "@parameters('$authentication')"
@@ -216,16 +262,16 @@
                     ]
                   }
                 },
-                "Counter_missing": {
+                "Claim_missing": {
                   "type": "If",
                   "expression": {
                     "equals": [
-                      "@length(outputs('Get_counter')?['body/value'])",
+                      "@length(outputs('Get_existing_claim')?['body/value'])",
                       0
                     ]
                   },
                   "actions": {
-                    "Create_counter": {
+                    "Create_claim": {
                       "type": "OpenApiConnection",
                       "inputs": {
                         "host": {
@@ -237,20 +283,69 @@
                           "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                           "table": "DocumentNumberCounter",
                           "item/Title": "@{outputs('Compose_DateKey')}",
+                          "item/CaseId": "@triggerBody()?['number']",
                           "item/LastNumber": 0
                         },
                         "authentication": "@parameters('$authentication')"
                       },
                       "runAfter": {}
+                    },
+                    "Set_ClaimId_new": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varClaimId",
+                        "value": "@outputs('Create_claim')?['body/ID']"
+                      },
+                      "runAfter": {
+                        "Create_claim": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Set_ClaimDate_new": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varClaimDate",
+                        "value": "@{outputs('Compose_DateKey')}"
+                      },
+                      "runAfter": {
+                        "Set_ClaimId_new": [
+                          "Succeeded"
+                        ]
+                      }
                     }
                   },
                   "runAfter": {
-                    "Get_counter": [
+                    "Get_existing_claim": [
                       "Succeeded"
                     ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_ClaimId_existing": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varClaimId",
+                          "value": "@first(outputs('Get_existing_claim')?['body/value'])?['ID']"
+                        },
+                        "runAfter": {}
+                      },
+                      "Set_ClaimDate_existing": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varClaimDate",
+                          "value": "@{first(outputs('Get_existing_claim')?['body/value'])?['Title']}"
+                        },
+                        "runAfter": {
+                          "Set_ClaimId_existing": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    }
                   }
                 },
-                "Get_counter_again": {
+                "Get_claims": {
                   "type": "OpenApiConnection",
                   "inputs": {
                     "host": {
@@ -261,27 +356,30 @@
                     "parameters": {
                       "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                       "table": "DocumentNumberCounter",
-                      "$filter": "Title eq '@{outputs('Compose_DateKey')}'",
-                      "$top": 1
+                      "$filter": "Title eq '@{variables('varClaimDate')}' and ID le @{variables('varClaimId')}",
+                      "$top": 5000
                     },
                     "authentication": "@parameters('$authentication')"
                   },
                   "runAfter": {
-                    "Counter_missing": [
+                    "Claim_missing": [
                       "Succeeded"
                     ]
                   }
                 },
-                "Compose_Next": {
-                  "type": "Compose",
-                  "inputs": "@add(int(first(outputs('Get_counter_again')?['body/value'])?['LastNumber']),1)",
+                "Set_Seq": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varSeq",
+                    "value": "@length(outputs('Get_claims')?['body/value'])"
+                  },
                   "runAfter": {
-                    "Get_counter_again": [
+                    "Get_claims": [
                       "Succeeded"
                     ]
                   }
                 },
-                "Update_counter": {
+                "Update_claim": {
                   "type": "OpenApiConnection",
                   "inputs": {
                     "host": {
@@ -292,14 +390,14 @@
                     "parameters": {
                       "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                       "table": "DocumentNumberCounter",
-                      "id": "@first(outputs('Get_counter_again')?['body/value'])?['ID']",
-                      "item/Title": "@{outputs('Compose_DateKey')}",
-                      "item/LastNumber": "@outputs('Compose_Next')"
+                      "id": "@variables('varClaimId')",
+                      "item/Title": "@{variables('varClaimDate')}",
+                      "item/LastNumber": "@variables('varSeq')"
                     },
                     "authentication": "@parameters('$authentication')"
                   },
                   "runAfter": {
-                    "Compose_Next": [
+                    "Set_Seq": [
                       "Succeeded"
                     ]
                   }
@@ -308,10 +406,10 @@
                   "type": "SetVariable",
                   "inputs": {
                     "name": "varDocumentNo",
-                    "value": "@concat(outputs('Compose_DateKey'),'-',formatNumber(outputs('Compose_Next'),'000'))"
+                    "value": "@concat(variables('varClaimDate'),'-',formatNumber(variables('varSeq'),'000'))"
                   },
                   "runAfter": {
-                    "Update_counter": [
+                    "Update_claim": [
                       "Succeeded"
                     ]
                   }
@@ -336,6 +434,7 @@
                   "table": "SignatureCases",
                   "id": "@triggerBody()?['number']",
                   "item/Title": "@{variables('varDocumentNo')}",
+                  "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                   "item/DocumentNo": "@{variables('varDocumentNo')}",
                   "item/Status/Value": "Signed",
                   "item/ClientRequestId": "@{triggerBody()?['text']}",
@@ -464,6 +563,8 @@
                   "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                   "table": "SignatureCases",
                   "id": "@triggerBody()?['number']",
+                  "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                  "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                   "item/SignatureImageUrl": "@{variables('varSignatureUrl')}"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -589,6 +690,8 @@
                       "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                       "table": "SignatureCases",
                       "id": "@triggerBody()?['number']",
+                      "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                      "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                       "item/Status/Value": "Stored",
                       "item/PdfUrl": "@{variables('varPdfUrl')}"
                     },
@@ -713,6 +816,8 @@
                         "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                         "table": "SignatureCases",
                         "id": "@triggerBody()?['number']",
+                        "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                        "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                         "item/Status/Value": "Sent",
                         "item/SentAt": "@{utcNow()}",
                         "item/ErrorCode": "",
@@ -760,7 +865,7 @@
             }
           },
           "runAfter": {
-            "Init_varSignatureUrl": [
+            "Init_varSeq": [
               "Succeeded"
             ]
           }
@@ -793,7 +898,7 @@
             },
             "Compose_ErrorCode": {
               "type": "Compose",
-              "inputs": "@if(startsWith(outputs('Compose_FailedAction'),'Get_case'),'E-FLOW-010',if(or(startsWith(outputs('Compose_FailedAction'),'Get_counter'),startsWith(outputs('Compose_FailedAction'),'Create_counter'),startsWith(outputs('Compose_FailedAction'),'Update_counter'),startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',if(or(startsWith(outputs('Compose_FailedAction'),'Create_signature_png'),startsWith(outputs('Compose_FailedAction'),'Get_existing_png'),startsWith(outputs('Compose_FailedAction'),'Update_case_signature')),'E-FLOW-030',if(or(startsWith(outputs('Compose_FailedAction'),'Populate_template'),startsWith(outputs('Compose_FailedAction'),'Compose_Html'),startsWith(outputs('Compose_FailedAction'),'Create_temp_doc'),startsWith(outputs('Compose_FailedAction'),'Convert_to_pdf')),'E-FLOW-040',if(or(startsWith(outputs('Compose_FailedAction'),'Create_pdf'),startsWith(outputs('Compose_FailedAction'),'Update_case_pdf'),startsWith(outputs('Compose_FailedAction'),'Get_pdf_content')),'E-FLOW-050',if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),startsWith(outputs('Compose_FailedAction'),'Update_case_sent'),startsWith(outputs('Compose_FailedAction'),'Create_sendlog')),'E-FLOW-060','E-FLOW-000')))))))",
+              "inputs": "@if(startsWith(outputs('Compose_FailedAction'),'Get_case'),'E-FLOW-010',if(or(startsWith(outputs('Compose_FailedAction'),'Get_existing_claim'),startsWith(outputs('Compose_FailedAction'),'Create_claim'),startsWith(outputs('Compose_FailedAction'),'Get_claims'),startsWith(outputs('Compose_FailedAction'),'Update_claim'),startsWith(outputs('Compose_FailedAction'),'Update_case_number')),'E-FLOW-020',if(or(startsWith(outputs('Compose_FailedAction'),'Create_signature_png'),startsWith(outputs('Compose_FailedAction'),'Get_existing_png'),startsWith(outputs('Compose_FailedAction'),'Update_case_signature')),'E-FLOW-030',if(or(startsWith(outputs('Compose_FailedAction'),'Populate_template'),startsWith(outputs('Compose_FailedAction'),'Compose_Html'),startsWith(outputs('Compose_FailedAction'),'Create_temp_doc'),startsWith(outputs('Compose_FailedAction'),'Convert_to_pdf')),'E-FLOW-040',if(or(startsWith(outputs('Compose_FailedAction'),'Create_pdf'),startsWith(outputs('Compose_FailedAction'),'Update_case_pdf'),startsWith(outputs('Compose_FailedAction'),'Get_pdf_content')),'E-FLOW-050',if(or(startsWith(outputs('Compose_FailedAction'),'Send_email'),startsWith(outputs('Compose_FailedAction'),'Update_case_sent'),startsWith(outputs('Compose_FailedAction'),'Create_sendlog')),'E-FLOW-060','E-FLOW-000'))))))",
               "runAfter": {
                 "Compose_ErrorDetail": [
                   "Succeeded"
@@ -821,6 +926,8 @@
                   "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                   "table": "SignatureCases",
                   "id": "@triggerBody()?['number']",
+                  "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
+                  "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                   "item/Status/Value": "Error",
                   "item/ErrorCode": "@{outputs('Compose_ErrorCode')}",
                   "item/ErrorMessage": "@{outputs('Compose_ErrorDetail')}",
@@ -891,7 +998,10 @@
               },
               "runAfter": {
                 "Update_case_error": [
-                  "Succeeded"
+                  "Succeeded",
+                  "Failed",
+                  "Skipped",
+                  "TimedOut"
                 ]
               }
             }

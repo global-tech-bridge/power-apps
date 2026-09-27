@@ -8,8 +8,9 @@
 #   1. pac の認証を確認（未認証なら pac auth create を促す）
 #   2. solution/config.json からソリューション ソースを生成
 #   3. pac solution pack で zip 化
-#   4. 接続参照のマッピング設定ファイルを生成（初回のみ）
+#   4. 接続参照の設定ファイルを生成し、対象環境の接続から接続IDを自動で埋める
 #   5. pac solution import でインポートし、変更を発行
+#   6. フローをオンにする（オンにできない場合は理由を表示して止まる）
 #
 # 前提
 #   - pac CLI                dotnet tool install -g microsoft.powerapps.cli.tool
@@ -78,10 +79,14 @@ ls -la "$ZIP" | sed 's/^/    /'
 if [ ! -f "$SETTINGS" ]; then
   info "接続参照の設定ファイルを生成します: $SETTINGS"
   pac solution create-settings --solution-zip "$ZIP" --settings-file "$SETTINGS"
-  warn "生成された $SETTINGS を開き、各接続参照に接続IDを入れてから再実行してください。"
-  warn "接続IDは Power Apps ポータル → 接続 → 対象の接続を開いたURL末尾のGUIDです。"
-  echo
-  cat "$SETTINGS" | sed 's/^/    /'
+fi
+
+# 対象環境の接続から接続IDを自動で埋める。
+# 接続が無い・複数ある場合は取り違えを防ぐため止まる。
+info "接続IDを対象環境の接続から埋めます"
+if ! python3 scripts/fill-connection-ids.py "$ENVIRONMENT" "$SETTINGS"; then
+  warn "接続が足りないか、どれを使うか決められませんでした。"
+  warn "ポータルの「接続」で作成するか、$SETTINGS の ConnectionId を手で入れてから再実行してください。"
   exit 2
 fi
 
@@ -107,17 +112,26 @@ IMPORT_ARGS=(--path "$ZIP" --settings-file "$SETTINGS"
 [ -n "$ENVIRONMENT" ] && IMPORT_ARGS+=(--environment "$ENVIRONMENT")
 pac solution import "${IMPORT_ARGS[@]}"
 
+# ---- 6. フローをオンにする -------------------------------------------------
+# --activate-plugins では再インポート時にフローがオンにならなかった（実環境で確認）。
+# オンにする時点で定義が検証されるので、インポートでは見逃される式の誤りもここで分かる。
+info "フローをオンにします"
+if command -v az >/dev/null && az account show >/dev/null 2>&1; then
+  if ! python3 scripts/activate-flows.py "$ENVIRONMENT"; then
+    die "オンにできないフローがあります。上の理由を確認してください。"
+  fi
+else
+  warn "Azure CLI にサインインしていないため、フローをオンにできません。"
+  warn "az login の後に python3 scripts/activate-flows.py $ENVIRONMENT を実行するか、"
+  warn "Power Automate の画面で3つのフローをオンにしてください。"
+  exit 3
+fi
+
 info "完了しました。"
 cat <<'EOS'
 
-    次にやること（Power Automate の画面で確認）
-      1. 3つのフローがインポートされ、オンになっていること
-      2. YAJ-CancelFee-Submit の トリガー → 設定 → 同時実行制御 が
-         オン・並列度1 になっていること（定義に含めているが必ず目視確認）
-      3. Populate_template と Convert_to_pdf の Word テンプレート指定が
-         正しいファイルを指していること
-         （solution/config.json の driveId / fileId を解決していない場合は
-           ここで選び直す。scripts/resolve-template-ids.sh も参照）
-      4. アプリ側でフローを再接続（Power Apps Studio → データ → フロー）
+    次にやること
+      1. OneDrive に中間ファイル用のフォルダ（config の oneDrive.tempFolder）があること
+      2. アプリ側でフローを追加（Power Apps Studio → データ → フロー）
 
 EOS

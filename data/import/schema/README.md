@@ -21,21 +21,21 @@
 | [`AuditLog.xlsx`](AuditLog.xlsx) | 7 | 0 | 4 | 7 項目 |
 
 このフォルダの 5 ファイルで **61 列**。
-`../OrgMaster.xlsx` の 7 列を足すと、全 **70 列**のうち **68 列**がウィザードで作られる。
+`../OrgMaster.xlsx` の 7 列を足すと、全 **71 列**のうち **68 列**がウィザードで作られる。
 
-手作業で作るのは残る **2 列**だけ。
+手作業で作るのは残る **3 列**だけ。
 
 | 手作業で作る列 | 種類 | 理由 |
 |---|---|---|
 | `SignatureCases.Operator` | ユーザーまたはグループ | ウィザードがユーザー列を作れない |
-| `DocumentNumberCounter.LastNumber` | 数値 | 1列だけなので取り込む意味がない |
+| `DocumentNumberCounter.CaseId` / `LastNumber` | 数値 | 2列だけなので取り込む意味がない |
 
 ### ここに無いリスト
 
 | リスト | 理由 |
 |---|---|
 | `OrgMaster` | 実データ入りの `../OrgMaster.xlsx` が列と105件をまとめて作るため |
-| `DocumentNumberCounter` | 作る列が `LastNumber` の1つだけで、手で作るほうが速いため |
+| `DocumentNumberCounter` | 作る列が `CaseId` と `LastNumber` の2つだけで、手で作るほうが速いため |
 
 
 ## SignatureCases

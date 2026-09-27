@@ -148,6 +148,8 @@
                       "dataset": "https://CONTOSO.sharepoint.com/sites/yaj-cancelfee",
                       "table": "SignatureCases",
                       "id": "@triggerBody()?['number']",
+                      "item/Title": "@{coalesce(outputs('Get_case')?['body/Title'],outputs('Get_case')?['body/DocumentNo'],'（作成中）')}",
+                      "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                       "item/SentAt": "@{utcNow()}",
                       "item/ResendCount": "@add(int(coalesce(outputs('Get_case')?['body/ResendCount'],0)),1)"
                     },

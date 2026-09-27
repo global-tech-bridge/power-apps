@@ -39,7 +39,7 @@ DST.mkdir(parents=True, exist_ok=True)
 # ここでは作らないリストと、その理由
 EXCLUDE = {
     "OrgMaster": "実データ入りの `../OrgMaster.xlsx` が列と105件をまとめて作るため",
-    "DocumentNumberCounter": "作る列が `LastNumber` の1つだけで、手で作るほうが速いため",
+    "DocumentNumberCounter": "作る列が `CaseId` と `LastNumber` の2つだけで、手で作るほうが速いため",
 }
 
 # 取り込み後に削除するサンプル行の目印
@@ -204,7 +204,7 @@ summary += ["", f"このフォルダの {len(summary_rows)} ファイルで **{t
             "", f"手作業で作るのは残る **{by_hand} 列**だけ。", "",
             "| 手作業で作る列 | 種類 | 理由 |", "|---|---|---|",
             "| `SignatureCases.Operator` | ユーザーまたはグループ | ウィザードがユーザー列を作れない |",
-            "| `DocumentNumberCounter.LastNumber` | 数値 | 1列だけなので取り込む意味がない |",
+            "| `DocumentNumberCounter.CaseId` / `LastNumber` | 数値 | 2列だけなので取り込む意味がない |",
             "",
             "### ここに無いリスト", "", "| リスト | 理由 |", "|---|---|"]
 for name, reason in EXCLUDE.items():
@@ -219,4 +219,4 @@ for name, ncols, nskip, nrows, nfix in summary_rows:
     print(f"  {name:<24} 列 {ncols:>2}  手作業 {nskip}  サンプル {nrows}行  手当て {nfix}項目")
 print(f"\nこのフォルダで {total_cols} 列 / ../OrgMaster.xlsx で {excluded_wizard} 列 "
       f"= 全 {grand_total} 列のうち {by_wizard} 列をウィザードで作成")
-print(f"手作業で作るのは {by_hand} 列（SignatureCases.Operator, DocumentNumberCounter.LastNumber）")
+print(f"手作業で作るのは {by_hand} 列（SignatureCases.Operator, DocumentNumberCounter.CaseId / LastNumber）")

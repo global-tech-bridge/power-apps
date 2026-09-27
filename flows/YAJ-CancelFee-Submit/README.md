@@ -18,13 +18,19 @@
 | 必要なライセンス | Power Apps Premium または Power Automate Premium（[理由](../../docs/01-deployment.md)） |
 | 所有者 | 個人ではなくサービスアカウント（要件定義 15.5） |
 
-### ⚠ 同時実行数を必ず 1 にする
+### ⚠ 同時実行制御は設定しない
 
-トリガーの […] → **設定** → **同時実行制御** を **オン**、**次の数の並列度** を **1** にする。
+**トリガーの同時実行制御はオフのまま**にする（既定値）。
 
-文書番号の採番はカウンタリストの読み取り→加算→書き戻しで行うため、並列実行されると
-同じ番号を2件に振ってしまう。並列度1に固定することで採番処理が直列化され、
-要件定義 8章「同時登録時にも重複しない採番方式」を満たす。
+当初は「並列度を1にして採番を直列化する」設計だったが、Power Automate は
+**同時実行制御と、アプリへ同期で結果を返す「応答」アクションを併用できない**。
+オンにすると、フローを保存・有効化する時点で次のエラーになる（2026-09-27 実環境で確認）。
+
+> The concurrency control is not supported when the workflow contains actions of type
+> 'response' without the operationOptions flag set to 'asynchronous'.
+
+アプリは送信結果（成功・文書番号・エラー内容）を待つ必要があるので「応答」は外せない。
+そのため採番は**同時実行制御に頼らない方式**にしている（4.3）。
 
 ## 1. トリガー入力
 
@@ -62,6 +68,9 @@ Power Apps (V2) トリガーに、この順番で入力を追加する（順番�
 | 変数を初期化する | `varPdfUrl` | 文字列 | （空） |
 | 変数を初期化する | `varSignatureBase64` | 文字列 | （空） |
 | 変数を初期化する | `varSignatureUrl` | 文字列 | （空） |
+| 変数を初期化する | `varClaimId` | 整数 | `0` |
+| 変数を初期化する | `varClaimDate` | 文字列 | （空） |
+| 変数を初期化する | `varSeq` | 整数 | `0` |
 
 ## 4. スコープ「Try」
 
@@ -75,23 +84,49 @@ Power Apps (V2) トリガーに、この順番で入力を追加する（順番�
 ### 4.3 条件 `Need_number` — `E2`
 文書番号がまだ無いときだけ採番する。**これが再実行時の二重採番を防ぐ要点。**
 
-**「はい」の分岐:**
+#### 採番の仕組み（採番台帳方式）
+
+送信1件につき、採番台帳 `DocumentNumberCounter` に1行を追加する。
+**SharePoint の項目IDは追加した順に重複なく振られる**ので、
+「同じ日付で、自分の行ID以下の行が何件あるか」を数えれば、それが自分の連番になる。
+
+```
+  A さんが送信 → 台帳に行を追加（ID 41, 日付 20260927）→ 20260927 で ID≤41 は 3件 → 20260927-003
+  B さんが同時に送信 → 台帳に行を追加（ID 42, 日付 20260927）→ 20260927 で ID≤42 は 4件 → 20260927-004
+```
+
+2件が同時に来ても行IDが必ず違うので、番号は必ず別になる。**ロックも待ち合わせも要らない。**
+再実行時は、案件ID（`CaseId`）で自分の行を探して再利用するので、番号は変わらない。
+削除した案件の行も台帳には残すので、番号が再利用されることは無い（欠番は出るが重複は出ない）。
+
+#### 手順（「はい」の分岐）
 
 1. `Compose_DateKey` — 作成: `E3`（JSTの yyyyMMdd）
-2. `Get_counter` — SharePoint「複数の項目の取得」
+2. `Get_existing_claim` — SharePoint「複数の項目の取得」
    - リスト: `DocumentNumberCounter` / フィルター クエリ: `E4` / 上位の数: `1`
-3. 条件 `Counter_missing` — `E5`
-   - 「はい」: `Create_counter` — SharePoint「項目の作成」
-     `Title` = `Compose_DateKey` の出力 / `LastNumber` = `0`
-   - 「いいえ」: 何もしない
-4. `Get_counter_again` — SharePoint「複数の項目の取得」（2 と同じ条件）
-5. `Compose_Next` — 作成: `E6`（現在値 + 1）
-6. `Update_counter` — SharePoint「項目の更新」
-   - ID: `E7` / `Title` = `Compose_DateKey` の出力 / `LastNumber` = `Compose_Next` の出力
-7. `Set_DocumentNo` — 変数の設定: `varDocumentNo` ← `E8`（`20260909-001` 形式）
+   - 再実行時に、この案件の台帳の行が既にあるかを見る
+3. 条件 `Claim_missing` — `E5`
+   - 「はい」（初回）:
+     1. `Create_claim` — SharePoint「項目の作成」
+        `Title` = `Compose_DateKey` の出力 / `CaseId` = トリガーの `ItemID` / `LastNumber` = `0`
+     2. `Set_ClaimId_new` — 変数の設定: `varClaimId` ← `E6a`
+     3. `Set_ClaimDate_new` — 変数の設定: `varClaimDate` ← `Compose_DateKey` の出力
+   - 「いいえ」（再実行）:
+     1. `Set_ClaimId_existing` — 変数の設定: `varClaimId` ← `E6b`
+     2. `Set_ClaimDate_existing` — 変数の設定: `varClaimDate` ← `E6c`
+4. `Get_claims` — SharePoint「複数の項目の取得」
+   - リスト: `DocumentNumberCounter` / フィルター クエリ: `E7` / 上位の数: `5000`
+   - 同じ日付で自分以前の行をすべて取る
+5. `Set_Seq` — 変数の設定: `varSeq` ← `E7b`（取れた件数 = 自分の連番）
+6. `Update_claim` — SharePoint「項目の更新」
+   - ID: `varClaimId` / `Title` = `varClaimDate` / `LastNumber` = `varSeq`（監査用に記録）
+7. `Set_DocumentNo` — 変数の設定: `varDocumentNo` ← `E8`（`20260927-001` 形式）
 
-> 手順3〜4でカウンタを「必ず存在させてから読み直す」構成にしているのは、
-> 分岐ごとに次の番号を組み立てると式が二重になり、片方を直し忘れる事故が起きるため。
+> **SharePoint「項目の更新」の注意**
+> 「項目の更新」は、**リストの必須列（`Title` と `CustomerName`）を毎回渡さないと保存できない**
+> （フローを有効化する時点で `missing required property 'item/Title'` などで弾かれる。
+> 2026-09-27 実環境で確認）。以降の `SignatureCases` の更新ではすべて、
+> `Title` に文書番号（`E1b`）、`CustomerName` に `Get_case` の `CustomerName` を入れる。
 
 ### 4.4 `Update_case_number` — SharePoint「項目の更新」
 - ID: トリガーの `ItemID`
