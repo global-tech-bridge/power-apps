@@ -59,8 +59,14 @@ App:
       );
 
       // ---- 組織の初期値 ---------------------------------------------------
-      // 「その利用者が最後に登録したレコードの支社・ブロック・拠点を初期値にする」
-      // （要件定義 11.2）。異動時は選択し直せば、次回からは新しい値が初期値になる。
+      // フィードバック 2026-09-17: 初回は空白でよい。一度選んだ支社・ブロック・拠点は
+      // 次回起動時に初期表示する。
+      //   1. この端末で前回選んだ値（SaveData で保存したもの）
+      //   2. 無ければ、その利用者が最後に登録したレコードの値（要件定義 11.2）
+      //   3. どちらも無ければ空白
+      // LoadData は Studio では使えないため IfError で無視する（公開後は動く）。
+      Clear(colOrgPref);
+      IfError(LoadData(colOrgPref, "YajOrgPref", true), false);
       Set(varLastCase,
           First(
               Sort(
@@ -70,9 +76,9 @@ App:
               )
           )
       );
-      Set(varDefaultBranch, varLastCase.BranchName);
-      Set(varDefaultBlock, varLastCase.BlockName);
-      Set(varDefaultSite, varLastCase.SiteName);
+      Set(varDefaultBranch, Coalesce(First(colOrgPref).BranchName, varLastCase.BranchName));
+      Set(varDefaultBlock, Coalesce(First(colOrgPref).BlockName, varLastCase.BlockName));
+      Set(varDefaultSite, Coalesce(First(colOrgPref).SiteName, varLastCase.SiteName));
 
       // ---- 編集中レコードの初期化 -----------------------------------------
       // varRecordId = 0 は新規。Defaults() で型付きの空レコードを用意する。

@@ -89,7 +89,9 @@ Screens:
           Control: Label
           Properties:
             Text: |-
-              ="送信先：" & varCompleted.CustomerEmail & " ／ " & varCompleted.OperatorEmail
+              ="送信先：" & If(IsBlank(varCompleted.CustomerEmail),
+                  varCompleted.OperatorEmail & "（顧客メールアドレス未登録）",
+                  varCompleted.CustomerEmail & " ／ " & varCompleted.OperatorEmail)
             X: =112
             Y: =584
             Width: =544
@@ -99,7 +101,10 @@ Screens:
       - lblPdfNote:
           Control: Label
           Properties:
-            Text: ="お客様の控えはメールに添付したPDFをご確認ください。"
+            Text: |-
+              =If(IsBlank(varCompleted.CustomerEmail),
+                  "お客様のメールアドレスが未登録のため、担当者宛にのみ送付しました。控えは印刷してお渡しください。",
+                  "お客様の控えはメールに添付したPDFをご確認ください。")
             X: =112
             Y: =624
             Width: =544

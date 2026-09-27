@@ -228,12 +228,14 @@
       );
 
       // ---- 組織の初期値 ---------------------------------------------------
-      Set(varLastCase,
-          First(Sort(Filter(colCases, OperatorEmail = varUserEmail), ID, SortOrder.Descending))
-      );
-      Set(varDefaultBranch, varLastCase.BranchName);
-      Set(varDefaultBlock, varLastCase.BlockName);
-      Set(varDefaultSite, varLastCase.SiteName);
+      // フィードバック 2026-09-17: 初回は空白でよい。一度選んだ値は次回起動時に初期表示。
+      // サンプル案件から推測はしない（初回から埋まっていると紛らわしいため）。
+      // LoadData は Studio では使えないため IfError で無視する（公開後は動く）。
+      Clear(colOrgPref);
+      IfError(LoadData(colOrgPref, "YajOrgPref", true), false);
+      Set(varDefaultBranch, First(colOrgPref).BranchName);
+      Set(varDefaultBlock, First(colOrgPref).BlockName);
+      Set(varDefaultSite, First(colOrgPref).SiteName);
 
       // ---- 編集中レコード -------------------------------------------------
       Set(varRecordId, 0);

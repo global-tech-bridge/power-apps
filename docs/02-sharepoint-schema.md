@@ -35,7 +35,7 @@ PnP.PowerShell が使えない環境では、下の表のとおりに画面で�
 | `Title` | 1行テキスト | ○ | — | 既定である列。作成不要 | SharePoint の既定必須列 |
 | `DocumentNo` | 1行テキスト | — | ○ | — | 文書番号 YYYYMMDD-NNN。採番はフローが行う |
 | `CustomerName` | 1行テキスト | ○ | ○ | — | 顧客名 |
-| `CustomerEmail` | 1行テキスト | — | — | — | 署名済みPDFの送付先 |
+| `CustomerEmail` | 1行テキスト | — | — | — | 署名済みPDFの送付先（任意。未登録なら担当者にのみ送付） |
 | `CustomerPhone` | 1行テキスト | — | — | — | 顧客電話番号（任意） |
 | `Model` | 1行テキスト | — | — | — | 型式 |
 | `SerialNo` | 1行テキスト | — | — | — | 機番 |

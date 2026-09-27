@@ -271,14 +271,19 @@
     Properties:
       Text: |-
         ="顧客名：" & varEdit.CustomerName & Char(10)
-        & "PDF送付先：" & varEdit.CustomerEmail & Char(10)
+        & "PDF送付先：" & If(IsBlank(varEdit.CustomerEmail),
+            "（顧客メールアドレス未登録のため、担当者にのみ送付）",
+            varEdit.CustomerEmail) & Char(10)
         & "型式・機番：" & varEdit.Model
             & If(varEdit.NoSerialNo, "（機番なし）", " / " & varEdit.SerialNo) & Char(10)
         & "整備区分：" & varEdit.MaintenanceType.Value & Char(10)
         & "組織：" & varEdit.BranchName & " › " & varEdit.BlockName & " › " & varEdit.SiteName & Char(10)
         & "確認文面：版 " & varConsent.Version & Char(10) & Char(10)
-        & "送信すると文書番号が採番され、署名済みPDFが上記の顧客メールアドレスと"
-        & varUserEmail & " に送信されます。送信後の内容は変更できません。"
+        & "送信すると文書番号が採番され、署名済みPDFが "
+        & If(IsBlank(varEdit.CustomerEmail),
+            varUserEmail & " に送信されます。",
+            "上記の顧客メールアドレスと " & varUserEmail & " に送信されます。")
+        & "送信後の内容は変更できません。"
       Visible: =varShowConfirm
       X: =112
       Y: =342

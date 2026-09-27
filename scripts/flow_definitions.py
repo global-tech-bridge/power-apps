@@ -549,9 +549,14 @@ def submit_flow(cfg):
         "担当者までご連絡ください。</p>"
         f"<p>{cfg['mail']['companyName']}</p>"
     )
+    # 顧客メールアドレスは任意（フィードバック 2026-09-17）。
+    # 空のまま連結すると宛先が「;担当者」になり送信が失敗するため、
+    # 顧客が未登録なら担当者だけに送る。
     recipients = (
-        "@{outputs('Get_case')?['body/CustomerEmail']};"
-        "@{outputs('Get_case')?['body/OperatorEmail']}"
+        "@{if(empty(coalesce(outputs('Get_case')?['body/CustomerEmail'],'')),"
+        "outputs('Get_case')?['body/OperatorEmail'],"
+        "concat(outputs('Get_case')?['body/CustomerEmail'],';',"
+        "outputs('Get_case')?['body/OperatorEmail']))}"
     )
     send = {
         "Send_email": mail(

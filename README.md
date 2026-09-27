@@ -101,7 +101,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | [03 Power Automate 設計](docs/03-power-automate.md) | 3フローの役割、冪等性、エラーコード一覧、PDF生成経路、採番方式 |
 | [04 権限設計](docs/04-permissions.md) | SharePoint のアクセス権、アプリ内の権限判定、管理者の付与 |
 | [05 運用・障害対応](docs/05-operations.md) | 確認文面の改訂、組織の変更、障害切り分け、定期点検 |
-| [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した69件のテストケース |
+| [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した80件のテストケース |
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
 | [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
 | [10 CLIデプロイ](docs/10-cli-deployment.md) | **pac CLI でフロー3つをまとめてインポートする**。画面で1アクションずつ作る代わり |

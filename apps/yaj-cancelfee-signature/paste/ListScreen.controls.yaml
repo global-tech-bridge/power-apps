@@ -48,7 +48,7 @@
       X: =16
       Y: =84
       Width: =736
-      Height: =226
+      Height: =238
       Fill: =RGBA(255, 255, 255, 1)
 - txtKeyword:
     Control: Classic/TextInput
@@ -145,16 +145,48 @@
       Height: =40
       Size: =11
 
-- lblFilterStatus:
+# ---- ステータス／日付範囲（フィードバック 2026-09-17: 選択中の位置を分かりやすく）----
+# 見出しを項目ごとに分け、日付が選ばれている欄は塗りと枠で強調する。
+# クラシックの日付の選択コントロールは、ポップアップ カレンダー内の
+# 選択日の色や表示位置を変えるプロパティを持たない（公式リファレンスで確認）。
+- lblCapFilterStatus:
     Control: Label
     Properties:
-      Text: ="ステータス／作成日（開始）／作成日（終了）"
+      Text: ="ステータス"
       X: =32
-      Y: =214
-      Width: =470
+      Y: =220
+      Width: =228
       Height: =18
       Size: =9
       Color: =RGBA(96, 94, 92, 1)
+- lblCapFilterFrom:
+    Control: Label
+    Properties:
+      Text: |-
+        ="作成日（開始）" & If(IsBlank(dpFrom.SelectedDate), "", "　● 選択中")
+      X: =272
+      Y: =220
+      Width: =228
+      Height: =18
+      Size: =9
+      Color: |-
+        =If(IsBlank(dpFrom.SelectedDate), RGBA(96, 94, 92, 1), RGBA(0, 90, 158, 1))
+      FontWeight: |-
+        =If(IsBlank(dpFrom.SelectedDate), FontWeight.Normal, FontWeight.Semibold)
+- lblCapFilterTo:
+    Control: Label
+    Properties:
+      Text: |-
+        ="作成日（終了）" & If(IsBlank(dpTo.SelectedDate), "", "　● 選択中")
+      X: =512
+      Y: =220
+      Width: =224
+      Height: =18
+      Size: =9
+      Color: |-
+        =If(IsBlank(dpTo.SelectedDate), RGBA(96, 94, 92, 1), RGBA(0, 90, 158, 1))
+      FontWeight: |-
+        =If(IsBlank(dpTo.SelectedDate), FontWeight.Normal, FontWeight.Semibold)
 - ddFilterStatus:
     Control: Classic/DropDown
     Properties:
@@ -166,29 +198,55 @@
             LookUp(colStatus, Label = ddFilterStatus.Selected.Value, Code)
         )
       X: =32
-      Y: =234
+      Y: =240
       Width: =228
-      Height: =40
+      Height: =42
       Size: =11
 - dpFrom:
     Control: Classic/DatePicker
     Properties:
       DefaultDate: =Blank()
       Format: =DateTimeFormat.ShortDate
+      InputTextPlaceholder: ="日付を選択"
+      Fill: |-
+        =If(IsBlank(dpFrom.SelectedDate), RGBA(255, 255, 255, 1), RGBA(222, 235, 247, 1))
+      BorderColor: |-
+        =If(IsBlank(dpFrom.SelectedDate), RGBA(138, 136, 134, 1), RGBA(0, 120, 212, 1))
+      BorderThickness: |-
+        =If(IsBlank(dpFrom.SelectedDate), 1, 2)
+      FontWeight: |-
+        =If(IsBlank(dpFrom.SelectedDate), FontWeight.Normal, FontWeight.Semibold)
+      FocusedBorderColor: =RGBA(0, 90, 158, 1)
+      FocusedBorderThickness: =3
+      IconFill: =RGBA(255, 255, 255, 1)
+      IconBackground: =RGBA(0, 120, 212, 1)
       X: =272
-      Y: =234
+      Y: =240
       Width: =228
-      Height: =40
+      Height: =42
       Size: =11
 - dpTo:
     Control: Classic/DatePicker
     Properties:
       DefaultDate: =Blank()
       Format: =DateTimeFormat.ShortDate
+      InputTextPlaceholder: ="日付を選択"
+      Fill: |-
+        =If(IsBlank(dpTo.SelectedDate), RGBA(255, 255, 255, 1), RGBA(222, 235, 247, 1))
+      BorderColor: |-
+        =If(IsBlank(dpTo.SelectedDate), RGBA(138, 136, 134, 1), RGBA(0, 120, 212, 1))
+      BorderThickness: |-
+        =If(IsBlank(dpTo.SelectedDate), 1, 2)
+      FontWeight: |-
+        =If(IsBlank(dpTo.SelectedDate), FontWeight.Normal, FontWeight.Semibold)
+      FocusedBorderColor: =RGBA(0, 90, 158, 1)
+      FocusedBorderThickness: =3
+      IconFill: =RGBA(255, 255, 255, 1)
+      IconBackground: =RGBA(0, 120, 212, 1)
       X: =512
-      Y: =234
+      Y: =240
       Width: =224
-      Height: =40
+      Height: =42
       Size: =11
 
 - chkMineOnly:
@@ -197,7 +255,7 @@
       Text: ="自分の登録分のみ"
       Default: =false
       X: =32
-      Y: =280
+      Y: =292
       Width: =260
       Height: =24
       Size: =11
@@ -219,7 +277,7 @@
         Reset(ddFilterBlock);
         Reset(ddFilterSite)
       X: =504
-      Y: =276
+      Y: =288
       Width: =232
       Height: =32
       Size: =10
@@ -235,7 +293,7 @@
       Text: |-
         ="表示 " & CountRows(galCases.AllItems) & " 件"
       X: =16
-      Y: =316
+      Y: =328
       Width: =736
       Height: =22
       Size: =10
@@ -288,7 +346,7 @@
       TemplatePadding: =0
       ShowScrollbar: =true
       X: =16
-      Y: =342
+      Y: =354
       Width: =736
       Height: =Parent.Height - Self.Y - 16
     Children:

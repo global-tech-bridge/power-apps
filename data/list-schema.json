@@ -7,7 +7,7 @@
       "Columns": [
         {"Name": "DocumentNo",          "Type": "Text",     "Indexed": true,  "Note": "文書番号 YYYYMMDD-NNN。採番はフローが行う"},
         {"Name": "CustomerName",        "Type": "Text",     "Required": true, "Indexed": true, "Note": "顧客名"},
-        {"Name": "CustomerEmail",       "Type": "Text",     "Note": "署名済みPDFの送付先"},
+        {"Name": "CustomerEmail",       "Type": "Text",     "Note": "署名済みPDFの送付先（任意。未登録なら担当者にのみ送付）"},
         {"Name": "CustomerPhone",       "Type": "Text",     "Note": "顧客電話番号（任意）"},
         {"Name": "Model",               "Type": "Text",     "Note": "型式"},
         {"Name": "SerialNo",            "Type": "Text",     "Note": "機番"},

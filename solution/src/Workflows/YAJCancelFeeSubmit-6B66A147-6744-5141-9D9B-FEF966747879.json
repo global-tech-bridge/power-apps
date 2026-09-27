@@ -686,7 +686,7 @@
                         "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
                       },
                       "parameters": {
-                        "emailMessage/To": "@{outputs('Get_case')?['body/CustomerEmail']};@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "emailMessage/To": "@{if(empty(coalesce(outputs('Get_case')?['body/CustomerEmail'],'')),outputs('Get_case')?['body/OperatorEmail'],concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body/OperatorEmail']))}",
                         "emailMessage/Subject": "【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書（文書番号 @{variables('varDocumentNo')}）",
                         "emailMessage/Body": "<p>@{outputs('Get_case')?['body/CustomerName']} 様</p><p>いつもお世話になっております。ヤンマーアグリジャパン @{outputs('Get_case')?['body/SiteName']} です。<br>このたびは、分解・診断を伴う整備お見積り後のキャンセル料についてご確認・ご署名をいただき、ありがとうございました。</p><p>ご署名いただいた確認書をPDFで添付いたします。内容をご確認のうえ、控えとして保管をお願いいたします。</p><table><tr><td>文書番号</td><td>@{variables('varDocumentNo')}</td></tr><tr><td>署名日時</td><td>@{formatDateTime(convertTimeZone(outputs('Get_case')?['body/SignedAt'],'UTC','Tokyo Standard Time'),'yyyy年MM月dd日 HH:mm')}</td></tr><tr><td>型式・機番</td><td>@{outputs('Get_case')?['body/Model']} / @{if(equals(outputs('Get_case')?['body/NoSerialNo'],true),'機番なし',coalesce(outputs('Get_case')?['body/SerialNo'],''))}</td></tr><tr><td>整備区分</td><td>@{outputs('Get_case')?['body/MaintenanceType/Value']}</td></tr><tr><td>担当者</td><td>@{outputs('Get_case')?['body/OperatorName']}</td></tr></table><p>本メールの内容にお心当たりがない場合、またご不明な点がある場合は、担当者までご連絡ください。</p><p>ヤンマーアグリジャパン株式会社</p>",
                         "emailMessage/Attachments": [
@@ -741,7 +741,7 @@
                         "item/Title": "@{variables('varDocumentNo')}",
                         "item/CaseId": "@triggerBody()?['number']",
                         "item/DocumentNo": "@{variables('varDocumentNo')}",
-                        "item/SentTo": "@{outputs('Get_case')?['body/CustomerEmail']};@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "item/SentTo": "@{if(empty(coalesce(outputs('Get_case')?['body/CustomerEmail'],'')),outputs('Get_case')?['body/OperatorEmail'],concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body/OperatorEmail']))}",
                         "item/SentBy": "@{outputs('Get_case')?['body/OperatorEmail']}",
                         "item/SentAt": "@{utcNow()}",
                         "item/Kind/Value": "Initial",

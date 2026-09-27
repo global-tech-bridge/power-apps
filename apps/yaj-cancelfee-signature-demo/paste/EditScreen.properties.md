@@ -24,5 +24,8 @@ Reset(ddBranch);
 Reset(ddBlock);
 Reset(ddSite);
 Set(varSaveError, "");
-Set(varSaveErrorDetail, "")
+Set(varSaveErrorDetail, "");
+Set(varShowDraftDelete, false);
+Set(varBusy, false);
+Reset(txtDraftDeleteReason)
 ```

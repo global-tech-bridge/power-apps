@@ -285,7 +285,8 @@
 - lblValC2:
     Control: Label
     Properties:
-      Text: =varSelected.CustomerEmail
+      Text: |-
+        =Coalesce(varSelected.CustomerEmail, "（未登録）")
       X: =212
       Y: =276
       Width: =172
@@ -529,7 +530,9 @@
             DisplayMode.Disabled,
             DisplayMode.Edit
         )
-      OnSelect: =Set(varShowResend, true)
+      OnSelect: |-
+        =Reset(txtResendTo);
+        Set(varShowResend, true)
       X: =272
       Y: =828
       Width: =200
@@ -567,7 +570,7 @@
     Properties:
       Text: |-
         =If(varIsAdmin,
-            "署名完了後の内容は編集できません。誤登録の削除は理由の記録が必要です。",
+            "署名完了後の内容は編集できません。管理者は状態に関係なく削除できます（理由の記録が必要）。",
             "署名完了後の内容は編集・削除できません。誤登録の場合は管理者に連絡してください。"
         )
       X: =16
@@ -651,22 +654,27 @@
       Size: =12
 
 # --- PDF再送の確認 ---
+# フィードバック 2026-09-17 で配置・挙動の誤りを指摘されたため作り直した。
+#   * 本文が長く宛先欄に重なっていた → 枠を広げ、本文を短くした
+#   * 「空欄なら登録済みアドレスへ送る」と書いてあるのに空欄だと送れなかった
+#     → 登録済みアドレスを初期表示し、空欄は「入力してください」とはっきり出す
+#   * 一度書き換えてキャンセルすると次回も残っていた → 開くたびに初期化
 - recResend:
     Control: Rectangle
     Properties:
       Visible: =varShowResend
       X: =84
-      Y: =300
+      Y: =250
       Width: =600
-      Height: =330
+      Height: =440
       Fill: =RGBA(255, 255, 255, 1)
 - lblResendTitle:
     Control: Label
     Properties:
-      Text: ="署名済みPDFを再送します"
+      Text: ="確認書PDFを再送します"
       Visible: =varShowResend
       X: =112
-      Y: =324
+      Y: =274
       Width: =544
       Height: =32
       Size: =16
@@ -675,37 +683,63 @@
     Control: Label
     Properties:
       Text: |-
-        ="文書番号 " & varSelected.DocumentNo & " の保存済みPDFを再送します。"
-        & "PDFは作り直さず、SharePointに保存済みのファイルをそのまま添付します。" & Char(10) & Char(10)
-        & "宛先を変更する場合は下の欄を書き換えてください（空欄のままなら登録済みのアドレスへ送ります）。"
+        ="文書番号 " & varSelected.DocumentNo & "（" & varSelected.CustomerName & " 様）" & Char(10)
+        & "保存済みのPDFをそのまま添付して送ります。PDFは作り直しません。"
       Visible: =varShowResend
       X: =112
-      Y: =360
+      Y: =314
       Width: =544
-      Height: =104
+      Height: =64
       Size: =11
+      Color: =RGBA(50, 49, 48, 1)
+- lblCapResendTo:
+    Control: Label
+    Properties:
+      Text: ="送信先メールアドレス"
+      Visible: =varShowResend
+      X: =112
+      Y: =392
+      Width: =544
+      Height: =20
+      Size: =10
+      FontWeight: =FontWeight.Semibold
 - txtResendTo:
     Control: Classic/TextInput
     Properties:
       Default: =varSelected.CustomerEmail
-      HintText: ="送信先メールアドレス"
+      HintText: ="例：taro@example.com"
       Visible: =varShowResend
       X: =112
-      Y: =470
+      Y: =414
       Width: =544
-      Height: =42
+      Height: =44
       Size: =12
+- lblResendHint:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(IsBlank(varSelected.CustomerEmail),
+            "顧客メールアドレスが登録されていません。送信先を入力してください。",
+            "登録済みの顧客メールアドレスを表示しています。別の宛先に送る場合は書き換えてください。")
+      Visible: =varShowResend
+      X: =112
+      Y: =462
+      Width: =544
+      Height: =40
+      Size: =9
+      Color: =RGBA(96, 94, 92, 1)
 - lblResendValidation:
     Control: Label
     Properties:
       Text: |-
-        =If(!IsMatch(Trim(txtResendTo.Text), Match.Email),
-            "※ メールアドレスの形式が正しくありません。",
+        =If(
+            IsBlank(Trim(txtResendTo.Text)), "※ 送信先メールアドレスを入力してください。",
+            !IsMatch(Trim(txtResendTo.Text), Match.Email), "※ メールアドレスの形式が正しくありません。",
             ""
         )
       Visible: =varShowResend
       X: =112
-      Y: =516
+      Y: =506
       Width: =544
       Height: =24
       Size: =10
@@ -715,9 +749,11 @@
     Properties:
       Text: ="キャンセル"
       Visible: =varShowResend
-      OnSelect: =Set(varShowResend, false)
+      OnSelect: |-
+        =Reset(txtResendTo);
+        Set(varShowResend, false)
       X: =112
-      Y: =548
+      Y: =614
       Width: =200
       Height: =52
       Size: =12
@@ -755,7 +791,7 @@
             )
         )
       X: =336
-      Y: =548
+      Y: =614
       Width: =320
       Height: =52
       Size: =13

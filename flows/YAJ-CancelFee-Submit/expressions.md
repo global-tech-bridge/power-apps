@@ -153,10 +153,11 @@ concat('/SignatureDocs/',variables('varDocumentNo'),'.pdf')
 not(equals(outputs('Get_case')?['body/Status/Value'],'Sent'))
 ```
 
-**E26** — 宛先（顧客＋ログイン社員）
+**E26** — 宛先（顧客＋ログイン社員）。顧客メールアドレスは任意なので、未登録なら担当者だけに送る
 ```
-concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body/OperatorEmail'])
+if(empty(coalesce(outputs('Get_case')?['body/CustomerEmail'],'')),outputs('Get_case')?['body/OperatorEmail'],concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body/OperatorEmail']))
 ```
+空のまま `concat` すると宛先が `;担当者` になり、Outlook コネクタが送信に失敗する。
 
 **E27** — 件名
 ```

@@ -91,7 +91,7 @@
 - lblCapCustomerEmail:
     Control: Label
     Properties:
-      Text: ="顧客メールアドレス（必須／署名済みPDFの送付先）"
+      Text: ="顧客メールアドレス（任意／入力すると署名済みPDFを送付）"
       X: =32
       Y: =186
       Width: =346
@@ -415,8 +415,10 @@
       Text: |-
         =If(
             IsBlank(Trim(txtCustomerName.Text)), "※ 顧客名は必須です。",
-            IsBlank(Trim(txtCustomerEmail.Text)), "※ 署名済みPDFの送付先となる顧客メールアドレスは必須です。",
-            !IsMatch(Trim(txtCustomerEmail.Text), Match.Email), "※ 顧客メールアドレスの形式が正しくありません。",
+            // 顧客メールアドレスは任意。入力されたときだけ形式を確認する
+            !IsBlank(Trim(txtCustomerEmail.Text))
+                && !IsMatch(Trim(txtCustomerEmail.Text), Match.Email),
+                "※ 顧客メールアドレスの形式が正しくありません。",
             IsBlank(Trim(txtModel.Text)), "※ 型式は必須です。",
             IsBlank(Trim(txtSerialNo.Text)) && !chkNoSerial.Value,
                 "※ 機番は必須です。機番がない機体の場合は「機番なしの機体」にチェックしてください。",
@@ -480,6 +482,19 @@
                          }
                      );
                      Set(varEdit, LookUp(colCases, ID = varRecordId));
+                     // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
+                     // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
+                     ClearCollect(colOrgPref,
+                         {
+                             BranchName: ddBranch.Selected.Value,
+                             BlockName: ddBlock.Selected.Value,
+                             SiteName: ddSite.Selected.Value
+                         }
+                     );
+                     IfError(SaveData(colOrgPref, "YajOrgPref"), false);
+                     Set(varDefaultBranch, ddBranch.Selected.Value);
+                     Set(varDefaultBlock, ddBlock.Selected.Value);
+                     Set(varDefaultSite, ddSite.Selected.Value);
                      Navigate(ConsentScreen, ScreenTransition.Cover)
 - btnSaveDraft:
     Control: Classic/Button
@@ -527,6 +542,19 @@
                          }
                      );
                      Set(varEdit, LookUp(colCases, ID = varRecordId));
+                     // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
+                     // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
+                     ClearCollect(colOrgPref,
+                         {
+                             BranchName: ddBranch.Selected.Value,
+                             BlockName: ddBlock.Selected.Value,
+                             SiteName: ddSite.Selected.Value
+                         }
+                     );
+                     IfError(SaveData(colOrgPref, "YajOrgPref"), false);
+                     Set(varDefaultBranch, ddBranch.Selected.Value);
+                     Set(varDefaultBlock, ddBlock.Selected.Value);
+                     Set(varDefaultSite, ddSite.Selected.Value);
                      Notify(
                          "ドラフトを保存しました。文書番号は確認・署名の送信時に採番されます。",
                          NotificationType.Success
@@ -569,3 +597,134 @@
       Height: =40
       Size: =9
       Color: =RGBA(96, 94, 92, 1)
+# ================ 下書きの削除（管理者のみ）================
+# フィードバック 2026-09-17: 管理者は状態に関係なく削除できるようにする。
+# 送信済み・エラーの案件は詳細画面から、下書きはこの画面から削除する。
+- btnDeleteDraft:
+    Control: Classic/Button
+    Properties:
+      Text: ="この下書きを削除"
+      Visible: =varIsAdmin && varRecordId > 0
+      OnSelect: |-
+        =Reset(txtDraftDeleteReason);
+        Set(varShowDraftDelete, true)
+      X: =552
+      Y: =950
+      Width: =200
+      Height: =44
+      Size: =11
+      Color: =RGBA(168, 0, 0, 1)
+      BorderColor: =RGBA(168, 0, 0, 1)
+      BorderThickness: =1
+      Fill: =RGBA(255, 255, 255, 1)
+- recDraftDeleteOverlay:
+    Control: Rectangle
+    Properties:
+      Visible: =varShowDraftDelete || varBusy
+      X: =0
+      Y: =0
+      Width: =Parent.Width
+      Height: =Parent.Height
+      Fill: =RGBA(0, 0, 0, 0.55)
+- recDraftDelete:
+    Control: Rectangle
+    Properties:
+      Visible: =varShowDraftDelete
+      X: =84
+      Y: =300
+      Width: =600
+      Height: =330
+      Fill: =RGBA(255, 255, 255, 1)
+- lblDraftDeleteTitle:
+    Control: Label
+    Properties:
+      Text: ="この下書きを削除します"
+      Visible: =varShowDraftDelete
+      X: =112
+      Y: =324
+      Width: =544
+      Height: =32
+      Size: =16
+      FontWeight: =FontWeight.Semibold
+      Color: =RGBA(168, 0, 0, 1)
+- lblDraftDeleteBody:
+    Control: Label
+    Properties:
+      Text: |-
+        =varEdit.CustomerName & " 様の下書きを削除します。この操作は取り消せません。"
+        & Char(10) & "削除の理由は監査ログに記録されます。"
+      Visible: =varShowDraftDelete
+      X: =112
+      Y: =362
+      Width: =544
+      Height: =70
+      Size: =11
+- txtDraftDeleteReason:
+    Control: Classic/TextInput
+    Properties:
+      Default: =""
+      HintText: ="削除理由（必須）例：重複して登録したため"
+      Visible: =varShowDraftDelete
+      X: =112
+      Y: =444
+      Width: =544
+      Height: =44
+      Size: =12
+- lblDraftDeleteValidation:
+    Control: Label
+    Properties:
+      Text: |-
+        =If(Len(Trim(txtDraftDeleteReason.Text)) < 5,
+            "※ 削除理由を5文字以上で入力してください。",
+            ""
+        )
+      Visible: =varShowDraftDelete
+      X: =112
+      Y: =494
+      Width: =544
+      Height: =24
+      Size: =10
+      Color: =RGBA(196, 49, 75, 1)
+- btnDraftDeleteCancel:
+    Control: Classic/Button
+    Properties:
+      Text: ="キャンセル"
+      Visible: =varShowDraftDelete
+      OnSelect: =Set(varShowDraftDelete, false)
+      X: =112
+      Y: =552
+      Width: =200
+      Height: =52
+      Size: =12
+- btnDraftDeleteOk:
+    Control: Classic/Button
+    Properties:
+      Text: ="削除する"
+      Visible: =varShowDraftDelete
+      DisplayMode: |-
+        =If(IsBlank(lblDraftDeleteValidation.Text) && !varBusy,
+            DisplayMode.Edit,
+            DisplayMode.Disabled
+        )
+      OnSelect: |-
+       =// デモ: コレクションから消すだけ。本番はフローで削除し監査ログに記録する。
+                     Set(varShowDraftDelete, false);
+                     Remove(colCases, LookUp(colCases, ID = varRecordId));
+                     Set(varRecordId, 0);
+                     Notify(
+                         "【デモ】下書きを削除しました。本番では監査ログに記録します。",
+                         NotificationType.Success
+                     );
+                     Navigate(ListScreen, ScreenTransition.UnCover)
+- lblDraftDeleteBusy:
+    Control: Label
+    Properties:
+      Text: ="処理中です。しばらくお待ちください。"
+      Visible: =varBusy
+      X: =84
+      Y: =470
+      Width: =600
+      Height: =84
+      Size: =14
+      Align: =Align.Center
+      Color: =RGBA(255, 255, 255, 1)

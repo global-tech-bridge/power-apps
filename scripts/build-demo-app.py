@@ -237,12 +237,14 @@ def build_onstart():
       );
 
       // ---- 組織の初期値 ---------------------------------------------------
-      Set(varLastCase,
-          First(Sort(Filter(colCases, OperatorEmail = varUserEmail), ID, SortOrder.Descending))
-      );
-      Set(varDefaultBranch, varLastCase.BranchName);
-      Set(varDefaultBlock, varLastCase.BlockName);
-      Set(varDefaultSite, varLastCase.SiteName);
+      // フィードバック 2026-09-17: 初回は空白でよい。一度選んだ値は次回起動時に初期表示。
+      // サンプル案件から推測はしない（初回から埋まっていると紛らわしいため）。
+      // LoadData は Studio では使えないため IfError で無視する（公開後は動く）。
+      Clear(colOrgPref);
+      IfError(LoadData(colOrgPref, "YajOrgPref", true), false);
+      Set(varDefaultBranch, First(colOrgPref).BranchName);
+      Set(varDefaultBlock, First(colOrgPref).BlockName);
+      Set(varDefaultSite, First(colOrgPref).SiteName);
 
       // ---- 編集中レコード -------------------------------------------------
       Set(varRecordId, 0);
@@ -298,7 +300,20 @@ DEMO_SAVE = """=// デモ: SharePoint ではなくコレクションへ保存す
                       OperatorName: varUserName
                   }
               );
-              Set(varEdit, LookUp(colCases, ID = varRecordId));"""
+              Set(varEdit, LookUp(colCases, ID = varRecordId));
+              // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
+              // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
+              ClearCollect(colOrgPref,
+                  {
+                      BranchName: ddBranch.Selected.Value,
+                      BlockName: ddBlock.Selected.Value,
+                      SiteName: ddSite.Selected.Value
+                  }
+              );
+              IfError(SaveData(colOrgPref, "YajOrgPref"), false);
+              Set(varDefaultBranch, ddBranch.Selected.Value);
+              Set(varDefaultBlock, ddBlock.Selected.Value);
+              Set(varDefaultSite, ddSite.Selected.Value);"""
 
 DEMO_SUBMIT = """=// デモ: フローを呼ばず、その場で採番して送信済みにする。
               // 本番では Power Automate が採番・PDF生成・SharePoint保存・メール送信を行う。
@@ -382,6 +397,16 @@ DEMO_DELETE = """=// デモ: コレクションから消すだけ。本番はPDF
               );
               Navigate(ListScreen, ScreenTransition.UnCover)"""
 
+DEMO_DRAFT_DELETE = """=// デモ: コレクションから消すだけ。本番はフローで削除し監査ログに記録する。
+              Set(varShowDraftDelete, false);
+              Remove(colCases, LookUp(colCases, ID = varRecordId));
+              Set(varRecordId, 0);
+              Notify(
+                  "【デモ】下書きを削除しました。本番では監査ログに記録します。",
+                  NotificationType.Success
+              );
+              Navigate(ListScreen, ScreenTransition.UnCover)"""
+
 DEMO_OPEN_PDF = """=Notify(
               "【デモ】PDFは生成されません。本番では署名済みPDFが開きます。",
               NotificationType.Information
@@ -397,7 +422,7 @@ DEMO_ERROR_CHECKBOX = """      - chkDemoError:
             OnCheck: =Set(varDemoForceError, true)
             OnUncheck: =Set(varDemoForceError, false)
             X: =300
-            Y: =280
+            Y: =292
             Width: =290
             Height: =24
             Size: =10
@@ -470,6 +495,13 @@ def main():
             )
             text = head + tail
             text = text.replace("Set(varEdit, Defaults(SignatureCases));", "Set(varEdit, recBlankCase);")
+            # 下書き削除: フロー呼び出しをコレクション操作に
+            i = text.find("      - btnDraftDeleteOk:")
+            if i < 0:
+                sys.exit("見つかりません: btnDraftDeleteOk")
+            text = text[:i] + replace_block(
+                text[i:], "            OnSelect: |-", DEMO_DRAFT_DELETE, "btnDraftDeleteOk.OnSelect"
+            )
 
         elif name == "ConsentScreen.pa.yaml":
             text = replace_block(text, "            OnTimerEnd: |-", DEMO_SUBMIT, "tmrSubmit.OnTimerEnd")
