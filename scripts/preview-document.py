@@ -13,6 +13,7 @@ pdfMode が wordTemplate のときは、この方式ではHTMLを作らないの
 """
 import base64
 import json
+import os
 import re
 import struct
 import sys
@@ -21,7 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/tmp")
-CFG = json.loads((ROOT / "solution/config.json").read_text(encoding="utf-8"))
+# YAJ_CONFIG で別の設定ファイルを指定できる（テスト用テナントなど）。
+# 既定の solution/config.json は Yanmar 向けの配布状態を保つ。
+CFG_PATH = Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json"))
+CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 
 if CFG.get("pdfMode") != "html":
     sys.exit("pdfMode が html ではありません。プレビューは HTML→.doc 方式のときだけ作れます。")

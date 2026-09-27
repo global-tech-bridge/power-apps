@@ -16,6 +16,7 @@ GUID は名前から決定的に生成する（uuid5）。再生成しても同�
 差分が出るのは実際に定義を変えたときだけになる。
 """
 import json
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -25,7 +26,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 import flow_definitions as fd  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-CFG = json.loads((ROOT / "solution/config.json").read_text(encoding="utf-8"))
+# YAJ_CONFIG で別の設定ファイルを指定できる（テスト用テナントなど）。
+# 既定の solution/config.json は Yanmar 向けの配布状態を保つ。
+CFG_PATH = Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json"))
+CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 SRC = ROOT / "solution/src"
 
 # 決定的な GUID を作るための名前空間（このプロジェクト固有の固定値）
@@ -35,7 +39,6 @@ NS = uuid.UUID("6f2b1c94-3a7d-5e11-9c4a-8d0e5b2f7a63")
 WORKFLOW_CATEGORY = 5
 # ソリューション コンポーネント種別
 COMPONENT_WORKFLOW = 29
-COMPONENT_CONNECTION_REFERENCE = 10088
 
 SCHEMA = (
     "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/"
@@ -218,14 +221,14 @@ def main():
     (SRC / "Other/Customizations.xml").write_text(customizations, encoding="utf-8")
 
     # ---- Solution.xml ----
+    # 接続参照は RootComponents に載せない。
+    # 接続参照（connectionreference）はコンポーネント種別コードが環境ごとに異なる
+    # カスタム エンティティ扱いで、固定値（以前は 10088）を書くとインポートが
+    # 「Invalid component type provided 10088」で失敗する（実環境で確認）。
+    # customizations.xml の <connectionreferences> に定義があれば一緒に取り込まれる。
     root_components = "\n".join(
         f'      <RootComponent type="{COMPONENT_WORKFLOW}" id="{{{i}}}" behavior="0" />'
         for _, i, _ in workflows
-    )
-    root_components += "\n" + "\n".join(
-        f'      <RootComponent type="{COMPONENT_CONNECTION_REFERENCE}" '
-        f'schemaName="{connection_reference_name(c)}" behavior="0" />'
-        for c in connectors
     )
 
     solution = f"""<?xml version="1.0" encoding="utf-8"?>

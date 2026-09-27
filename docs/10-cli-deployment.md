@@ -14,19 +14,21 @@ Power Automate のフローを画面で1アクションずつ作るのは手間�
 | できる | 3フローの定義（アクション・式・スコープ・実行条件・同時実行制御）を丸ごと投入 |
 | できる | 接続参照のマッピング（設定ファイルで指定） |
 | **必要** | **Dataverse が有効な環境**。ソリューションは Dataverse の仕組みなので、Dataverse の無い環境にはインポートできない |
-| 未検証 | インポートそのもの。**この端末に対象テナントが無いため、パックまでしか確認できていない** |
+| **検証済み** | **テスト用テナントへのインポート（2026-09-27）**。3フローと3接続参照が入ることを確認 |
+| できない | **接続の作成**。SharePoint / OneDrive / Outlook は OAuth の同意が必要で、ポータルで1回だけ手作業になる（`pac connection create` は Dataverse 用のサービスプリンシパル接続しか作れない） |
+| できない | **キャンバスアプリの CLI 投入**。後述 |
 
-> **実機で確認できているのはここまで**
-> pac 2.11.2（macOS）で `solution init` / `pack` / `unpack` が動作すること、
-> 生成したソースが警告1件（後述）だけで zip 化できること、
-> zip の中身に3フローと3接続参照が正しく入ることまで。
-> `pac solution import` は未実行。
+> **実環境で確認した結果（2026-09-27）**
+> テスト用テナント（`tentoten067.onmicrosoft.com`）に開発者環境を CLI で作り、
+> `pac solution import` でソリューションを投入した。
+> 3フロー（Submit / Resend / Delete）と3接続参照がすべて入り、
+> フローは接続が無いため「下書き（オフ）」になる。これは想定どおり。
 
 ## 1. 前提
 
 | 項目 | 内容 |
 |---|---|
-| pac CLI | `dotnet tool install -g microsoft.powerapps.cli.tool`（2.11.2 で確認） |
+| pac CLI | **2.12.2 以上**。`dotnet tool update -g microsoft.powerapps.cli.tool`。2.11.2 以前は `pac admin create`（環境作成）が動かない（後述） |
 | Python 3 | `pip install openpyxl python-docx jsonschema pyyaml` |
 | 環境 | **Dataverse が有効な環境**（既定環境に Dataverse が無い場合は開発者環境を使う） |
 | 先に済ませること | [Part 1・2](08-manual-setup.md)（SharePoint のリストと初期データ）。フローが参照するため |
@@ -151,18 +153,63 @@ python3 scripts/check-solution.py
    日本語フォント・UTF-8 BOM）が揃っているか
    （`wordTemplate` 方式のときは、テンプレートの差し込み欄との一致を検査）
 
-## 7. パック時に出る警告について
+## 7. 実環境で判明した落とし穴
 
-```
-Following root components are not defined in customizations:
-  Type='10088', Id (or schema name)='GenericComponent-gtb_office365_...'
+### 接続参照を RootComponents に載せるとインポートが失敗する
+
+当初は接続参照を `Solution.xml` の RootComponents に種別 `10088` で載せていたが、
+**インポートが `Invalid component type provided 10088` で失敗した**。
+接続参照（connectionreference）は環境ごとに種別コードが変わるカスタム エンティティ扱いで、
+固定値を書けない。パック時に出ていた
+`Following root components are not defined in customizations: Type='10088'` の警告は
+これを指していた（当初「無害」と判断していたのは誤り）。
+
+**RootComponents から外し、`customizations.xml` の `<connectionreferences>` だけで定義する**
+ように直した。これでパック時の警告も消え、インポートでは接続参照も一緒に入る。
+
+### pac 2.11.2 では環境を作れない
+
+`pac admin create` が、どの `--region` を指定しても失敗する。
+
+| 指定 | エラー |
+|---|---|
+| `--region japan` | `macroRegion 'japan' is not valid`（サーバーがマクロリージョン名を要求） |
+| `--region asia-pacific` | `environment location is not valid`（pac 自身が旧形式を要求） |
+
+新しいテナントは**マクロリージョン**で環境を作る方式に変わっており、pac 2.4〜2.12 の
+既知の不具合。**2.12.2 で追加された `--macro-region` を使う**。
+
+```bash
+pac admin create --type Developer --name "YAJ CancelFee Test" \
+  --macro-region asia-pacific --language 1041 --currency JPY --domain yajcancelfeetest
 ```
 
-接続参照（コンポーネント種別 10088）について SolutionPackager が出す警告。
-**パックされた `customizations.xml` には接続参照が正しく入っている**ので
-（`check-solution.py` で確認している）、この警告のままインポートして問題ないと判断している。
-ただし**インポート自体が未検証**なので、ここでつまずいた場合は
-接続参照を手で作り直す（フローを開いて接続を選び直す）ことで回避できる。
+### 新しいテナントでは「日本」を直接選べない
+
+Advanced Data Residency（ADR）が無いテナントは、日本を単独では指定できず、
+**Asia-Pacific**（シンガポール・オーストラリア・インド・日本・韓国）の中から自動配置になる。
+今回は `crm7`（日本）に配置された。本番の Yanmar テナントに既存の日本リージョン環境が
+あるなら、そちらを使うのが確実。
+
+### 別案件の pac プロファイルに注意
+
+同じマシンに別テナントの pac 認証プロファイルがあると、`pac solution import` は
+**有効なプロファイルのテナントに向けて**実行される。`deploy.sh` は
+`YAJ_PAC_PROFILE`（既定 `yanmar-test`）と有効プロファイルが一致しないと止まるようにした。
+
+```bash
+pac auth create --deviceCode --name yanmar-test   # 初回
+pac auth select --name yanmar-test                # 切り替え
+```
+
+### テナント固有の設定は `config.local.json` に
+
+`solution/config.json` は Yanmar 向けの配布状態のまま保ち、テスト用テナントの
+サイトURLなどは `solution/config.local.json`（Git 管理外）に書いて `YAJ_CONFIG` で指定する。
+
+```bash
+YAJ_CONFIG=solution/config.local.json ./scripts/deploy.sh https://yajcancelfeetest.crm7.dynamics.com/
+```
 
 ## 8. うまくいかないとき
 
@@ -175,6 +222,15 @@ Following root components are not defined in customizations:
 | 変換が Bad gateway で失敗 | OneDrive コネクタの既知の問題。`Wait_for_file` の待ち時間（既定15秒）を増やす |
 
 ## 9. キャンバスアプリについて
+
+**`.pa.yaml` だけからは CLI で `.msapp` を作れない**（実機で確認）。
+`pac canvas pack --layout SourceCode` を実行すると次のように言われて止まる。
+
+> Canvas apps packed using yaml SourceCode must be validated first by opening
+> the app for edit within the Power Apps studio.
+
+Studio で一度開いて検証されたアプリが前提になっている Microsoft 側の仕様で、
+回避できない。アプリは画面から取り込む（[08 手順](08-manual-setup.md) の Part 4）。
 
 アプリ本体はこのソリューションに含めていない。
 `pac canvas pack` で `.msapp` を作る方法は

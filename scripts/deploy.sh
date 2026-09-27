@@ -20,7 +20,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SOLUTION_NAME="$(python3 -c "import json;print(json.load(open('solution/config.json'))['solution']['uniqueName'])")"
+# YAJ_CONFIG で別の設定ファイルを使える（テスト用テナントなど）
+CONFIG="${YAJ_CONFIG:-solution/config.json}"
+export YAJ_CONFIG="$CONFIG"
+SOLUTION_NAME="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['solution']['uniqueName'])" "$CONFIG")"
 ZIP="solution/${SOLUTION_NAME}.zip"
 SETTINGS="solution/deploy-settings.json"
 ENVIRONMENT="${1:-}"
@@ -32,21 +35,35 @@ die()   { printf '\033[31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 command -v pac >/dev/null || die "pac CLI が見つかりません。dotnet tool install -g microsoft.powerapps.cli.tool"
 
 # ---- 1. 認証 --------------------------------------------------------------
-info "認証プロファイルを確認します"
-if ! pac auth list 2>/dev/null | grep -q '\*'; then
+# 同じマシンに別案件（別テナント）の pac プロファイルがあると、
+# 「たまたま有効だったプロファイル」に向けてデプロイしてしまう。
+# 必ず名前付きのプロファイルを明示し、それが有効になっていることを確かめる。
+PROFILE="${YAJ_PAC_PROFILE:-yanmar-test}"
+info "認証プロファイルを確認します（想定: $PROFILE）"
+ACTIVE_LINE="$(pac auth list 2>/dev/null | awk '$2=="*"')"
+ACTIVE_NAME="$(printf '%s' "$ACTIVE_LINE" | awk '{print $4}')"
+if [ -z "$ACTIVE_NAME" ]; then
   warn "有効な認証プロファイルがありません。次を実行してから再実行してください:"
-  echo "    pac auth create --deviceCode --environment <環境URL>"
+  echo "    pac auth create --deviceCode --name $PROFILE"
   exit 1
 fi
-pac auth list | sed 's/^/    /'
+if [ "$ACTIVE_NAME" != "$PROFILE" ]; then
+  warn "有効なプロファイルが '$ACTIVE_NAME' です。想定は '$PROFILE' です。"
+  warn "別案件のテナントにデプロイする事故を防ぐため中止します。切り替えるには:"
+  echo "    pac auth select --name $PROFILE"
+  echo "    （別名のプロファイルを使う場合は YAJ_PAC_PROFILE=<名前> を指定）"
+  exit 1
+fi
+printf '    %s\n' "$ACTIVE_LINE"
+[ -n "$ENVIRONMENT" ] || die "環境URLを引数で指定してください: ./scripts/deploy.sh https://<組織>.crm7.dynamics.com"
 
 # ---- 2. ソース生成 --------------------------------------------------------
 info "ソリューション ソースを生成します"
 python3 scripts/build-solution.py
 
-SITE_URL="$(python3 -c "import json;print(json.load(open('solution/config.json'))['sharePoint']['siteUrl'])")"
+SITE_URL="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['sharePoint']['siteUrl'])" "$CONFIG")"
 case "$SITE_URL" in
-  *CONTOSO*) die "solution/config.json の siteUrl が既定値のままです。実環境のURLに変更してください。" ;;
+  *CONTOSO*) die "$CONFIG の siteUrl が既定値のままです。実環境のURLに変更してください。" ;;
 esac
 
 # ---- 3. パック ------------------------------------------------------------

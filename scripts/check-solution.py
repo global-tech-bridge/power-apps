@@ -11,6 +11,7 @@
   5. Word テンプレートの差し込み欄が、実テンプレートの欄と一致しているか
 """
 import json
+import os
 import re
 import sys
 import zipfile
@@ -19,7 +20,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "solution/src"
 TPL = ROOT / "templates/整備キャンセル料確認書.docx"
-CFG = json.loads((ROOT / "solution/config.json").read_text(encoding="utf-8"))
+# YAJ_CONFIG で別の設定ファイルを指定できる（テスト用テナントなど）。
+# 既定の solution/config.json は Yanmar 向けの配布状態を保つ。
+CFG_PATH = Path(os.environ.get("YAJ_CONFIG", ROOT / "solution/config.json"))
+CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 MODE = CFG.get("pdfMode", "html")
 # 配布状態（siteUrl が既定値のまま）かどうか
 UNCONFIGURED = "CONTOSO" in CFG["sharePoint"]["siteUrl"]

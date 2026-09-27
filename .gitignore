@@ -9,3 +9,6 @@ templates/_signature-placeholder.png
 solution/*.zip
 solution/deploy-settings.json
 scripts/__pycache__/
+
+# テナント固有の設定（YAJ_CONFIG で指定）
+solution/config.local*.json

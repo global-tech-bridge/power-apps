@@ -85,9 +85,6 @@
       <RootComponent type="29" id="{6b66a147-6744-5141-9d9b-fef966747879}" behavior="0" />
       <RootComponent type="29" id="{ec4bd530-e055-5da0-91ac-9ad093104b93}" behavior="0" />
       <RootComponent type="29" id="{6b3fa11b-e6d1-5ef7-b2cb-2b521b8363bc}" behavior="0" />
-      <RootComponent type="10088" schemaName="gtb_office365_b17d3e9c63" behavior="0" />
-      <RootComponent type="10088" schemaName="gtb_onedriveforbusiness_47cdddf275" behavior="0" />
-      <RootComponent type="10088" schemaName="gtb_sharepointonline_7b847770e9" behavior="0" />
     </RootComponents>
     <MissingDependencies />
   </SolutionManifest>
