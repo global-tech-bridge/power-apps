@@ -24,6 +24,67 @@ Power Automate のフローを画面で1アクションずつ作るのは手間�
 > 3フロー（Submit / Resend / Delete）と3接続参照がすべて入り、
 > フローは接続が無いため「下書き（オフ）」になる。これは想定どおり。
 
+## 0. SharePoint も CLI で作れる（2026-09-27 実環境で確認）
+
+フローより先に、SharePoint のサイト・リスト7つ・ライブラリ4つ・初期データを
+**Microsoft Graph 経由で一括作成**できる。PowerShell もアプリ登録も不要。
+
+```bash
+export AZURE_CONFIG_DIR=~/.cliauth/yanmar/azure
+
+# 1. Azure CLI でサインイン（グループ＝チームサイトの作成に使う）
+az login --use-device-code --tenant <テナント>.onmicrosoft.com --allow-no-subscriptions
+
+# 2. リスト作成用のトークンを取得（Sites.Manage.All。初回は同意画面が出る）
+python3 scripts/graph-device-login.py <テナント>.onmicrosoft.com
+
+# 3. 作成（何度実行しても安全。既にあるものは飛ばし、足りない列だけ足す）
+YAJ_CONFIG=solution/config.local.json python3 scripts/provision-sharepoint-graph.py --dry-run
+YAJ_CONFIG=solution/config.local.json python3 scripts/provision-sharepoint-graph.py
+```
+
+### トークンが2種類要る理由
+
+**Azure CLI のトークンではリストを作れない**（実環境で 403 を確認）。
+Azure CLI のアプリは Graph に対して `Group.ReadWrite.All` などは持つが
+`Sites.*` を持たず、サイトの読み取りはできても書き込みができない。
+SharePoint の REST API も Azure CLI のトークンを 401 で拒否する。
+
+そこで、リスト作成には Microsoft 公式の **Microsoft Graph Command Line Tools**
+（Microsoft Graph PowerShell が使うアプリ）で device code サインインし、
+`Sites.Manage.All` と `User.Read` だけを要求する。
+
+| | 用途 | 権限 |
+|---|---|---|
+| Azure CLI | Microsoft 365 グループ（チームサイト）の作成 | `Group.ReadWrite.All` |
+| Graph Command Line Tools | リスト・列・初期データ・ファイル | `Sites.Manage.All` / `User.Read` |
+
+取得するのはアクセストークンだけ（約1時間で失効。リフレッシュトークンは要求しない）。
+保存先はリポジトリ外の `~/.cliauth/yanmar/graph-sites-token.json`（本人のみ読み取り可）。
+同意は Entra 管理センター → エンタープライズ アプリケーション →
+Microsoft Graph Command Line Tools から取り消せる。
+
+### 作られるもの・作られないもの
+
+| 作られる | 作られない（Graph で設定できない。画面で行う） |
+|---|---|
+| Microsoft 365 グループと**プライベート**のチームサイト | ライブラリ単位の権限（`SignatureDocs` / `SignatureImages` の継承の中止） |
+| リスト7つ・全70列（種類・必須・既定値・**インデックス25列**） | `SignatureCases` の項目レベルのアクセス許可 |
+| ライブラリ4つ | |
+| 組織マスタ105件・確認文面 v1.0・管理者（実行者）・Word テンプレート | |
+
+`SignatureDocs` のバージョン管理は、新規ライブラリの既定でオンになっている。
+
+### 実環境での確認結果
+
+作成後に Graph で読み戻し、次を確認した。
+
+- リスト7つ・ライブラリ4つがすべて存在する
+- 70列すべてが `data/list-schema.json` の定義どおり（種類・複数行のプレーンテキスト・
+  選択肢の値・日時の時刻・インデックス・必須）
+- 組織マスタ105件（支社3種・ブロック13種）
+- 確認文面の本文が元資料と**完全一致**（切り捨てなし）
+
 ## 1. 前提
 
 | 項目 | 内容 |

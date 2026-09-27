@@ -149,8 +149,8 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 | `data/consent/ConsentText_v1.0.txt` | `ConsentMaster` | フォームに貼り付け |
 | `templates/整備キャンセル料確認書.docx` | `DocTemplates` | ファイルのアップロード |
 
-> `ConsentMaster` 用のインポート ファイルは意図的に作っていない。本文が3,000字を
-> 超えるため、Excel からリストを作成すると1行テキスト（255字）の列になって
+> `ConsentMaster` 用のインポート ファイルは意図的に作っていない。本文が約800字
+> あるため、Excel からリストを作成すると1行テキスト（255字）の列になって
 > **本文が切り捨てられる**。確認文面は証跡そのものなので、フォームから入れる。
 
 ### 確認

@@ -73,7 +73,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | 順 | やること | 見るドキュメント | 目安 |
 |---:|---|---|---|
 | 0 | **着手前の確認**（Premium ライセンスと MFA 条件付きアクセス。**ここを飛ばすと作り直しになる**） | [09 環境確認シート](docs/09-environment-checklist.md) ＋ [01 デプロイ手順](docs/01-deployment.md) の「0. 前提と準備」 | 30分 |
-| 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | [08 手順](docs/08-manual-setup.md) Part 1 ＋ [02 データ設計](docs/02-sharepoint-schema.md) | 30〜45分 |
+| 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | **CLI**: [10 CLIデプロイ](docs/10-cli-deployment.md) の「0.」（`provision-sharepoint-graph.py`）／画面: [08 手順](docs/08-manual-setup.md) Part 1 | 5分／30〜45分 |
 | 2 | 初期データ（組織マスタ105件・確認文面・管理者・テンプレート） | [08 手順](docs/08-manual-setup.md) Part 2 ＋ [data/import/](data/import/) | 10分 |
 | 3 | Power Automate フロー3つ | **[10 CLIデプロイ](docs/10-cli-deployment.md)**（`./scripts/deploy.sh`）／画面で作る場合は [flows/](flows/) | 15分／90〜120分 |
 | 4 | キャンバスアプリの取り込み | [08 手順](docs/08-manual-setup.md) Part 4 ＋ [paste/](apps/yaj-cancelfee-signature/paste/) | 40〜60分 |

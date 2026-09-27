@@ -59,6 +59,6 @@ AppAdmins_grid.tsv   Title / UserEmail / UserName / Note
 
 | 入れ先 | 理由と方法 |
 |---|---|
-| `ConsentMaster` の本文 | 本文が2,300字を超えるため、Excel からリストを作成すると1行テキスト（255字）の列ができて**本文が切り捨てられる**。確認文面は証跡そのものなので、その経路は用意していない。列を先に作ってから、[`../consent/ConsentText_v1.0.txt`](../consent/ConsentText_v1.0.txt) の3行目以降をフォームに貼り付ける |
+| `ConsentMaster` の本文 | 本文が約800字あるため、Excel からリストを作成すると1行テキスト（255字）の列ができて**本文が切り捨てられる**。確認文面は証跡そのものなので、その経路は用意していない。列を先に作ってから、[`../consent/ConsentText_v1.0.txt`](../consent/ConsentText_v1.0.txt) の3行目以降をフォームに貼り付ける |
 | `SignatureCases` `SendLog` `AuditLog` `DocumentNumberCounter` のデータ | 初期データなし。アプリとフローが書き込む |
 | `DocTemplates` | [`../../templates/整備キャンセル料確認書.docx`](../../templates/) をアップロードする |
