@@ -61,6 +61,72 @@ python3 scripts/check-text-fit.py "$APP_SRC"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/yaj-app.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
+# ---- 2b. アプリ用ソリューションと土台のアプリ ------------------------------------
+# ソリューションが無ければ作る（発行者は YAJ_CONFIG の solution.publisher*。
+# 発行者はフロー用ソリューションの初回インポートで作られるので、deploy.sh を先に流すこと）。
+# 土台のアプリがソリューションに入っていなければ、画面での作り方を示して止まる。
+info "アプリ用ソリューション $APP_SOLUTION を確認します"
+command -v az >/dev/null || die "Azure CLI が見つかりません（Dataverse の確認に使う）"
+DV_TOKEN="$(az account get-access-token --resource "$ENVIRONMENT" --query accessToken -o tsv 2>/dev/null)" \
+  || die "Azure CLI で Dataverse のトークンを取れません。az login をやり直してください"
+DV_TOKEN="$DV_TOKEN" python3 - "$ENVIRONMENT" "$APP_SOLUTION" "$APP_NAME" "${YAJ_CONFIG:-solution/config.json}" <<'PY'
+import json, os, sys, urllib.error, urllib.parse, urllib.request
+
+env, sol_name, app_name, cfg_path = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3], sys.argv[4]
+tok = os.environ["DV_TOKEN"]
+cfg = json.load(open(cfg_path, encoding="utf-8"))
+
+
+def call(method, path, body=None):
+    url = env + "/api/data/v9.2/" + urllib.parse.quote(path, safe="/?&=$,()'")
+    req = urllib.request.Request(
+        url, method=method,
+        data=json.dumps(body).encode() if body is not None else None,
+        headers={"Authorization": f"Bearer {tok}", "Accept": "application/json",
+                 "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.status, json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read() or b"{}")
+
+
+st, sol = call("GET", f"solutions?$select=solutionid&$filter=uniquename eq '{sol_name}'")
+if st != 200:
+    sys.exit(f"ソリューションを確認できません（HTTP {st}）: {sol.get('error', {}).get('message', sol)}")
+if not sol["value"]:
+    pub = cfg["solution"]["publisherUniqueName"]
+    st, p = call("GET", f"publishers?$select=publisherid&$filter=uniquename eq '{pub}'")
+    if not p.get("value"):
+        sys.exit(f"発行者 {pub} がまだありません。先に ./scripts/deploy.sh でフローを入れてください（発行者が作られる）")
+    st, r = call("POST", "solutions", {
+        "uniquename": sol_name, "friendlyname": f"{cfg['solution']['displayName']}（アプリ）",
+        "version": "1.0.0.0", "publisherid@odata.bind": f"/publishers({p['value'][0]['publisherid']})",
+    })
+    if st >= 300:
+        sys.exit(f"ソリューションを作れません（HTTP {st}）: {r.get('error', {}).get('message', r)}")
+    print(f"    ソリューション {sol_name} を作りました")
+    st, sol = call("GET", f"solutions?$select=solutionid&$filter=uniquename eq '{sol_name}'")
+sid = sol["value"][0]["solutionid"]
+
+st, comps = call("GET", f"solutioncomponents?$select=objectid&$filter=_solutionid_value eq {sid} and componenttype eq 300")
+names = []
+for c in comps.get("value", []):
+    st, app = call("GET", f"canvasapps({c['objectid']})?$select=displayname")
+    if st == 200:
+        names.append(app.get("displayname"))
+if app_name not in names:
+    sys.exit(f"""ソリューション {sol_name} に、土台のアプリ「{app_name}」がありません（あるもの: {names or 'なし'}）。
+  初回だけ画面で作ります（docs/11-production-deployment.md の 7-2）:
+    1. make.powerapps.com → ソリューション → {sol_name} → 新規 → アプリ → キャンバス アプリ
+       名前「{app_name}」、形式「タブレット」
+    2. 設定 → 表示: 縦向き・4:3（768×1024）／ 全般: データ行の制限 2000
+    3. データを追加: SharePoint のリスト7つ＋ライブラリ SignatureImages、Office 365 ユーザー、
+       Power Automate のフロー3つ
+    4. 保存して「公開」→ Studio を閉じて、このスクリプトを再実行""")
+print(f"    土台のアプリ「{app_name}」が入っています")
+PY
+
 # ---- 3. ダウンロードと展開 -------------------------------------------------
 info "環境のアプリをダウンロードします: $APP_NAME"
 pac canvas download --environment "$ENVIRONMENT" --name "$APP_NAME" \

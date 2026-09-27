@@ -133,6 +133,7 @@ cat <<'EOS'
 
     次にやること
       1. OneDrive に中間ファイル用のフォルダ（config の oneDrive.tempFolder）があること
-      2. アプリ側でフローを追加（Power Apps Studio → データ → フロー）
+      2. アプリを入れる: ./scripts/deploy-app.sh <環境URL>
+         （初回は土台のアプリを Studio で作る。手順は docs/11-production-deployment.md の 7）
 
 EOS

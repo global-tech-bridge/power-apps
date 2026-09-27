@@ -61,6 +61,11 @@ SharePoint もフローも作らずに動く**デモ版**がある。
 
 ## 構築の進め方
 
+**ヤンマー様の本番環境に入れるときは
+[docs/11-production-deployment.md](docs/11-production-deployment.md)**（CLI 中心・管理者権限なし）。
+最初に `scripts/preflight.py` を流すと、この PC とアカウントで何ができるか・
+IT 部門に何を依頼すべきかが分かる。
+
 **CLI（`pac` / PnP.PowerShell）が使えない場合は
 [docs/08-manual-setup.md](docs/08-manual-setup.md) 1本で完結する。**
 これが今回の想定。上から順にやれば構築が終わる。
@@ -105,6 +110,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
 | [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
 | [10 CLIデプロイ](docs/10-cli-deployment.md) | **pac CLI でフロー3つとアプリをインポートする**。SharePoint も Graph で一括作成できる |
+| [11 本番環境へのデプロイ](docs/11-production-deployment.md) | **ヤンマー様の環境に、管理者権限なしで CLI 中心に入れる手順**。IT 部門への依頼事項、事前チェック、うまくいかないときの対処 |
 | [09 環境確認シート](docs/09-environment-checklist.md) | **展開先テナントに確認すべき項目**（ライセンス・DLP・MFA・SharePoint・メール・端末）と、テスト環境での再現方法 |
 
 ## 本番運用の前に必ず決めること
