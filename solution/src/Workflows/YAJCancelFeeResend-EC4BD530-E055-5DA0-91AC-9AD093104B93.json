@@ -4,7 +4,7 @@
       "shared_office365": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "gtb_office365_b17d3e9c63"
+          "connectionReferenceLogicalName": "yhdai_office365_b17d3e9c63"
         },
         "api": {
           "name": "shared_office365"
@@ -13,7 +13,7 @@
       "shared_sharepointonline": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "gtb_sharepointonline_7b847770e9"
+          "connectionReferenceLogicalName": "yhdai_sharepointonline_7b847770e9"
         },
         "api": {
           "name": "shared_sharepointonline"

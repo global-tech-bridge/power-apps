@@ -76,10 +76,11 @@ pac solution pack --zipfile "$ZIP" --folder solution/src --packagetype Unmanaged
 ls -la "$ZIP" | sed 's/^/    /'
 
 # ---- 4. 接続参照のマッピング ----------------------------------------------
-if [ ! -f "$SETTINGS" ]; then
-  info "接続参照の設定ファイルを生成します: $SETTINGS"
-  pac solution create-settings --solution-zip "$ZIP" --settings-file "$SETTINGS"
-fi
+# 毎回 zip から作り直す。以前の設定ファイルを使い回すと、発行者の接頭辞を
+# 変えたときに古い論理名のまま取り込まれ、新しい接続参照に接続が入らない（実環境で確認）。
+info "接続参照の設定ファイルを生成します: $SETTINGS"
+rm -f "$SETTINGS"
+pac solution create-settings --solution-zip "$ZIP" --settings-file "$SETTINGS" >/dev/null
 
 # 対象環境の接続から接続IDを自動で埋める。
 # 接続が無い・複数ある場合は取り違えを防ぐため止まる。

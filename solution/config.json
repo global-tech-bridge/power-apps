@@ -4,9 +4,9 @@
     "uniqueName": "YAJCancelFeeSignature",
     "displayName": "YAJ 整備キャンセル料 確認書",
     "version": "1.0.0.0",
-    "publisherUniqueName": "gtb",
-    "publisherDisplayName": "Global Tech Bridge",
-    "publisherPrefix": "gtb",
+    "publisherUniqueName": "YHDAIStrategyDX",
+    "publisherDisplayName": "YHDAI戦略DX推進G",
+    "publisherPrefix": "yhdai",
     "optionValuePrefix": "47705"
   },
   "sharePoint": {

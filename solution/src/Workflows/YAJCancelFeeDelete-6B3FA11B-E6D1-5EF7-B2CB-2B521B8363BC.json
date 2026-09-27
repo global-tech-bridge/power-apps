@@ -4,7 +4,7 @@
       "shared_sharepointonline": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "gtb_sharepointonline_7b847770e9"
+          "connectionReferenceLogicalName": "yhdai_sharepointonline_7b847770e9"
         },
         "api": {
           "name": "shared_sharepointonline"

@@ -19,7 +19,7 @@ Power Automate のフローを画面で1アクションずつ作るのは手間�
 | できない | **キャンバスアプリの CLI 投入**。後述 |
 
 > **実環境で確認した結果（2026-09-27）**
-> テスト用テナント（`tentoten067.onmicrosoft.com`）に開発者環境を CLI で作り、
+> 検証用に用意したテスト用テナントに開発者環境を CLI で作り、
 > `pac solution import` でソリューションを投入した。
 > 3フロー（Submit / Resend / Delete）と3接続参照がすべて入り、
 > フローは接続が無いため「下書き（オフ）」になる。これは想定どおり。
@@ -103,7 +103,7 @@ Microsoft Graph Command Line Tools から取り消せる。
 | `sharePoint.siteUrl` | **必須**。`https://CONTOSO...` のままだとビルドが止まる |
 | `pdfMode` | `html`（既定）= 標準コネクタのみ。`wordTemplate` = Premium が必要 |
 | `oneDrive.tempFolder` | 中間 `.doc` の置き場。**サービスアカウントの OneDrive** を使うこと |
-| `solution.*` | ソリューション名・発行者・バージョン |
+| `solution.*` | ソリューション名・発行者・バージョン。発行者は「YHDAI戦略DX推進G」（一意名 `YHDAIStrategyDX`、接頭辞 `yhdai`）。接続参照の論理名もこの接頭辞で始まる（例: `yhdai_sharepointonline_…`）。**本番に一度入れたら接頭辞は変えない**（変えると別の接続参照として入り、フローの付け替えが要る） |
 
 ### PDF生成方式
 

@@ -11,16 +11,16 @@
     <Version>1.0.0.0</Version>
     <Managed>0</Managed>
     <Publisher>
-      <UniqueName>gtb</UniqueName>
+      <UniqueName>YHDAIStrategyDX</UniqueName>
       <LocalizedNames>
-        <LocalizedName description="Global Tech Bridge" languagecode="1041" />
+        <LocalizedName description="YHDAI戦略DX推進G" languagecode="1041" />
       </LocalizedNames>
       <Descriptions>
-        <Description description="Global Tech Bridge" languagecode="1041" />
+        <Description description="YHDAI戦略DX推進G" languagecode="1041" />
       </Descriptions>
       <EMailAddress xsi:nil="true"></EMailAddress>
       <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
-      <CustomizationPrefix>gtb</CustomizationPrefix>
+      <CustomizationPrefix>yhdai</CustomizationPrefix>
       <CustomizationOptionValuePrefix>47705</CustomizationOptionValuePrefix>
       <Addresses>
         <Address>

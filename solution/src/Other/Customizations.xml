@@ -13,27 +13,27 @@
   <SolutionPluginAssemblies />
   <EntityDataProviders />
   <connectionreferences>
-    <connectionreference connectionreferencelogicalname="gtb_office365_b17d3e9c63">
-      <connectionreferencedisplayname>gtb_office365_b17d3e9c63</connectionreferencedisplayname>
-      <connectionreferencelogicalname>gtb_office365_b17d3e9c63</connectionreferencelogicalname>
+    <connectionreference connectionreferencelogicalname="yhdai_office365_b17d3e9c63">
+      <connectionreferencedisplayname>yhdai_office365_b17d3e9c63</connectionreferencedisplayname>
+      <connectionreferencelogicalname>yhdai_office365_b17d3e9c63</connectionreferencelogicalname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="gtb_onedriveforbusiness_47cdddf275">
-      <connectionreferencedisplayname>gtb_onedriveforbusiness_47cdddf275</connectionreferencedisplayname>
-      <connectionreferencelogicalname>gtb_onedriveforbusiness_47cdddf275</connectionreferencelogicalname>
+    <connectionreference connectionreferencelogicalname="yhdai_onedriveforbusiness_47cdddf275">
+      <connectionreferencedisplayname>yhdai_onedriveforbusiness_47cdddf275</connectionreferencedisplayname>
+      <connectionreferencelogicalname>yhdai_onedriveforbusiness_47cdddf275</connectionreferencelogicalname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness</connectorid>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
       <statecode>0</statecode>
       <statuscode>1</statuscode>
     </connectionreference>
-    <connectionreference connectionreferencelogicalname="gtb_sharepointonline_7b847770e9">
-      <connectionreferencedisplayname>gtb_sharepointonline_7b847770e9</connectionreferencedisplayname>
-      <connectionreferencelogicalname>gtb_sharepointonline_7b847770e9</connectionreferencelogicalname>
+    <connectionreference connectionreferencelogicalname="yhdai_sharepointonline_7b847770e9">
+      <connectionreferencedisplayname>yhdai_sharepointonline_7b847770e9</connectionreferencedisplayname>
+      <connectionreferencelogicalname>yhdai_sharepointonline_7b847770e9</connectionreferencelogicalname>
       <connectorid>/providers/Microsoft.PowerApps/apis/shared_sharepointonline</connectorid>
       <iscustomizable>1</iscustomizable>
       <promptingbehavior>0</promptingbehavior>
