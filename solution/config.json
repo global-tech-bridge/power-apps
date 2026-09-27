@@ -33,7 +33,9 @@
   },
   "mail": {
     "subjectPrefix": "【ヤンマーアグリジャパン】整備お見積りに伴うキャンセル料に関する確認書",
-    "companyName": "ヤンマーアグリジャパン株式会社"
+    "companyName": "ヤンマーアグリジャパン株式会社",
+    "senderMode": "operator",
+    "$senderMode": "operator = 送信・再送を押した担当者本人の Outlook で送る（差出人＝担当者）。shared = フローに登録した共通の接続で送る"
   },
   "pdfMode": "html",
   "$pdfMode_comment": "html = HTML を .doc として保存し OneDrive for Business（標準コネクタ）で PDF 変換。追加ライセンス不要。 wordTemplate = Word テンプレート方式。Word Online (Business)（Premium）が必要で、MFA 条件付きアクセス有効時は動かない。",

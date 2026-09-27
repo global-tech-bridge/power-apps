@@ -84,11 +84,26 @@ def used_connectors(definition):
     return sorted(found)
 
 
+def runtime_source(connector):
+    """接続を誰のものとして使うか。
+
+    embedded = フローに登録した接続（共通の接続）。
+    invoker  = フローを呼び出したユーザー本人の接続（Power Apps の「実行のみのユーザー」が提供）。
+
+    メールだけは既定で invoker にする。差出人が送信を押した担当者本人になり、
+    顧客からの返信も担当者に届く。SharePoint / OneDrive は共通の接続のまま
+    （担当者に保存先ライブラリへの書き込み権限を渡さないため）。
+    """
+    if connector == "shared_office365" and CFG["mail"].get("senderMode", "operator") == "operator":
+        return "invoker"
+    return "embedded"
+
+
 def build_workflow_json(name, definition):
     connectors = used_connectors(definition)
     refs = {
         c: {
-            "runtimeSource": "embedded",
+            "runtimeSource": runtime_source(c),
             "connection": {"connectionReferenceLogicalName": connection_reference_name(c)},
             "api": {"name": c},
         }

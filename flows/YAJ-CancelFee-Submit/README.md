@@ -14,7 +14,8 @@
 |---|---|
 | フロー名 | `YAJ-CancelFee-Submit` |
 | トリガー | Power Apps (V2) |
-| 必要な接続 | SharePoint、**Word Online (Business)（Premium）**、Office 365 Outlook |
+| 必要な接続 | SharePoint、OneDrive for Business、Office 365 Outlook（Word テンプレート方式のときだけ **Word Online (Business)（Premium）**） |
+| メールの差出人 | 送信を押した担当者本人。「実行のみのユーザー」の設定で、Office 365 Outlook の接続を**実行のみのユーザーが提供**にする（CLI デプロイでは `runtimeSource: invoker` で自動設定） |
 | 必要なライセンス | Power Apps Premium または Power Automate Premium（[理由](../../docs/01-deployment.md)） |
 | 所有者 | 個人ではなくサービスアカウント（要件定義 15.5） |
 

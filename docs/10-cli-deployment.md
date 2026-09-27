@@ -103,6 +103,7 @@ Microsoft Graph Command Line Tools から取り消せる。
 | `sharePoint.siteUrl` | **必須**。`https://CONTOSO...` のままだとビルドが止まる |
 | `pdfMode` | `html`（既定）= 標準コネクタのみ。`wordTemplate` = Premium が必要 |
 | `oneDrive.tempFolder` | 中間 `.doc` の置き場。**サービスアカウントの OneDrive** を使うこと |
+| `mail.senderMode` | `operator`（既定）= 送信・再送を押した担当者本人の Outlook で送る。フローの Outlook 接続参照を `runtimeSource: invoker`（実行のみのユーザーが提供）にする。`shared` = フローに登録した共通の接続で送る。**切り替えたら Studio の Power Automate ペインで送信・再送のフローを「最新の情報に更新」し、公開する**（アプリが利用者本人の Outlook 接続を求めるようになる） |
 | `solution.*` | ソリューション名・発行者・バージョン。発行者は「YHDAI戦略DX推進G」（一意名 `YHDAIStrategyDX`、接頭辞 `yhdai`）。接続参照の論理名もこの接頭辞で始まる（例: `yhdai_sharepointonline_…`）。**本番に一度入れたら接頭辞は変えない**（変えると別の接続参照として入り、フローの付け替えが要る） |
 
 ### PDF生成方式

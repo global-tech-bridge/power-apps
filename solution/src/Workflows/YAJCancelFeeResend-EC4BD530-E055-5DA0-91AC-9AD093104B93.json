@@ -2,7 +2,7 @@
   "properties": {
     "connectionReferences": {
       "shared_office365": {
-        "runtimeSource": "embedded",
+        "runtimeSource": "invoker",
         "connection": {
           "connectionReferenceLogicalName": "yhdai_office365_b17d3e9c63"
         },
@@ -176,6 +176,7 @@
                       "item/CaseId": "@triggerBody()?['number']",
                       "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
                       "item/SentTo": "@{triggerBody()?['text']}",
+                      "item/SentBy": "@{coalesce(triggerOutputs()?['headers']?['x-ms-user-email'],outputs('Get_case')?['body/OperatorEmail'])}",
                       "item/SentAt": "@{utcNow()}",
                       "item/Kind/Value": "Resend",
                       "item/Result/Value": "Success"
@@ -203,6 +204,7 @@
                       "item/Action/Value": "Resend",
                       "item/CaseId": "@triggerBody()?['number']",
                       "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
+                      "item/PerformedBy": "@{coalesce(triggerOutputs()?['headers']?['x-ms-user-email'],outputs('Get_case')?['body/OperatorEmail'])}",
                       "item/PerformedAt": "@{utcNow()}",
                       "item/Reason": "PDF再送",
                       "item/Detail": "送信先: @{triggerBody()?['text']}"

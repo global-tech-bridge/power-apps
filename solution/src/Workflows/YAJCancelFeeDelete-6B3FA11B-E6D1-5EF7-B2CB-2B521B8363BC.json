@@ -89,6 +89,7 @@
                   "item/Action/Value": "Delete",
                   "item/CaseId": "@triggerBody()?['number']",
                   "item/DocumentNo": "@{outputs('Get_case')?['body/DocumentNo']}",
+                  "item/PerformedBy": "@{coalesce(triggerOutputs()?['headers']?['x-ms-user-email'],outputs('Get_case')?['body/OperatorEmail'])}",
                   "item/PerformedAt": "@{utcNow()}",
                   "item/Reason": "@{triggerBody()?['text']}",
                   "item/Detail": "@{concat('顧客名: ',coalesce(outputs('Get_case')?['body/CustomerName'],''),' / ステータス: ',coalesce(outputs('Get_case')?['body/Status/Value'],''),' / 署名日時: ',coalesce(string(outputs('Get_case')?['body/SignedAt']),''),' / PDF: ',coalesce(outputs('Get_case')?['body/PdfUrl'],'なし'))}"

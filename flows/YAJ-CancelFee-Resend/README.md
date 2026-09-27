@@ -5,6 +5,9 @@
 
 **PDFは作り直さない。** SharePoint に保存済みのファイルをそのまま添付する。
 
+**差出人は再送を押した人。** Office 365 Outlook の接続は「実行のみのユーザーが提供」（CLI デプロイでは `runtimeSource: invoker`）。
+送信履歴の `SentBy` と監査ログの `PerformedBy` にも、押した人のアドレス（トリガーのヘッダー `x-ms-user-email`）を記録する。
+
 ## トリガー入力（Power Apps (V2)）
 
 | # | 種類 | 名前 | 説明 |

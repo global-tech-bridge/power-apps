@@ -186,6 +186,10 @@ def strip_keep(actions):
 
 
 strip_keep(d["actions"])
+# 本物のフローはメールを「呼び出したユーザーの接続」（invoker）で送る。
+# Flow API から直接実行する一時コピーには呼び出し元のアプリが無いので、共通の接続に戻す。
+for ref in wf["properties"]["connectionReferences"].values():
+    ref["runtimeSource"] = "embedded"
 TEST_NAME = "YAJ-CancelFee-Submit-E2ETest"
 status, created = http("POST", f"{ORG}/api/data/v9.2/workflows", DV, {
     "name": TEST_NAME, "category": 5, "type": 1, "primaryentity": "none",

@@ -20,6 +20,12 @@ AUTH = "@parameters('$authentication')"
 
 # トリガー入力の内部キー。Power Apps (V2) は宣言名ではなく型ごとの連番になる。
 ITEM_ID = "@triggerBody()?['number']"
+
+# 操作したユーザー（送信・再送・削除を押した人）。Power Apps から呼ばれたフローでは、
+# トリガーのヘッダー x-ms-user-email に呼び出したユーザーのメールアドレスが入る。
+# senderMode=operator ではメールもこの人の接続で送るので、差出人と SentBy が一致する。
+# 取れないとき（Flow API から直接実行したときなど）は担当者のアドレスにする。
+SENT_BY = "@coalesce(triggerOutputs()?['headers']?['x-ms-user-email'],outputs('Get_case')?['body/OperatorEmail'])"
 REQUEST_ID = "@triggerBody()?['text']"
 SIGNATURE_IMAGE = "@triggerBody()?['text_1']"
 
@@ -655,7 +661,7 @@ def submit_flow(cfg):
                 "item/CaseId": ITEM_ID,
                 "item/DocumentNo": doc_no,
                 "item/SentTo": recipients,
-                "item/SentBy": "@{outputs('Get_case')?['body/OperatorEmail']}",
+                "item/SentBy": f"@{{{SENT_BY[1:]}}}",
                 "item/SentAt": "@{utcNow()}",
                 "item/Kind/Value": "Initial",
                 "item/Result/Value": "Success",
@@ -956,6 +962,7 @@ def resend_flow(cfg):
                         "item/CaseId": ITEM_ID,
                         "item/DocumentNo": case_doc_no,
                         "item/SentTo": f"@{{{to_email[1:]}}}",
+                        "item/SentBy": f"@{{{SENT_BY[1:]}}}",
                         "item/SentAt": "@{utcNow()}",
                         "item/Kind/Value": "Resend",
                         "item/Result/Value": "Success",
@@ -971,6 +978,7 @@ def resend_flow(cfg):
                         "item/Action/Value": "Resend",
                         "item/CaseId": ITEM_ID,
                         "item/DocumentNo": case_doc_no,
+                        "item/PerformedBy": f"@{{{SENT_BY[1:]}}}",
                         "item/PerformedAt": "@{utcNow()}",
                         "item/Reason": "PDF再送",
                         "item/Detail": f"送信先: @{{{to_email[1:]}}}",
@@ -1077,6 +1085,7 @@ def delete_flow(cfg):
                 "item/Action/Value": "Delete",
                 "item/CaseId": ITEM_ID,
                 "item/DocumentNo": doc_no,
+                "item/PerformedBy": f"@{{{SENT_BY[1:]}}}",
                 "item/PerformedAt": "@{utcNow()}",
                 "item/Reason": f"@{{{reason[1:]}}}",
                 "item/Detail":

@@ -2,7 +2,7 @@
   "properties": {
     "connectionReferences": {
       "shared_office365": {
-        "runtimeSource": "embedded",
+        "runtimeSource": "invoker",
         "connection": {
           "connectionReferenceLogicalName": "yhdai_office365_b17d3e9c63"
         },
@@ -889,7 +889,7 @@
                         "item/CaseId": "@triggerBody()?['number']",
                         "item/DocumentNo": "@{variables('varDocumentNo')}",
                         "item/SentTo": "@{if(empty(coalesce(outputs('Get_case')?['body/CustomerEmail'],'')),outputs('Get_case')?['body/OperatorEmail'],concat(outputs('Get_case')?['body/CustomerEmail'],';',outputs('Get_case')?['body/OperatorEmail']))}",
-                        "item/SentBy": "@{outputs('Get_case')?['body/OperatorEmail']}",
+                        "item/SentBy": "@{coalesce(triggerOutputs()?['headers']?['x-ms-user-email'],outputs('Get_case')?['body/OperatorEmail'])}",
                         "item/SentAt": "@{utcNow()}",
                         "item/Kind/Value": "Initial",
                         "item/Result/Value": "Success"
