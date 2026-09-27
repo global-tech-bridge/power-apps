@@ -14,14 +14,14 @@
 
 | リスト | 作られる列 | 手作業の列 | サンプル行 | 取り込み後の手当て |
 |---|---:|---:|---:|---:|
-| [`SignatureCases.xlsx`](SignatureCases.xlsx) | 33 | 1 | 6 | 14 項目 |
+| [`SignatureCases.xlsx`](SignatureCases.xlsx) | 34 | 1 | 6 | 15 項目 |
 | [`ConsentMaster.xlsx`](ConsentMaster.xlsx) | 9 | 0 | 1 | 7 項目 |
 | [`AppAdmins.xlsx`](AppAdmins.xlsx) | 4 | 0 | 1 | 3 項目 |
 | [`SendLog.xlsx`](SendLog.xlsx) | 8 | 0 | 2 | 7 項目 |
 | [`AuditLog.xlsx`](AuditLog.xlsx) | 7 | 0 | 4 | 7 項目 |
 
-このフォルダの 5 ファイルで **61 列**。
-`../OrgMaster.xlsx` の 7 列を足すと、全 **71 列**のうち **68 列**がウィザードで作られる。
+このフォルダの 5 ファイルで **62 列**。
+`../OrgMaster.xlsx` の 7 列を足すと、全 **72 列**のうち **69 列**がウィザードで作られる。
 
 手作業で作るのは残る **3 列**だけ。
 
@@ -40,7 +40,7 @@
 
 ## SignatureCases
 
-`SignatureCases.xlsx` … 作られる列 **33** / サンプル行 **6**
+`SignatureCases.xlsx` … 作られる列 **34** / サンプル行 **6**
 
 ### ウィザードの列マッピングで選ぶ種類
 
@@ -70,6 +70,7 @@
 | `OperatorEmail` | 1行テキスト |
 | `OperatorName` | 1行テキスト |
 | `SignatureImageUrl` | 1行テキスト |
+| `SignatureImageItemId` | 数値 |
 | `PdfUrl` | 1行テキスト |
 | `PdfFileName` | 1行テキスト |
 | `RegisteredAt` | 日付と時刻 |
@@ -90,6 +91,7 @@
 - [ ] `Status` … 「値を手動で追加できる」を**いいえ**にし、選択肢が全部揃っているか確認する
 - [ ] `ConsentTextSnapshot` … 種類を**複数行テキスト**に変更し、リッチ テキストを**いいえ**にする
 - [ ] `SignedAt` … 含める内容を**日付と時刻**にする
+- [ ] `SignatureImageItemId` … 小数点以下の桁数を**0**にする
 - [ ] `RegisteredAt` … 含める内容を**日付と時刻**にする
 - [ ] `SentAt` … 含める内容を**日付と時刻**にする
 - [ ] `ResendCount` … 小数点以下の桁数を**0**にする

@@ -128,19 +128,19 @@ python3 scripts/check-template-fields.py
 python3 scripts/check-import-files.py
 ```
 
-## `pac canvas pack` で .msapp にする場合
+## `.msapp` にして CLI で入れる場合
 
-「コードの貼り付け」ではなく `.msapp` を作って取り込む方法。
+「コードの貼り付け」ではなく、`Src/` を `.msapp` に詰めて環境に入れる方法。
+**`scripts/deploy-app.sh` で自動化してある**（2026-09-28 テスト用テナントで確認）。
+しくみと初回だけ必要な手作業は [docs/10-cli-deployment.md](../../docs/10-cli-deployment.md) の 9章。
 
 ```bash
-# 1. Studio で空アプリ（PenInput を1つ配置しておく）を .msapp としてダウンロード
-pac canvas unpack --msapp Base.msapp --sources ./work --layout SourceCode
-
-# 2. ./work/Src/ 配下を本リポジトリの Src/ の内容で置き換える
-
-# 3. 再梱包して Studio にインポート
-pac canvas pack --msapp YajCancelFeeSignature.msapp --sources ./work --layout SourceCode
+./scripts/deploy-app.sh https://<組織>.crm7.dynamics.com
 ```
+
+**コントロール名はアプリ全体で一意にすること。** 画面が違っても同じ名前は使えない
+（`.msapp` だと `PA2110` で開けない。貼り付けだと Studio が黙って改名し、数式が別画面を指す）。
+`python3 scripts/check-references.py` が検出する。
 
 ### macOS での pac CLI
 

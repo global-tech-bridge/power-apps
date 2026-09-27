@@ -9,7 +9,7 @@
       Size: =64
       Align: =Align.Center
       Color: =RGBA(16, 124, 16, 1)
-- lblTitle:
+- lblTitleComplete:
     Control: Label
     Properties:
       Text: ="署名を受け付けました"
@@ -51,7 +51,7 @@
       Size: =9
       Align: =Align.Center
       Color: =RGBA(96, 94, 92, 1)
-- lblDocNo:
+- lblDocNoComplete:
     Control: Label
     Properties:
       Text: =varCompleted.DocumentNo
@@ -140,7 +140,7 @@
       Width: =292
       Height: =54
       Size: =13
-- btnToList:
+- btnToListComplete:
     Control: Classic/Button
     Properties:
       Text: ="一覧に戻る"

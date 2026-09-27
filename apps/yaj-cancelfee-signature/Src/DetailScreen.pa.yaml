@@ -14,7 +14,7 @@ Screens:
         Reset(txtResendTo)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderDetail:
           Control: Rectangle
           Properties:
             X: =0
@@ -22,7 +22,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - btnBack:
+      - btnBackDetail:
           Control: Classic/Button
           Properties:
             Text: ="‹ 一覧"
@@ -35,7 +35,7 @@ Screens:
             Fill: =RGBA(0, 0, 0, 0)
             Color: =RGBA(255, 255, 255, 1)
             BorderThickness: =0
-      - lblTitle:
+      - lblTitleDetail:
           Control: Label
           Properties:
             Text: ="確認書の詳細"
@@ -248,7 +248,7 @@ Screens:
             Size: =12
 
       # ---------------- 顧客・機体・整備情報 ----------------
-      - recCustomer:
+      - recCustomerDetail:
           Control: Rectangle
           Properties:
             X: =16
@@ -256,7 +256,7 @@ Screens:
             Width: =736
             Height: =234
             Fill: =RGBA(255, 255, 255, 1)
-      - lblSecCustomer:
+      - lblSecCustomerDetail:
           Control: Label
           Properties:
             Text: ="顧客・機体・整備情報"
@@ -385,7 +385,7 @@ Screens:
             Width: =172
             Height: =26
             Size: =12
-      - lblCapComment:
+      - lblCapCommentDetail:
           Control: Label
           Properties:
             Text: ="コメント／顧客ご用命事項"
@@ -395,7 +395,7 @@ Screens:
             Height: =16
             Size: =9
             Color: =RGBA(96, 94, 92, 1)
-      - txtComment:
+      - txtCommentDetail:
           Control: Classic/TextInput
           Properties:
             Mode: =TextMode.MultiLine
@@ -500,8 +500,16 @@ Screens:
       - imgSignature:
           Control: Image
           Properties:
-            # SignatureImages ライブラリに保存した PNG の URL（テキスト列）を表示する。
-            Image: =varSelected.SignatureImageUrl
+            # SignatureImages ライブラリの PNG を、コネクタ経由の Thumbnail で表示する。
+            # URL（SignatureImageUrl）をそのまま渡すと認証が付かず空白になる（2026-09-28 実環境で確認）。
+            # ID の一致は委任できるので、ライブラリの件数が増えても取りこぼさない。
+            # 列は論理名 '{Thumbnail}' で書く。表示名はテナントの言語で変わる（日本語では「サムネイル」）。
+            Image: |-
+              =If(
+                  Coalesce(varSelected.SignatureImageItemId, 0) > 0,
+                  LookUp(SignatureImages, ID = varSelected.SignatureImageItemId).'{Thumbnail}'.Large,
+                  ""
+              )
             ImagePosition: =ImagePosition.Fit
             X: =36
             Y: =626
@@ -511,7 +519,7 @@ Screens:
           Control: Label
           Properties:
             Text: ="署名画像は保存されていません。"
-            Visible: =IsBlank(varSelected.SignatureImageUrl)
+            Visible: =Coalesce(varSelected.SignatureImageItemId, 0) <= 0
             X: =36
             Y: =694
             Width: =696
@@ -570,7 +578,7 @@ Screens:
             BorderColor: =RGBA(168, 0, 0, 1)
             BorderThickness: =1
             Fill: =RGBA(255, 255, 255, 1)
-      - btnToList:
+      - btnToListDetail:
           Control: Classic/Button
           Properties:
             Text: ="一覧"
@@ -610,7 +618,7 @@ Screens:
             Color: =RGBA(168, 0, 0, 1)
 
       # ================ オーバーレイ ================
-      - recOverlay:
+      - recOverlayDetail:
           Control: Rectangle
           Properties:
             Visible: |-
@@ -793,6 +801,8 @@ Screens:
               );
               Set(varBusy, false);
               If(!IsBlank(varResendResult) && varResendResult.Success,
+                  // 更新はフロー側で行うため、アプリが持つ一覧のデータは古いまま。読み直す
+                  Refresh(SignatureCases);
                   Set(varSelected, LookUp(SignatureCases, ID = varSelected.ID));
                   Notify(
                       "署名済みPDFを再送しました。（" & Trim(txtResendTo.Text) & "）",
@@ -907,6 +917,8 @@ Screens:
               );
               Set(varBusy, false);
               If(!IsBlank(varDeleteResult) && varDeleteResult.Success,
+                  // 更新はフロー側で行うため、アプリが持つ一覧のデータは古いまま。読み直す
+                  Refresh(SignatureCases);
                   Notify("削除しました。監査ログに記録しました。", NotificationType.Success);
                   Navigate(ListScreen, ScreenTransition.UnCover),
                   Notify(

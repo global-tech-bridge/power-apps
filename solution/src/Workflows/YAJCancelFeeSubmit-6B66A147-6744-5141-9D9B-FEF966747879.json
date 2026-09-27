@@ -143,6 +143,23 @@
             ]
           }
         },
+        "Init_varSignatureItemId": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSignatureItemId",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "Init_varSignatureUrl": [
+              "Succeeded"
+            ]
+          }
+        },
         "Init_varClaimId": {
           "type": "InitializeVariable",
           "inputs": {
@@ -155,7 +172,7 @@
             ]
           },
           "runAfter": {
-            "Init_varSignatureUrl": [
+            "Init_varSignatureItemId": [
               "Succeeded"
             ]
           }
@@ -498,6 +515,18 @@
                       "Succeeded"
                     ]
                   }
+                },
+                "Set_SignatureItemId": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varSignatureItemId",
+                    "value": "@int(outputs('Create_signature_png')?['body/ItemId'])"
+                  },
+                  "runAfter": {
+                    "Set_SignatureUrl": [
+                      "Succeeded"
+                    ]
+                  }
                 }
               },
               "runAfter": {
@@ -547,6 +576,18 @@
                         "Succeeded"
                       ]
                     }
+                  },
+                  "Set_SignatureItemId_existing": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varSignatureItemId",
+                      "value": "@int(coalesce(outputs('Get_case')?['body/SignatureImageItemId'],0))"
+                    },
+                    "runAfter": {
+                      "Set_SignatureUrl_existing": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 }
               }
@@ -565,7 +606,8 @@
                   "id": "@triggerBody()?['number']",
                   "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
                   "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
-                  "item/SignatureImageUrl": "@{variables('varSignatureUrl')}"
+                  "item/SignatureImageUrl": "@{variables('varSignatureUrl')}",
+                  "item/SignatureImageItemId": "@if(greater(variables('varSignatureItemId'),0),variables('varSignatureItemId'),null)"
                 },
                 "authentication": "@parameters('$authentication')"
               },

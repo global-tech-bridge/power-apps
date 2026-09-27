@@ -14,7 +14,7 @@ Screens:
         Reset(txtSerialNo);
         Reset(chkNoSerial);
         Reset(ddMaintenanceType);
-        Reset(txtComment);
+        Reset(txtCommentEdit);
         Reset(ddBranch);
         Reset(ddBlock);
         Reset(ddSite);
@@ -25,7 +25,7 @@ Screens:
         Reset(txtDraftDeleteReason)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderEdit:
           Control: Rectangle
           Properties:
             X: =0
@@ -33,7 +33,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - btnBack:
+      - btnBackEdit:
           Control: Classic/Button
           Properties:
             Text: ="‹ 一覧"
@@ -46,7 +46,7 @@ Screens:
             Fill: =RGBA(0, 0, 0, 0)
             Color: =RGBA(255, 255, 255, 1)
             BorderThickness: =0
-      - lblTitle:
+      - lblTitleEdit:
           Control: Label
           Properties:
             Text: |-
@@ -58,7 +58,7 @@ Screens:
             Size: =17
             Color: =RGBA(255, 255, 255, 1)
             FontWeight: =FontWeight.Semibold
-      - lblDocNo:
+      - lblDocNoEdit:
           Control: Label
           Properties:
             Text: |-
@@ -75,7 +75,7 @@ Screens:
             Color: =RGBA(219, 235, 250, 1)
 
       # ---------------- 顧客情報 ----------------
-      - recCustomer:
+      - recCustomerEdit:
           Control: Rectangle
           Properties:
             X: =16
@@ -83,7 +83,7 @@ Screens:
             Width: =736
             Height: =180
             Fill: =RGBA(255, 255, 255, 1)
-      - lblSecCustomer:
+      - lblSecCustomerEdit:
           Control: Label
           Properties:
             Text: ="顧客情報"
@@ -251,7 +251,7 @@ Screens:
             Width: =228
             Height: =24
             Size: =10
-      - lblCapComment:
+      - lblCapCommentEdit:
           Control: Label
           Properties:
             Text: ="コメント／顧客ご用命事項（任意）"
@@ -261,7 +261,7 @@ Screens:
             Height: =18
             Size: =9
             Color: =RGBA(96, 94, 92, 1)
-      - txtComment:
+      - txtCommentEdit:
           Control: Classic/TextInput
           Properties:
             Mode: =TextMode.MultiLine
@@ -435,7 +435,7 @@ Screens:
             Color: =RGBA(96, 94, 92, 1)
 
       # ---------------- 入力チェックと操作 ----------------
-      - lblValidation:
+      - lblValidationEdit:
           Control: Label
           Properties:
             Text: |-
@@ -466,62 +466,70 @@ Screens:
           Properties:
             Text: ="確認・署名画面へ進む ›"
             DisplayMode: |-
-              =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
+              =If(IsBlank(lblValidationEdit.Text), DisplayMode.Edit, DisplayMode.Disabled)
             # ドラフト保存と同一のレコード内容を保存する。
             # 保存内容を変更する場合は btnSaveDraft.OnSelect も必ず同じように直すこと。
             OnSelect: |-
-             =// デモ: SharePoint ではなくコレクションへ保存する
-                           If(varRecordId = 0,
-                               Set(varRecordId, varNextCaseId);
-                               Set(varNextCaseId, varNextCaseId + 1);
-                               Collect(colCases,
-                                   Patch(recBlankCase, {ID: varRecordId, RegisteredAt: Now()})
-                               )
-                           );
-                           Patch(colCases, LookUp(colCases, ID = varRecordId),
-                               {
-                                   CustomerName: Trim(txtCustomerName.Text),
-                                   CustomerEmail: Trim(txtCustomerEmail.Text),
-                                   CustomerPhone: Trim(txtCustomerPhone.Text),
-                                   Model: Trim(txtModel.Text),
-                                   SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
-                                   NoSerialNo: chkNoSerial.Value,
-                                   MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
-                                   Comment: txtComment.Text,
-                                   BranchName: ddBranch.Selected.Value,
-                                   BlockName: ddBlock.Selected.Value,
-                                   BlockCode: LookUp(colOrg,
-                                       BranchName = ddBranch.Selected.Value
-                                       && BlockName = ddBlock.Selected.Value,
-                                       BlockCode
-                                   ),
-                                   SiteName: ddSite.Selected.Value,
-                                   SiteCode: LookUp(colOrg,
-                                       BranchName = ddBranch.Selected.Value
-                                       && BlockName = ddBlock.Selected.Value
-                                       && SiteName = ddSite.Selected.Value,
-                                       SiteCode
-                                   ),
-                                   Status: {Value: "Draft"},
-                                   OperatorEmail: varUserEmail,
-                                   OperatorName: varUserName
-                               }
-                           );
-                           Set(varEdit, LookUp(colCases, ID = varRecordId));
-                           // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
-                           // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
-                           ClearCollect(colOrgPref,
-                               {
-                                   BranchName: ddBranch.Selected.Value,
-                                   BlockName: ddBlock.Selected.Value,
-                                   SiteName: ddSite.Selected.Value
-                               }
-                           );
-                           IfError(SaveData(colOrgPref, "YajOrgPref"), false);
-                           Set(varDefaultBranch, ddBranch.Selected.Value);
-                           Set(varDefaultBlock, ddBlock.Selected.Value);
-                           Set(varDefaultSite, ddSite.Selected.Value);
-                           Navigate(ConsentScreen, ScreenTransition.Cover)
+              =// デモ: SharePoint ではなくコレクションへ保存する
+                            If(varRecordId = 0,
+                                Set(varRecordId, varNextCaseId);
+                                Set(varNextCaseId, varNextCaseId + 1);
+                                Collect(colCases,
+                                    Patch(recBlankCase, {ID: varRecordId, RegisteredAt: Now()})
+                                )
+                            );
+                            Patch(colCases, LookUp(colCases, ID = varRecordId),
+                                {
+                                    CustomerName: Trim(txtCustomerName.Text),
+                                    CustomerEmail: Trim(txtCustomerEmail.Text),
+                                    CustomerPhone: Trim(txtCustomerPhone.Text),
+                                    Model: Trim(txtModel.Text),
+                                    SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
+                                    NoSerialNo: chkNoSerial.Value,
+                                    MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
+                                    Comment: txtCommentEdit.Text,
+                                    BranchName: ddBranch.Selected.Value,
+                                    BlockName: ddBlock.Selected.Value,
+                                    BlockCode: LookUp(colOrg,
+                                        BranchName = ddBranch.Selected.Value
+                                        && BlockName = ddBlock.Selected.Value,
+                                        BlockCode
+                                    ),
+                                    SiteName: ddSite.Selected.Value,
+                                    SiteCode: LookUp(colOrg,
+                                        BranchName = ddBranch.Selected.Value
+                                        && BlockName = ddBlock.Selected.Value
+                                        && SiteName = ddSite.Selected.Value,
+                                        SiteCode
+                                    ),
+                                    Status: {Value: "Draft"},
+                                    OperatorEmail: varUserEmail,
+                                    OperatorName: varUserName
+                                }
+                            );
+                            Set(varEdit, LookUp(colCases, ID = varRecordId));
+                            // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
+                            // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
+                            ClearCollect(colOrgPref,
+                                {
+                                    BranchName: ddBranch.Selected.Value,
+                                    BlockName: ddBlock.Selected.Value,
+                                    SiteName: ddSite.Selected.Value
+                                }
+                            );
+                            IfError(SaveData(colOrgPref, "YajOrgPref"), false);
+                            Set(varDefaultBranch, ddBranch.Selected.Value);
+                            Set(varDefaultBlock, ddBlock.Selected.Value);
+                            Set(varDefaultSite, ddSite.Selected.Value);
+                            Navigate(ConsentScreen, ScreenTransition.Cover)
+            X: =16
+            Y: =822
+            Width: =380
+            Height: =52
+            Size: =14
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
       - btnSaveDraft:
           Control: Classic/Button
           Properties:
@@ -530,62 +538,67 @@ Screens:
               =If(IsBlank(Trim(txtCustomerName.Text)), DisplayMode.Disabled, DisplayMode.Edit)
             # btnNext.OnSelect と同一のレコード内容。変更時は両方を直すこと。
             OnSelect: |-
-             =// デモ: SharePoint ではなくコレクションへ保存する
-                           If(varRecordId = 0,
-                               Set(varRecordId, varNextCaseId);
-                               Set(varNextCaseId, varNextCaseId + 1);
-                               Collect(colCases,
-                                   Patch(recBlankCase, {ID: varRecordId, RegisteredAt: Now()})
-                               )
-                           );
-                           Patch(colCases, LookUp(colCases, ID = varRecordId),
-                               {
-                                   CustomerName: Trim(txtCustomerName.Text),
-                                   CustomerEmail: Trim(txtCustomerEmail.Text),
-                                   CustomerPhone: Trim(txtCustomerPhone.Text),
-                                   Model: Trim(txtModel.Text),
-                                   SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
-                                   NoSerialNo: chkNoSerial.Value,
-                                   MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
-                                   Comment: txtComment.Text,
-                                   BranchName: ddBranch.Selected.Value,
-                                   BlockName: ddBlock.Selected.Value,
-                                   BlockCode: LookUp(colOrg,
-                                       BranchName = ddBranch.Selected.Value
-                                       && BlockName = ddBlock.Selected.Value,
-                                       BlockCode
-                                   ),
-                                   SiteName: ddSite.Selected.Value,
-                                   SiteCode: LookUp(colOrg,
-                                       BranchName = ddBranch.Selected.Value
-                                       && BlockName = ddBlock.Selected.Value
-                                       && SiteName = ddSite.Selected.Value,
-                                       SiteCode
-                                   ),
-                                   Status: {Value: "Draft"},
-                                   OperatorEmail: varUserEmail,
-                                   OperatorName: varUserName
-                               }
-                           );
-                           Set(varEdit, LookUp(colCases, ID = varRecordId));
-                           // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
-                           // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
-                           ClearCollect(colOrgPref,
-                               {
-                                   BranchName: ddBranch.Selected.Value,
-                                   BlockName: ddBlock.Selected.Value,
-                                   SiteName: ddSite.Selected.Value
-                               }
-                           );
-                           IfError(SaveData(colOrgPref, "YajOrgPref"), false);
-                           Set(varDefaultBranch, ddBranch.Selected.Value);
-                           Set(varDefaultBlock, ddBlock.Selected.Value);
-                           Set(varDefaultSite, ddSite.Selected.Value);
-                           Notify(
-                               "ドラフトを保存しました。文書番号は確認・署名の送信時に採番されます。",
-                               NotificationType.Success
-                           );
-                           Navigate(ListScreen, ScreenTransition.UnCover)
+              =// デモ: SharePoint ではなくコレクションへ保存する
+                            If(varRecordId = 0,
+                                Set(varRecordId, varNextCaseId);
+                                Set(varNextCaseId, varNextCaseId + 1);
+                                Collect(colCases,
+                                    Patch(recBlankCase, {ID: varRecordId, RegisteredAt: Now()})
+                                )
+                            );
+                            Patch(colCases, LookUp(colCases, ID = varRecordId),
+                                {
+                                    CustomerName: Trim(txtCustomerName.Text),
+                                    CustomerEmail: Trim(txtCustomerEmail.Text),
+                                    CustomerPhone: Trim(txtCustomerPhone.Text),
+                                    Model: Trim(txtModel.Text),
+                                    SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
+                                    NoSerialNo: chkNoSerial.Value,
+                                    MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
+                                    Comment: txtCommentEdit.Text,
+                                    BranchName: ddBranch.Selected.Value,
+                                    BlockName: ddBlock.Selected.Value,
+                                    BlockCode: LookUp(colOrg,
+                                        BranchName = ddBranch.Selected.Value
+                                        && BlockName = ddBlock.Selected.Value,
+                                        BlockCode
+                                    ),
+                                    SiteName: ddSite.Selected.Value,
+                                    SiteCode: LookUp(colOrg,
+                                        BranchName = ddBranch.Selected.Value
+                                        && BlockName = ddBlock.Selected.Value
+                                        && SiteName = ddSite.Selected.Value,
+                                        SiteCode
+                                    ),
+                                    Status: {Value: "Draft"},
+                                    OperatorEmail: varUserEmail,
+                                    OperatorName: varUserName
+                                }
+                            );
+                            Set(varEdit, LookUp(colCases, ID = varRecordId));
+                            // 選んだ支社・ブロック・拠点を端末に覚えさせ、次回起動時の初期値にする。
+                            // SaveData は Studio では使えないため IfError で無視する（公開後は動く）。
+                            ClearCollect(colOrgPref,
+                                {
+                                    BranchName: ddBranch.Selected.Value,
+                                    BlockName: ddBlock.Selected.Value,
+                                    SiteName: ddSite.Selected.Value
+                                }
+                            );
+                            IfError(SaveData(colOrgPref, "YajOrgPref"), false);
+                            Set(varDefaultBranch, ddBranch.Selected.Value);
+                            Set(varDefaultBlock, ddBlock.Selected.Value);
+                            Set(varDefaultSite, ddSite.Selected.Value);
+                            Notify(
+                                "ドラフトを保存しました。文書番号は確認・署名の送信時に採番されます。",
+                                NotificationType.Success
+                            );
+                            Navigate(ListScreen, ScreenTransition.UnCover)
+            X: =406
+            Y: =822
+            Width: =180
+            Height: =52
+            Size: =12
       - btnReset:
           Control: Classic/Button
           Properties:
@@ -599,7 +612,7 @@ Screens:
               Reset(txtSerialNo);
               Reset(chkNoSerial);
               Reset(ddMaintenanceType);
-              Reset(txtComment);
+              Reset(txtCommentEdit);
               Reset(ddBranch);
               Reset(ddBlock);
               Reset(ddSite);
@@ -733,15 +746,23 @@ Screens:
                   DisplayMode.Disabled
               )
             OnSelect: |-
-             =// デモ: コレクションから消すだけ。本番はフローで削除し監査ログに記録する。
-                           Set(varShowDraftDelete, false);
-                           Remove(colCases, LookUp(colCases, ID = varRecordId));
-                           Set(varRecordId, 0);
-                           Notify(
-                               "【デモ】下書きを削除しました。本番では監査ログに記録します。",
-                               NotificationType.Success
-                           );
-                           Navigate(ListScreen, ScreenTransition.UnCover)
+              =// デモ: コレクションから消すだけ。本番はフローで削除し監査ログに記録する。
+                            Set(varShowDraftDelete, false);
+                            Remove(colCases, LookUp(colCases, ID = varRecordId));
+                            Set(varRecordId, 0);
+                            Notify(
+                                "【デモ】下書きを削除しました。本番では監査ログに記録します。",
+                                NotificationType.Success
+                            );
+                            Navigate(ListScreen, ScreenTransition.UnCover)
+            X: =336
+            Y: =552
+            Width: =320
+            Height: =52
+            Size: =13
+            Fill: =RGBA(168, 0, 0, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
       - lblDraftDeleteBusy:
           Control: Label
           Properties:

@@ -9,7 +9,7 @@
       Size: =56
       Align: =Align.Center
       Color: =RGBA(196, 49, 75, 1)
-- lblTitle:
+- lblTitleError:
     Control: Label
     Properties:
       Text: ="送信は完了していません"
@@ -101,20 +101,28 @@
       DisplayMode: |-
         =If(varRetrying, DisplayMode.Disabled, DisplayMode.Edit)
       OnSelect: |-
-       =// デモ: 再実行は必ず成功する
-                     Set(varRetrying, true);
-                     Patch(colCases, LookUp(colCases, ID = varRecordId),
-                         {
-                             Status: {Value: "Sent"},
-                             PdfUrl: "demo",
-                             SentAt: Now(),
-                             ErrorCode: "",
-                             ErrorMessage: ""
-                         }
-                     );
-                     Set(varRetrying, false);
-                     Set(varCompleted, LookUp(colCases, ID = varRecordId));
-                     Navigate(CompleteScreen, ScreenTransition.Fade)
+        =// デモ: 再実行は必ず成功する
+                      Set(varRetrying, true);
+                      Patch(colCases, LookUp(colCases, ID = varRecordId),
+                          {
+                              Status: {Value: "Sent"},
+                              PdfUrl: "demo",
+                              SentAt: Now(),
+                              ErrorCode: "",
+                              ErrorMessage: ""
+                          }
+                      );
+                      Set(varRetrying, false);
+                      Set(varCompleted, LookUp(colCases, ID = varRecordId));
+                      Navigate(CompleteScreen, ScreenTransition.Fade)
+      X: =84
+      Y: =726
+      Width: =292
+      Height: =54
+      Size: =14
+      Fill: =RGBA(0, 120, 212, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Semibold
 - btnBackToConsent:
     Control: Classic/Button
     Properties:
@@ -125,7 +133,7 @@
       Width: =292
       Height: =54
       Size: =13
-- btnToList:
+- btnToListError:
     Control: Classic/Button
     Properties:
       Text: ="一覧に戻る（後で再実行する）"

@@ -14,7 +14,7 @@ Screens:
         Reset(txtSerialNo);
         Reset(chkNoSerial);
         Reset(ddMaintenanceType);
-        Reset(txtComment);
+        Reset(txtCommentEdit);
         Reset(ddBranch);
         Reset(ddBlock);
         Reset(ddSite);
@@ -25,7 +25,7 @@ Screens:
         Reset(txtDraftDeleteReason)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderEdit:
           Control: Rectangle
           Properties:
             X: =0
@@ -33,7 +33,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - btnBack:
+      - btnBackEdit:
           Control: Classic/Button
           Properties:
             Text: ="‹ 一覧"
@@ -46,7 +46,7 @@ Screens:
             Fill: =RGBA(0, 0, 0, 0)
             Color: =RGBA(255, 255, 255, 1)
             BorderThickness: =0
-      - lblTitle:
+      - lblTitleEdit:
           Control: Label
           Properties:
             Text: |-
@@ -58,7 +58,7 @@ Screens:
             Size: =17
             Color: =RGBA(255, 255, 255, 1)
             FontWeight: =FontWeight.Semibold
-      - lblDocNo:
+      - lblDocNoEdit:
           Control: Label
           Properties:
             Text: |-
@@ -75,7 +75,7 @@ Screens:
             Color: =RGBA(219, 235, 250, 1)
 
       # ---------------- 顧客情報 ----------------
-      - recCustomer:
+      - recCustomerEdit:
           Control: Rectangle
           Properties:
             X: =16
@@ -83,7 +83,7 @@ Screens:
             Width: =736
             Height: =180
             Fill: =RGBA(255, 255, 255, 1)
-      - lblSecCustomer:
+      - lblSecCustomerEdit:
           Control: Label
           Properties:
             Text: ="顧客情報"
@@ -251,7 +251,7 @@ Screens:
             Width: =228
             Height: =24
             Size: =10
-      - lblCapComment:
+      - lblCapCommentEdit:
           Control: Label
           Properties:
             Text: ="コメント／顧客ご用命事項（任意）"
@@ -261,7 +261,7 @@ Screens:
             Height: =18
             Size: =9
             Color: =RGBA(96, 94, 92, 1)
-      - txtComment:
+      - txtCommentEdit:
           Control: Classic/TextInput
           Properties:
             Mode: =TextMode.MultiLine
@@ -435,7 +435,7 @@ Screens:
             Color: =RGBA(96, 94, 92, 1)
 
       # ---------------- 入力チェックと操作 ----------------
-      - lblValidation:
+      - lblValidationEdit:
           Control: Label
           Properties:
             Text: |-
@@ -466,7 +466,7 @@ Screens:
           Properties:
             Text: ="確認・署名画面へ進む ›"
             DisplayMode: |-
-              =If(IsBlank(lblValidation.Text), DisplayMode.Edit, DisplayMode.Disabled)
+              =If(IsBlank(lblValidationEdit.Text), DisplayMode.Edit, DisplayMode.Disabled)
             # ドラフト保存と同一のレコード内容を保存する。
             # 保存内容を変更する場合は btnSaveDraft.OnSelect も必ず同じように直すこと。
             OnSelect: |-
@@ -486,7 +486,7 @@ Screens:
                               SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
                               NoSerialNo: chkNoSerial.Value,
                               MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
-                              Comment: txtComment.Text,
+                              Comment: txtCommentEdit.Text,
                               BranchName: ddBranch.Selected.Value,
                               BlockName: ddBlock.Selected.Value,
                               BlockCode: LookUp(colOrg,
@@ -575,7 +575,7 @@ Screens:
                               SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
                               NoSerialNo: chkNoSerial.Value,
                               MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
-                              Comment: txtComment.Text,
+                              Comment: txtCommentEdit.Text,
                               BranchName: ddBranch.Selected.Value,
                               BlockName: ddBlock.Selected.Value,
                               BlockCode: LookUp(colOrg,
@@ -654,7 +654,7 @@ Screens:
               Reset(txtSerialNo);
               Reset(chkNoSerial);
               Reset(ddMaintenanceType);
-              Reset(txtComment);
+              Reset(txtCommentEdit);
               Reset(ddBranch);
               Reset(ddBlock);
               Reset(ddSite);
@@ -798,6 +798,8 @@ Screens:
               );
               Set(varBusy, false);
               If(!IsBlank(varDeleteResult) && varDeleteResult.Success,
+                  // 更新はフロー側で行うため、アプリが持つ一覧のデータは古いまま。読み直す
+                  Refresh(SignatureCases);
                   Notify("下書きを削除しました。監査ログに記録しました。", NotificationType.Success);
                   Set(varRecordId, 0);
                   Navigate(ListScreen, ScreenTransition.UnCover),

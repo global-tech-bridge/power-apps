@@ -19,7 +19,7 @@ Reset(txtModel);
 Reset(txtSerialNo);
 Reset(chkNoSerial);
 Reset(ddMaintenanceType);
-Reset(txtComment);
+Reset(txtCommentEdit);
 Reset(ddBranch);
 Reset(ddBlock);
 Reset(ddSite);

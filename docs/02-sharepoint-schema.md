@@ -58,6 +58,7 @@ PnP.PowerShell が使えない環境では、下の表のとおりに画面で�
 | `OperatorEmail` | 1行テキスト | — | ○ | — | 委任可能な絞り込み用に文字列でも保持する |
 | `OperatorName` | 1行テキスト | — | ○ | — | 担当者表示名 |
 | `SignatureImageUrl` | 1行テキスト | — | — | — | SignatureImages ライブラリ内の署名PNGのURL |
+| `SignatureImageItemId` | 数値 | — | — | 小数点以下の桁数: **0** | SignatureImages ライブラリ内の署名PNGのアイテムID。アプリはこのIDでライブラリを引いて画像を表示する（URL を Image に渡しても認証が付かず表示されない） |
 | `PdfUrl` | 1行テキスト | — | — | — | SignatureDocs ライブラリ内の署名済みPDFのURL |
 | `PdfFileName` | 1行テキスト | — | — | — | PDFファイル名（文書番号.pdf） |
 | `RegisteredAt` | 日付と時刻 | — | ○ | 含める内容: **日付と時刻** | 作成日。Created 列はサイトの言語で表示名が変わるため独自に持つ |

@@ -6,6 +6,7 @@ Studio に貼り付ける前に、次の食い違いを機械的に見つける�
   2. どこでも Set されていない変数を読んでいる
   3. 存在しない画面へ Navigate している
   4. SharePoint 列の綴りが docs/02-sharepoint-schema.md の定義と合っていない
+  5. コントロール名・画面名がアプリ全体で一意になっていない
 """
 import json
 import re
@@ -77,6 +78,20 @@ all_formulas = app_formulas + [f for v in per_screen_formulas.values() for f in 
 blob = "\n".join(all_formulas)
 
 problems = []
+
+# --- 0. 名前の一意性 ---
+# コントロール名はアプリ全体で一意でなければならない（画面が違っても不可）。
+# .msapp に詰めて Studio で開くと PA2110「An entity with name ... already exists」で
+# 読み込めない。コードの貼り付けでは Studio が黙って lblTitle_1 のように改名するため、
+# 数式が別の画面の同名コントロールを指したまま気づけない（2026-09-28 実環境で確認）。
+owners = defaultdict(list)
+for screen, names in per_screen_controls.items():
+    owners[screen].append(f"{screen}（画面）")
+    for n in names:
+        owners[n].append(screen)
+for name, where in sorted(owners.items()):
+    if len(where) > 1:
+        problems.append(f"[unique] {name} が複数箇所にある: {', '.join(sorted(where))}")
 
 # --- 1. コントロール参照 ---
 for screen, fx in per_screen_formulas.items():

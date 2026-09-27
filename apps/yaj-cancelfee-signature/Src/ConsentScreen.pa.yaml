@@ -20,7 +20,7 @@ Screens:
         Reset(penSignature)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderConsent:
           Control: Rectangle
           Properties:
             X: =0
@@ -28,7 +28,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - btnBack:
+      - btnBackConsent:
           Control: Classic/Button
           Properties:
             Text: ="‹ 入力"
@@ -41,7 +41,7 @@ Screens:
             Fill: =RGBA(0, 0, 0, 0)
             Color: =RGBA(255, 255, 255, 1)
             BorderThickness: =0
-      - lblTitle:
+      - lblTitleConsent:
           Control: Label
           Properties:
             Text: ="内容のご確認とご署名"
@@ -212,7 +212,7 @@ Screens:
             ShowControls: =false
 
       # ---------------- 入力チェックと送信 ----------------
-      - lblValidation:
+      - lblValidationConsent:
           Control: Label
           Properties:
             Text: |-
@@ -233,7 +233,7 @@ Screens:
           Properties:
             Text: ="確認して署名を送信"
             DisplayMode: |-
-              =If(IsBlank(lblValidation.Text) && !varSubmitting,
+              =If(IsBlank(lblValidationConsent.Text) && !varSubmitting,
                   DisplayMode.Edit,
                   DisplayMode.Disabled
               )
@@ -258,7 +258,7 @@ Screens:
             Size: =12
 
       # ================ オーバーレイ（最終確認 / 処理中）================
-      - recOverlay:
+      - recOverlayConsent:
           Control: Rectangle
           Properties:
             Visible: =varShowConfirm || varSubmitting
@@ -429,6 +429,8 @@ Screens:
                   );
                   Set(varSubmitting, false);
                   If(!IsBlank(varFlowResult) && varFlowResult.Success,
+                      // 更新はフロー側で行うため、アプリが持つ一覧のデータは古いまま。読み直す
+                      Refresh(SignatureCases);
                       // 全処理成功。ここだけが完了画面への唯一の経路。
                       Set(varSignatureBase64, "");
                       Set(varCompleted, LookUp(SignatureCases, ID = varRecordId));

@@ -56,7 +56,10 @@ print("App-OnStart.txt")
 # ---------------------------------------------------------------------------
 # 各画面 → コントロール一式と画面プロパティ
 # ---------------------------------------------------------------------------
-order = app_doc.get("EditorState", {}).get("ScreensOrder", [])
+# 画面の並び順は _EditorState.pa.yaml（Studio と同じ置き場所）。古い版は App.pa.yaml にあった
+editor_state = SRC / "_EditorState.pa.yaml"
+state_doc = yaml.safe_load(editor_state.read_text()) if editor_state.exists() else app_doc
+order = (state_doc or {}).get("EditorState", {}).get("ScreensOrder", [])
 summary = []
 
 for path in sorted(SRC.glob("*.pa.yaml")):

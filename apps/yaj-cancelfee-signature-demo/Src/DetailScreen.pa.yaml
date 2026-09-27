@@ -14,7 +14,7 @@ Screens:
         Reset(txtResendTo)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderDetail:
           Control: Rectangle
           Properties:
             X: =0
@@ -22,7 +22,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - btnBack:
+      - btnBackDetail:
           Control: Classic/Button
           Properties:
             Text: ="‹ 一覧"
@@ -35,7 +35,7 @@ Screens:
             Fill: =RGBA(0, 0, 0, 0)
             Color: =RGBA(255, 255, 255, 1)
             BorderThickness: =0
-      - lblTitle:
+      - lblTitleDetail:
           Control: Label
           Properties:
             Text: ="確認書の詳細（デモ）"
@@ -248,7 +248,7 @@ Screens:
             Size: =12
 
       # ---------------- 顧客・機体・整備情報 ----------------
-      - recCustomer:
+      - recCustomerDetail:
           Control: Rectangle
           Properties:
             X: =16
@@ -256,7 +256,7 @@ Screens:
             Width: =736
             Height: =234
             Fill: =RGBA(255, 255, 255, 1)
-      - lblSecCustomer:
+      - lblSecCustomerDetail:
           Control: Label
           Properties:
             Text: ="顧客・機体・整備情報"
@@ -385,7 +385,7 @@ Screens:
             Width: =172
             Height: =26
             Size: =12
-      - lblCapComment:
+      - lblCapCommentDetail:
           Control: Label
           Properties:
             Text: ="コメント／顧客ご用命事項"
@@ -395,7 +395,7 @@ Screens:
             Height: =16
             Size: =9
             Color: =RGBA(96, 94, 92, 1)
-      - txtComment:
+      - txtCommentDetail:
           Control: Classic/TextInput
           Properties:
             Mode: =TextMode.MultiLine
@@ -500,8 +500,10 @@ Screens:
       - imgSignature:
           Control: Image
           Properties:
-            # SignatureImages ライブラリに保存した PNG の URL（テキスト列）を表示する。
-            Image: =varSelected.SignatureImageUrl
+            # デモ版: colCases に入れた署名の data URI をそのまま表示する。
+            # 列は論理名 '{Thumbnail}' で書く。表示名はテナントの言語で変わる（日本語では「サムネイル」）。
+            Image: |-
+              =varSelected.SignatureImageUrl
             ImagePosition: =ImagePosition.Fit
             X: =36
             Y: =626
@@ -574,7 +576,7 @@ Screens:
             BorderColor: =RGBA(168, 0, 0, 1)
             BorderThickness: =1
             Fill: =RGBA(255, 255, 255, 1)
-      - btnToList:
+      - btnToListDetail:
           Control: Classic/Button
           Properties:
             Text: ="一覧"
@@ -614,7 +616,7 @@ Screens:
             Color: =RGBA(168, 0, 0, 1)
 
       # ================ オーバーレイ ================
-      - recOverlay:
+      - recOverlayDetail:
           Control: Rectangle
           Properties:
             Visible: |-
@@ -787,17 +789,26 @@ Screens:
                   DisplayMode.Disabled
               )
             OnSelect: |-
-             =// デモ: 実際には送信しない
-                           Set(varShowResend, false);
-                           Patch(colCases, LookUp(colCases, ID = varSelected.ID),
-                               {SentAt: Now(), ResendCount: varSelected.ResendCount + 1}
-                           );
-                           Set(varSelected, LookUp(colCases, ID = varSelected.ID));
-                           Notify(
-                               "【デモ】署名済みPDFを再送しました。（" & Trim(txtResendTo.Text) & "）"
-                                   & " 本番では保存済みPDFが実際に添付されます。",
-                               NotificationType.Success
-                           )
+              =// デモ: 実際には送信しない
+                            Set(varShowResend, false);
+                            Patch(colCases, LookUp(colCases, ID = varSelected.ID),
+                                {SentAt: Now(), ResendCount: varSelected.ResendCount + 1}
+                            );
+                            Set(varSelected, LookUp(colCases, ID = varSelected.ID));
+                            Notify(
+                                "【デモ】署名済みPDFを再送しました。（" & Trim(txtResendTo.Text) & "）"
+                                    & " 本番では保存済みPDFが実際に添付されます。",
+                                NotificationType.Success
+                            )
+            X: =336
+            Y: =614
+            Width: =320
+            Height: =52
+            Size: =13
+            Fill: =RGBA(0, 120, 212, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
       # --- 削除の確認（管理者のみ）---
       - recDelete:
           Control: Rectangle
@@ -881,14 +892,23 @@ Screens:
                   DisplayMode.Disabled
               )
             OnSelect: |-
-             =// デモ: コレクションから消すだけ。本番はPDFと署名画像も削除し監査ログに記録する。
-                           Set(varShowDelete, false);
-                           Remove(colCases, LookUp(colCases, ID = varSelected.ID));
-                           Notify(
-                               "【デモ】削除しました。本番では署名画像とPDFも削除し、監査ログに記録します。",
-                               NotificationType.Success
-                           );
-                           Navigate(ListScreen, ScreenTransition.UnCover)
+              =// デモ: コレクションから消すだけ。本番はPDFと署名画像も削除し監査ログに記録する。
+                            Set(varShowDelete, false);
+                            Remove(colCases, LookUp(colCases, ID = varSelected.ID));
+                            Notify(
+                                "【デモ】削除しました。本番では署名画像とPDFも削除し、監査ログに記録します。",
+                                NotificationType.Success
+                            );
+                            Navigate(ListScreen, ScreenTransition.UnCover)
+            X: =336
+            Y: =548
+            Width: =320
+            Height: =52
+            Size: =13
+            Fill: =RGBA(168, 0, 0, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Semibold
+
       # --- 処理中 ---
       - lblBusy:
           Control: Label

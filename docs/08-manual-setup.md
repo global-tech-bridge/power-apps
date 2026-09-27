@@ -10,7 +10,7 @@
 
 | 工程 | 内容 | 目安 |
 |---|---|---|
-| Part 1 | SharePoint リスト7つ（**計71列**）とライブラリ4つ | 30〜45分（方法A）／60〜90分（方法B） |
+| Part 1 | SharePoint リスト7つ（**計72列**）とライブラリ4つ | 30〜45分（方法A）／60〜90分（方法B） |
 | Part 2 | 初期データの投入（組織マスタ・確認文面・管理者・テンプレート） | 10分 |
 | Part 3 | Power Automate フロー3つ | 90〜120分 |
 | Part 4 | Power Apps の取り込み（6画面・197コントロール） | 40〜60分 |
@@ -32,7 +32,7 @@ Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 
 ## 1-2. リストと列を作る
 
-作る対象は次の7リスト・計71列。**列名・リスト名は英語のまま**にする（理由は後述）。
+作る対象は次の7リスト・計72列。**列名・リスト名は英語のまま**にする（理由は後述）。
 
 | # | リスト名 | 列数 | 用途 |
 |---:|---|---:|---|
@@ -51,7 +51,7 @@ Part 3 の手順だけは別ファイル（[flows/](../flows/)）にある。
 ### 方法A（推奨）: Excel から取り込んで列をまとめて作る
 
 SharePoint の **＋新規 → リスト → Excel から** は、取り込んだ表のヘッダーから列を作る。
-これを使うと、71列のうち **68列がウィザードで作られ、手作業は3列だけ**になる
+これを使うと、72列のうち **69列がウィザードで作られ、手作業は3列だけ**になる
 （`SignatureCases.Operator` と `DocumentNumberCounter` の `CaseId` / `LastNumber`）。
 
 取り込み用のファイルは [`data/import/`](../data/import/) に用意してある。
@@ -59,7 +59,7 @@ SharePoint の **＋新規 → リスト → Excel から** は、取り込ん�
 | 順 | リスト | 取り込むファイル | 備考 |
 |---:|---|---|---|
 | 1 | `OrgMaster` | [`data/import/OrgMaster.xlsx`](../data/import/OrgMaster.xlsx) | **列と実データ105件が同時に入る**。Part 2-1 は不要になる |
-| 2 | `SignatureCases` | [`data/import/schema/SignatureCases.xlsx`](../data/import/schema/SignatureCases.xlsx) | 33列。サンプル行6件は取り込み後に削除 |
+| 2 | `SignatureCases` | [`data/import/schema/SignatureCases.xlsx`](../data/import/schema/SignatureCases.xlsx) | 34列。サンプル行6件は取り込み後に削除 |
 | 3 | `ConsentMaster` | [`data/import/schema/ConsentMaster.xlsx`](../data/import/schema/ConsentMaster.xlsx) | 9列。サンプル行1件 |
 | 4 | `AppAdmins` | [`data/import/schema/AppAdmins.xlsx`](../data/import/schema/AppAdmins.xlsx) | 4列。サンプル行1件 |
 | 5 | `SendLog` | [`data/import/schema/SendLog.xlsx`](../data/import/schema/SendLog.xlsx) | 8列。サンプル行2件 |
@@ -405,7 +405,11 @@ Part 4 に進むと、問題の切り分けが楽になる。
    `SignatureCases` `OrgMaster` `ConsentMaster` `AppAdmins`
    `SendLog` `AuditLog` `DocumentNumberCounter`
 
-3. **データの追加** → 検索欄に `YAJ-CancelFee` と入力 → 3つのフローを追加
+3. 同じ手順で、**ライブラリ `SignatureImages`** にもチェックを入れて **接続**
+   （詳細画面の手書き署名は、このライブラリの `'{Thumbnail}'` で表示する。
+   無いと `DetailScreen` で「SignatureImages が見つかりません」になる）
+4. 左メニューの **…** → **Power Automate** → **フローの追加** → 3つのフローを追加
+   （以前の Studio では「データの追加」の検索で出た。2026-09 時点ではこちら）
 
    `YAJ-CancelFee-Submit` `YAJ-CancelFee-Resend` `YAJ-CancelFee-Delete`
 
@@ -536,7 +540,7 @@ Studio の版によっては、**設定 → 近日公開の機能**（または�
 |---|---|
 | `Distinct(...)` の `Value` が見つからない | `Value` を `Result` に置き換える。Power Fx の版によって `Distinct` の返す列名が異なる。該当は `ListScreen` の `ddFilterBranch` / `ddFilterBlock` / `ddFilterSite` と `EditScreen` の `ddBranch` / `ddBlock` / `ddSite` の計6箇所の `Sort(Distinct(...), Value)` |
 | フロー呼び出しの `.Success` が見つからない | Studio の入力候補に出る表記に合わせる。フローの「Power Apps または flow に応答する」で付けた出力名の大文字小文字がそのまま反映される。該当は `ConsentScreen` `ErrorScreen` `DetailScreen` |
-| `imgSignature` が画像として扱われない | `Image` プロパティを `varSelected.SignatureImageUrl & ""` にする（テキストであることを明示する） |
+| 詳細画面の手書き署名が空白 | データソースに**ライブラリ `SignatureImages`** があるか（4-2）。署名画像の URL を `Image` に直接渡しても認証が付かず表示されないため、`LookUp(SignatureImages, ID = varSelected.SignatureImageItemId).'{Thumbnail}'.Large` で表示している |
 | 画面名が見つからない | 4-3 の改名を確認。1文字でも違うと `Navigate()` が壊れる |
 
 ## 4-7. 画面の並び順を整える

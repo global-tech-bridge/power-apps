@@ -280,7 +280,7 @@ DEMO_SAVE = """=// デモ: SharePoint ではなくコレクションへ保存す
                       SerialNo: If(chkNoSerial.Value, "", Trim(txtSerialNo.Text)),
                       NoSerialNo: chkNoSerial.Value,
                       MaintenanceType: {Value: ddMaintenanceType.Selected.Value},
-                      Comment: txtComment.Text,
+                      Comment: txtCommentEdit.Text,
                       BranchName: ddBranch.Selected.Value,
                       BlockName: ddBlock.Selected.Value,
                       BlockCode: LookUp(colOrg,
@@ -437,7 +437,7 @@ def replace_block(text, anchor, new_value, label):
         sys.exit(f"差し替え対象が見つかりません: {label}")
     start = i + len(anchor)
     # 値の終わり = 同じかそれより浅いインデントで次のキーが始まる行
-    indent = len(anchor) - len(anchor.lstrip(" ")) - 1
+    indent = len(anchor) - len(anchor.lstrip(" "))
     rest = text[start:]
     m = re.search(rf"\n {{0,{indent}}}[A-Za-z#-]", rest)
     # ファイル末尾のプロパティには後続キーが無い
@@ -529,10 +529,24 @@ def main():
                 text = head + replace_block(tail, "            OnSelect: |-", block, label)
             text = text.replace("LookUp(SignatureCases, ID = varSelected.ID)", "LookUp(colCases, ID = varSelected.ID)")
             text = text.replace('Text: ="確認書の詳細"', 'Text: ="確認書の詳細（デモ）"')
+            # デモには SignatureImages が無い。署名は colCases に入れた data URI を直接表示する
+            text = replace_block(
+                text, "            Image: |-", "=varSelected.SignatureImageUrl", "imgSignature.Image"
+            )
+            text = text.replace(
+                "            # SignatureImages ライブラリの PNG を、コネクタ経由の Thumbnail で表示する。\n"
+                "            # URL（SignatureImageUrl）をそのまま渡すと認証が付かず空白になる（2026-09-28 実環境で確認）。\n"
+                "            # ID の一致は委任できるので、ライブラリの件数が増えても取りこぼさない。\n",
+                "            # デモ版: colCases に入れた署名の data URI をそのまま表示する。\n",
+            )
+            text = text.replace(
+                "            Visible: =Coalesce(varSelected.SignatureImageItemId, 0) <= 0",
+                "            Visible: =IsBlank(varSelected.SignatureImageUrl)",
+            )
 
         # デモ版に残ってはいけない参照
         for forbidden in ("SignatureCases", "OrgMaster", "ConsentMaster", "AppAdmins",
-                          "SendLog", "AuditLog", "DocumentNumberCounter",
+                          "SendLog", "AuditLog", "DocumentNumberCounter", "SignatureImages",
                           "YAJ-CancelFee-", "SPListExpandedUser"):
             if forbidden in text:
                 for line_no, line in enumerate(text.split("\n"), 1):

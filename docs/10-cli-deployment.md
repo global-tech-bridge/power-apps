@@ -1,4 +1,4 @@
-# CLI でフローをデプロイする
+# CLI でデプロイする（フロー・SharePoint・アプリ）
 
 Power Automate のフローを画面で1アクションずつ作るのは手間が大きい（3フローで90〜120分）。
 `pac` CLI を使えば、**ソリューションとしてまとめてインポート**できる。
@@ -16,7 +16,7 @@ Power Automate のフローを画面で1アクションずつ作るのは手間�
 | **必要** | **Dataverse が有効な環境**。ソリューションは Dataverse の仕組みなので、Dataverse の無い環境にはインポートできない |
 | **検証済み** | **テスト用テナントへのインポート（2026-09-27）**。3フローと3接続参照が入ることを確認 |
 | できない | **接続の作成**。SharePoint / OneDrive / Outlook は OAuth の同意が必要で、ポータルで1回だけ手作業になる（`pac connection create` は Dataverse 用のサービスプリンシパル接続しか作れない） |
-| できない | **キャンバスアプリの CLI 投入**。後述 |
+| **初回だけ画面** | **キャンバスアプリの CLI 投入**。土台のアプリを一度 Studio で作れば、以降は `deploy-app.sh` で反映できる（9章） |
 
 > **実環境で確認した結果（2026-09-27）**
 > 検証用に用意したテスト用テナントに開発者環境を CLI で作り、
@@ -69,7 +69,7 @@ Microsoft Graph Command Line Tools から取り消せる。
 | 作られる | 作られない（Graph で設定できない。画面で行う） |
 |---|---|
 | Microsoft 365 グループと**プライベート**のチームサイト | ライブラリ単位の権限（`SignatureDocs` / `SignatureImages` の継承の中止） |
-| リスト7つ・全71列（種類・必須・既定値・**インデックス26列**） | `SignatureCases` の項目レベルのアクセス許可 |
+| リスト7つ・全72列（種類・必須・既定値・**インデックス26列**） | `SignatureCases` の項目レベルのアクセス許可 |
 | ライブラリ4つ | |
 | 組織マスタ105件・確認文面 v1.0・管理者（実行者）・Word テンプレート | |
 
@@ -325,22 +325,65 @@ YAJ_CONFIG=solution/config.local.json ./scripts/deploy.sh https://yajcancelfeete
 | PDFの日本語が文字化けする | `preview.doc` を Word で開いて再現するか確認。再現するなら `scripts/flow_definitions.py` の `build_confirmation_html()` のフォント指定を `MS Gothic` に変える |
 | 変換が Bad gateway で失敗 | OneDrive コネクタの既知の問題。`Wait_for_file` の待ち時間（既定15秒）を増やす |
 
-## 9. キャンバスアプリについて
+## 9. キャンバスアプリも CLI で入れる（2026-09-28 実環境で確認）
 
-**`.pa.yaml` だけからは CLI で `.msapp` を作れない**（実機で確認）。
-`pac canvas pack --layout SourceCode` を実行すると次のように言われて止まる。
+```bash
+./scripts/deploy-app.sh https://<組織>.crm7.dynamics.com
+```
 
-> Canvas apps packed using yaml SourceCode must be validated first by opening
-> the app for edit within the Power Apps studio.
+`apps/yaj-cancelfee-signature/Src/*.pa.yaml` の画面と数式を、環境のアプリに反映する。
+**初回だけ**、土台になるアプリを画面で作っておく必要がある（下記 9-1）。
+2回目以降は、pa.yaml を直して上のコマンドを流すだけでよい。
 
-Studio で一度開いて検証されたアプリが前提になっている Microsoft 側の仕様で、
-回避できない。アプリは画面から取り込む（[08 手順](08-manual-setup.md) の Part 4）。
+### しくみ
 
-アプリ本体はこのソリューションに含めていない。
-`pac canvas pack` で `.msapp` を作る方法は
-[apps/yaj-cancelfee-signature/README.md](../apps/yaj-cancelfee-signature/README.md)、
-画面から取り込む方法は [08 手順](08-manual-setup.md) の Part 4 を参照。
+`.pa.yaml` だけからは `.msapp` を作れない。`pac canvas pack` は
+「Studio で一度開いて検証されたアプリ」を前提にしていて、
+データソースの接続情報（`References/DataSources.json`）も Studio で追加したときにしか作られない。
 
-アプリをソリューションに入れると環境間の移行は楽になるが、
-Studio で編集するたびにソリューションから取り出し直す運用になり、
-今の開発フェーズでは手数が増える。**フローだけ CLI 化する**のが現状のバランス。
+そこで **Studio で保存した版を土台にして、画面と数式だけを差し替える**。
+
+1. `pac canvas download` で環境のアプリを `.msapp` として取得する
+2. `pac canvas unpack --layout SourceCode` で展開し、`Src/*.pa.yaml` をリポジトリの内容に置き換える
+   （画面の並び順を持つ `_EditorState.pa.yaml` もリポジトリの版に置き換える）
+3. `pac canvas pack --layout SourceCode` で詰め直す。
+   中の `packed.json` に `LoadFromYaml: true` が入り、Studio は開くときに pa.yaml から読み込む
+4. アプリ用ソリューション（`YAJCancelFeeApp`）をエクスポートし、
+   `CanvasApps/<名前>_DocumentUri.msapp` を差し替えてインポートする。
+   キャンバスアプリはインポート時に公開される
+
+### 9-1. 初回だけ画面で行うこと（15分ほど）
+
+1. Studio で**空のアプリ**（タブレット）を作り、[08 手順](08-manual-setup.md) の 4-1 の設定
+   （縦向き・4:3 = 768×1024、データ行の制限 2000）を行う
+2. 4-2 のとおりデータソースを追加する
+   （リスト7つ、**ライブラリ `SignatureImages`**、フロー3つ）
+3. **保存して公開する**（画面やコントロールは作らなくてよい。次の手順で入る）。
+   `pac canvas download` は**最後に公開した版**を取ってくるので、保存だけでは土台に反映されない。
+   後からデータソースを足したときも、必ず公開まで行う
+4. **ソリューション** → アプリ用のソリューションを開く → **既存を追加** → **アプリ** →
+   **キャンバス アプリ** → **Dataverse の外部** タブ → このアプリを選んで追加
+   （ソリューションは発行者「YHDAI戦略DX推進G」で作る。CLI でも作れる）
+5. Studio を閉じてから `./scripts/deploy-app.sh` を実行する
+
+> **Studio を開いたまま実行しない。** 開いていた Studio が古い版で上書き保存すると、
+> 差し替えが消える。また、前のセッションが編集権を持ったままだと読み取り専用で開くので、
+> そのときは画面上部の **Override** で編集権を取り直す。
+
+### 実環境で判明したこと
+
+| 事象 | 内容 |
+|---|---|
+| **コントロール名の重複で開けない** | 名前はアプリ全体で一意でなければならない。`lblTitle` が6画面にあり、`PA2110 An entity with name 'lblTitle' already exists` で開けなかった。**コードの貼り付けでは Studio が黙って `lblTitle_1` と改名するため気づけず、数式が別の画面の同名コントロールを指す不具合になっていた**。画面名を付けた名前に直し、`check-references.py` で検出するようにした |
+| `EditorState` が2か所にあると開けない | `Only one module may specify the EditorState top-level property`。以前は `App.pa.yaml` の末尾に書いていたが、Studio が保存すると別ファイル `_EditorState.pa.yaml` にも書くため重なった。Studio と同じく `_EditorState.pa.yaml` だけに書く |
+| `--publish-changes` が戻らない | インポート自体は9秒で終わるが、「すべてのカスタマイズの公開」が10分以上戻らなかった。キャンバスアプリには不要なので付けない |
+| インポート後に pac が戻らないことがある | 通信が不安定なとき、インポートジョブは完了しているのに pac が応答待ちのまま止まった（SSL タイムアウトも1回）。10分以上止まったら pac を止め、Studio で開いて反映を確かめる |
+| 下書きを削除しても一覧に残る | 更新・削除はフロー側で行うため、アプリが持つ一覧が古いまま。フロー呼び出しの成功後に `Refresh(SignatureCases)` を入れた |
+| 詳細画面の手書き署名が空白 | 画像の URL を `Image` に渡しても認証が付かない。ライブラリをデータソースにして `'{Thumbnail}'.Large` で表示するように変えた（`SignatureImageItemId` 列を追加） |
+| データソースを足したのに `Name isn't valid` | `pac canvas download` は最後に**公開**した版を返す。Studio で保存しただけでは土台に入らない |
+| 表示名が言語で変わる | ライブラリの `{Thumbnail}` 列は日本語テナントでは表示名が「サムネイル」になり、`Thumbnail` では通らなかった。論理名 `'{Thumbnail}'` で書く |
+| 内蔵ブラウザーから貼り付けできない | 自動操作用のブラウザーではクリップボードの読み取りが拒否され、「コードの貼り付け」が使えなかった。手作業で貼る場合は普段のブラウザーで行う |
+
+### 画面から取り込む方法（CLI を使わない場合）
+
+[08 手順](08-manual-setup.md) の Part 4（コードの貼り付け）。

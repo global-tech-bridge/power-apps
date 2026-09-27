@@ -8,6 +8,8 @@
 
 App:
   Properties:
+    # Studio が新規アプリに付ける既定値。差し替えデプロイで消えないように明示する
+    Theme: =PowerAppsTheme
     StartScreen: =ListScreen
     OnStart: |-
       =// ---- マスタをローカルコレクションへ読み込む -------------------------
@@ -91,12 +93,3 @@ App:
       // 支社・ブロック・拠点は「自拠点」を初期表示にする（要件定義 12章）。
       // 未選択にすると全国が対象になる。
       Set(varFilterStatusCode, "")
-
-EditorState:
-  ScreensOrder:
-    - ListScreen
-    - EditScreen
-    - ConsentScreen
-    - CompleteScreen
-    - ErrorScreen
-    - DetailScreen

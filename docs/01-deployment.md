@@ -136,7 +136,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 ### 方法B: 画面から手作業で作成（CLI が使えない場合）
 
 **手順は [08 画面だけで構築する手順](08-manual-setup.md) の Part 1 と Part 2 に
-全部書き出してある。** リスト7つ（計71列）とライブラリ4つの作り方、
+全部書き出してある。** リスト7つ（計72列）とライブラリ4つの作り方、
 列の種類ごとの注意点、インデックスの設定、初期データの投入方法まで含む。
 
 インポート用のファイルは [`../data/import/`](../data/import/) に用意してある。
@@ -230,8 +230,11 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
    `SendLog` / `AuditLog` / `DocumentNumberCounter`
    （`SendLog` と `AuditLog` はフロー側で書くのでアプリからは使わないが、
    将来の履歴表示のために接続しておく）
-3. **データの追加** → 検索欄に `YAJ-CancelFee` と入力し、
+3. 同じ手順で、**ライブラリ `SignatureImages`** にもチェックを入れて接続する
+   （詳細画面の手書き署名は、このライブラリの `'{Thumbnail}'` で表示する）
+4. 左メニューの **…** → **Power Automate** → **フローの追加** で、
    3つのフローすべてを追加する
+   （以前の Studio では「データの追加」の検索で出た。2026-09 時点ではこちら）
 
 ### 4-3. 画面を作り、コードを貼り付ける
 
@@ -261,7 +264,7 @@ pwsh ./scripts/Provision-SharePoint.ps1 \
 |---|---|
 | `Distinct(...)` の `Value` が見つからない | `Value` を `Result` に置き換える。Power Fx の版によって `Distinct` の返す列名が異なる。該当箇所は `ListScreen`（3箇所）と `EditScreen`（3箇所）の `Sort(Distinct(...), Value)` |
 | フロー呼び出しの `.Success` が見つからない | Studio の入力候補に出る表記に合わせる。「Power Apps または flow に応答する」で付けた出力名の大文字小文字がそのまま反映される |
-| `varSelected.SignatureImageUrl` が画像として扱われない | `imgSignature.Image` を `varSelected.SignatureImageUrl & ""` にする（テキストとして明示する） |
+| 詳細画面の手書き署名が空白 | データソースに**ライブラリ `SignatureImages`** が無い、または案件の `SignatureImageItemId` が空。署名画像の URL を `Image` に直接渡しても、認証が付かず表示されない（2026-09-28 確認）ため、`LookUp(SignatureImages, ID = …).'{Thumbnail}'.Large` で表示している |
 
 ### 4-5. 保存と公開
 

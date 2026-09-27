@@ -1,5 +1,5 @@
 # ---------------- ヘッダー ----------------
-- recHeader:
+- recHeaderConsent:
     Control: Rectangle
     Properties:
       X: =0
@@ -7,7 +7,7 @@
       Width: =Parent.Width
       Height: =72
       Fill: =RGBA(0, 120, 212, 1)
-- btnBack:
+- btnBackConsent:
     Control: Classic/Button
     Properties:
       Text: ="‹ 入力"
@@ -20,7 +20,7 @@
       Fill: =RGBA(0, 0, 0, 0)
       Color: =RGBA(255, 255, 255, 1)
       BorderThickness: =0
-- lblTitle:
+- lblTitleConsent:
     Control: Label
     Properties:
       Text: ="内容のご確認とご署名"
@@ -191,7 +191,7 @@
       ShowControls: =false
 
 # ---------------- 入力チェックと送信 ----------------
-- lblValidation:
+- lblValidationConsent:
     Control: Label
     Properties:
       Text: |-
@@ -212,7 +212,7 @@
     Properties:
       Text: ="確認して署名を送信"
       DisplayMode: |-
-        =If(IsBlank(lblValidation.Text) && !varSubmitting,
+        =If(IsBlank(lblValidationConsent.Text) && !varSubmitting,
             DisplayMode.Edit,
             DisplayMode.Disabled
         )
@@ -237,7 +237,7 @@
       Size: =12
 
 # ================ オーバーレイ（最終確認 / 処理中）================
-- recOverlay:
+- recOverlayConsent:
     Control: Rectangle
     Properties:
       Visible: =varShowConfirm || varSubmitting
@@ -357,48 +357,48 @@
       Width: =1
       Height: =1
       OnTimerEnd: |-
-       =// デモ: フローを呼ばず、その場で採番して送信済みにする。
-                     // 本番では Power Automate が採番・PDF生成・SharePoint保存・メール送信を行う。
-                     If(IsBlank(varRequestId), Set(varRequestId, Text(GUID())));
-                     Set(varDemoDocNo,
-                         Text(Now(), "yyyymmdd") & "-"
-                         & Right("00" & Text(
-                             CountRows(
-                                 Filter(colCases,
-                                     Text(RegisteredAt, "yyyymmdd") = Text(Now(), "yyyymmdd")
-                                     && !IsBlank(DocumentNo)
-                                 )
-                             ) + 1
-                         ), 3)
-                     );
-                     Patch(colCases, LookUp(colCases, ID = varRecordId),
-                         {
-                             DocumentNo: varDemoDocNo,
-                             Status: {Value: If(varDemoForceError, "Error", "Sent")},
-                             SignedAt: Now(),
-                             SignerName: Trim(txtSignerName.Text),
-                             ConsentId: varConsent.ConsentId,
-                             ConsentTitle: varConsent.DisplayTitle,
-                             ConsentVersion: varConsent.Version,
-                             ConsentTextSnapshot: txtConsentBody.Text,
-                             ClientRequestId: varRequestId,
-                             SignatureImageUrl: penSignature.Image,
-                             PdfUrl: If(varDemoForceError, "", "demo"),
-                             PdfFileName: varDemoDocNo & ".pdf",
-                             SentAt: If(varDemoForceError, Blank(), Now()),
-                             ErrorCode: If(varDemoForceError, "E-FLOW-060", ""),
-                             ErrorMessage: If(varDemoForceError, "デモ用に意図的に失敗させています。", "")
-                         }
-                     );
-                     Set(varEdit, LookUp(colCases, ID = varRecordId));
-                     Set(varSubmitting, false);
-                     If(!varDemoForceError,
-                         Set(varCompleted, LookUp(colCases, ID = varRecordId));
-                         Navigate(CompleteScreen, ScreenTransition.Fade),
-                         Set(varErrorCode, "E-FLOW-060");
-                         Set(varErrorMessage,
-                             "PDFのメール送信に失敗しました。顧客メールアドレスを確認して、もう一度送信してください。"
-                         );
-                         Set(varFlowRunId, "demo-00000000-0000-0000-0000-000000000000");
-                         Navigate(ErrorScreen, ScreenTransition.Fade)
-                     )
+        =// デモ: フローを呼ばず、その場で採番して送信済みにする。
+                      // 本番では Power Automate が採番・PDF生成・SharePoint保存・メール送信を行う。
+                      If(IsBlank(varRequestId), Set(varRequestId, Text(GUID())));
+                      Set(varDemoDocNo,
+                          Text(Now(), "yyyymmdd") & "-"
+                          & Right("00" & Text(
+                              CountRows(
+                                  Filter(colCases,
+                                      Text(RegisteredAt, "yyyymmdd") = Text(Now(), "yyyymmdd")
+                                      && !IsBlank(DocumentNo)
+                                  )
+                              ) + 1
+                          ), 3)
+                      );
+                      Patch(colCases, LookUp(colCases, ID = varRecordId),
+                          {
+                              DocumentNo: varDemoDocNo,
+                              Status: {Value: If(varDemoForceError, "Error", "Sent")},
+                              SignedAt: Now(),
+                              SignerName: Trim(txtSignerName.Text),
+                              ConsentId: varConsent.ConsentId,
+                              ConsentTitle: varConsent.DisplayTitle,
+                              ConsentVersion: varConsent.Version,
+                              ConsentTextSnapshot: txtConsentBody.Text,
+                              ClientRequestId: varRequestId,
+                              SignatureImageUrl: penSignature.Image,
+                              PdfUrl: If(varDemoForceError, "", "demo"),
+                              PdfFileName: varDemoDocNo & ".pdf",
+                              SentAt: If(varDemoForceError, Blank(), Now()),
+                              ErrorCode: If(varDemoForceError, "E-FLOW-060", ""),
+                              ErrorMessage: If(varDemoForceError, "デモ用に意図的に失敗させています。", "")
+                          }
+                      );
+                      Set(varEdit, LookUp(colCases, ID = varRecordId));
+                      Set(varSubmitting, false);
+                      If(!varDemoForceError,
+                          Set(varCompleted, LookUp(colCases, ID = varRecordId));
+                          Navigate(CompleteScreen, ScreenTransition.Fade),
+                          Set(varErrorCode, "E-FLOW-060");
+                          Set(varErrorMessage,
+                              "PDFのメール送信に失敗しました。顧客メールアドレスを確認して、もう一度送信してください。"
+                          );
+                          Set(varFlowRunId, "demo-00000000-0000-0000-0000-000000000000");
+                          Navigate(ErrorScreen, ScreenTransition.Fade)
+                      )

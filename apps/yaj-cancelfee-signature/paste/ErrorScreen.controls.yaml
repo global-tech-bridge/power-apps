@@ -9,7 +9,7 @@
       Size: =56
       Align: =Align.Center
       Color: =RGBA(196, 49, 75, 1)
-- lblTitle:
+- lblTitleError:
     Control: Label
     Properties:
       Text: ="送信は完了していません"
@@ -114,6 +114,8 @@
         );
         Set(varRetrying, false);
         If(!IsBlank(varFlowResult) && varFlowResult.Success,
+            // 更新はフロー側で行うため、アプリが持つ一覧のデータは古いまま。読み直す
+            Refresh(SignatureCases);
             Set(varSignatureBase64, "");
             Set(varCompleted, LookUp(SignatureCases, ID = varRecordId));
             Navigate(CompleteScreen, ScreenTransition.Fade),
@@ -143,7 +145,7 @@
       Width: =292
       Height: =54
       Size: =13
-- btnToList:
+- btnToListError:
     Control: Classic/Button
     Properties:
       Text: ="一覧に戻る（後で再実行する）"

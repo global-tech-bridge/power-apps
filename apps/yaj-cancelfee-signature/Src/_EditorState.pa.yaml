@@ -1,0 +1,11 @@
+# Studio の編集状態（画面の並び順）。Studio が保存する版と同じく別ファイルにする。
+# App.pa.yaml に書くと、Studio が保存した _EditorState.pa.yaml と重なって
+# 「Only one module may specify the EditorState」で開けなくなる（2026-09-28 確認）。
+EditorState:
+  ScreensOrder:
+    - ListScreen
+    - EditScreen
+    - ConsentScreen
+    - CompleteScreen
+    - ErrorScreen
+    - DetailScreen

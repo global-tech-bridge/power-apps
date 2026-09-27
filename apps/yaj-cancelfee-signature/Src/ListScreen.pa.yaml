@@ -6,7 +6,7 @@ Screens:
       Fill: =RGBA(243, 242, 241, 1)
     Children:
       # ---------------- ヘッダー ----------------
-      - recHeader:
+      - recHeaderList:
           Control: Rectangle
           Properties:
             X: =0
@@ -14,7 +14,7 @@ Screens:
             Width: =Parent.Width
             Height: =72
             Fill: =RGBA(0, 120, 212, 1)
-      - lblTitle:
+      - lblTitleList:
           Control: Label
           Properties:
             Text: ="整備キャンセル料 確認書"

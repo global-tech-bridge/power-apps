@@ -152,7 +152,9 @@ Power Apps (V2) トリガーに、この順番で入力を追加する（順番�
 3. `Set_SignatureUrl_existing` — 変数の設定: `varSignatureUrl` ← `E17`
 
 ### 4.6 `Update_case_signature` — SharePoint「項目の更新」
-- ID: `ItemID` ／ `SignatureImageUrl` = `varSignatureUrl`
+- ID: `ItemID` ／ `SignatureImageUrl` = `varSignatureUrl` ／ `SignatureImageItemId` = `varSignatureItemId`（0 のときは空）
+- `varSignatureItemId` は、新しい署名なら「ファイルの作成」の出力 `ItemId`、既存なら案件の `SignatureImageItemId`。
+  アプリはこの ID で `SignatureImages` を引いて署名画像を表示する
 
 ### 4.7 条件 `Need_pdf` — `E18`
 PDFがまだ無いときだけ作る。**再実行時の二重PDF生成を防ぐ要点。**

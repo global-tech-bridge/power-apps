@@ -377,6 +377,12 @@ def submit_flow(cfg):
             f"@{{concat('{site.rstrip('/')}',outputs('Create_signature_png')?['body/Path'])}}",
             after("Create_signature_png"),
         ),
+        # アプリはこのIDで SignatureImages を LookUp して Thumbnail を表示する
+        "Set_SignatureItemId": set_var(
+            "varSignatureItemId",
+            "@int(outputs('Create_signature_png')?['body/ItemId'])",
+            after("Set_SignatureUrl"),
+        ),
     }
     signature_existing = {
         "Get_existing_png": sp(
@@ -394,6 +400,11 @@ def submit_flow(cfg):
             "varSignatureUrl",
             "@coalesce(outputs('Get_case')?['body/SignatureImageUrl'],'')",
             after("Set_SignatureBase64_existing"),
+        ),
+        "Set_SignatureItemId_existing": set_var(
+            "varSignatureItemId",
+            "@int(coalesce(outputs('Get_case')?['body/SignatureImageItemId'],0))",
+            after("Set_SignatureUrl_existing"),
         ),
     }
 
@@ -686,6 +697,7 @@ def submit_flow(cfg):
                 "item/Title": "@{coalesce(variables('varDocumentNo'),outputs('Get_case')?['body/Title'],'（作成中）')}",
                 "item/CustomerName": "@{outputs('Get_case')?['body/CustomerName']}",
                 "item/SignatureImageUrl": "@{variables('varSignatureUrl')}",
+                "item/SignatureImageItemId": "@if(greater(variables('varSignatureItemId'),0),variables('varSignatureItemId'),null)",
             },
             after("Has_new_signature"),
         ),
@@ -820,7 +832,10 @@ def submit_flow(cfg):
             "Init_varSignatureUrl": init_var(
                 "varSignatureUrl", "string", "", after("Init_varSignatureBase64")
             ),
-            "Init_varClaimId": init_var("varClaimId", "integer", 0, after("Init_varSignatureUrl")),
+            "Init_varSignatureItemId": init_var(
+                "varSignatureItemId", "integer", 0, after("Init_varSignatureUrl")
+            ),
+            "Init_varClaimId": init_var("varClaimId", "integer", 0, after("Init_varSignatureItemId")),
             "Init_varClaimDate": init_var("varClaimDate", "string", "", after("Init_varClaimId")),
             "Init_varSeq": init_var("varSeq", "integer", 0, after("Init_varClaimDate")),
             "Try": scope(try_actions, after("Init_varSeq")),

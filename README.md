@@ -76,7 +76,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | 1 | SharePoint サイト・リスト7つ・ライブラリ4つ | **CLI**: [10 CLIデプロイ](docs/10-cli-deployment.md) の「0.」（`provision-sharepoint-graph.py`）／画面: [08 手順](docs/08-manual-setup.md) Part 1 | 5分／30〜45分 |
 | 2 | 初期データ（組織マスタ105件・確認文面・管理者・テンプレート） | [08 手順](docs/08-manual-setup.md) Part 2 ＋ [data/import/](data/import/) | 10分 |
 | 3 | Power Automate フロー3つ | **[10 CLIデプロイ](docs/10-cli-deployment.md)**（`./scripts/deploy.sh`）／画面で作る場合は [flows/](flows/) | 15分／90〜120分 |
-| 4 | キャンバスアプリの取り込み | [08 手順](docs/08-manual-setup.md) Part 4 ＋ [paste/](apps/yaj-cancelfee-signature/paste/) | 40〜60分 |
+| 4 | キャンバスアプリの取り込み | **[10 CLIデプロイ](docs/10-cli-deployment.md) の 9章**（初回だけ土台のアプリを画面で作り、`./scripts/deploy-app.sh`）／画面だけで行う場合は [08 手順](docs/08-manual-setup.md) Part 4 ＋ [paste/](apps/yaj-cancelfee-signature/paste/) | 20分／40〜60分 |
 | 5 | 動作確認 | [06 テスト仕様書](docs/06-test-spec.md) | 60分 |
 | 6 | 引き継ぎ | [01 デプロイ手順](docs/01-deployment.md) の「6. 引き継ぎ」 | 30分 |
 
@@ -104,7 +104,7 @@ PnP.PowerShell が使える場合は [docs/01-deployment.md](docs/01-deployment.
 | [06 テスト仕様書](docs/06-test-spec.md) | 受入条件（要件定義17章）に対応した81件のテストケース |
 | [07 未確定事項と暫定判断](docs/07-open-issues.md) | **要件定義19章の20項目＋追加11項目の判断と変更コスト** |
 | [08 画面だけで構築する手順](docs/08-manual-setup.md) | **CLI を使わず、ブラウザ操作だけで SharePoint とアプリを構築する** |
-| [10 CLIデプロイ](docs/10-cli-deployment.md) | **pac CLI でフロー3つをまとめてインポートする**。画面で1アクションずつ作る代わり |
+| [10 CLIデプロイ](docs/10-cli-deployment.md) | **pac CLI でフロー3つとアプリをインポートする**。SharePoint も Graph で一括作成できる |
 | [09 環境確認シート](docs/09-environment-checklist.md) | **展開先テナントに確認すべき項目**（ライセンス・DLP・MFA・SharePoint・メール・端末）と、テスト環境での再現方法 |
 
 ## 本番運用の前に必ず決めること
