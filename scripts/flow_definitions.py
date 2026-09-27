@@ -370,9 +370,11 @@ def submit_flow(cfg):
             },
             after("Set_SignatureBase64"),
         ),
+        # SharePoint「ファイルの作成」の出力に {Link} は無く、サイトからの相対パス（Path）が返る
+        # （ItemId / Id / Name / Path / Size など。実環境の実行結果で確認）。
         "Set_SignatureUrl": set_var(
             "varSignatureUrl",
-            "@outputs('Create_signature_png')?['body/{Link}']",
+            f"@{{concat('{site.rstrip('/')}',outputs('Create_signature_png')?['body/Path'])}}",
             after("Create_signature_png"),
         ),
     }
@@ -464,7 +466,9 @@ def submit_flow(cfg):
             after("Convert_to_pdf"),
         ),
         "Set_PdfUrl": set_var(
-            "varPdfUrl", "@outputs('Create_pdf')?['body/{Link}']", after("Create_pdf")
+            "varPdfUrl",
+            f"@{{concat('{site.rstrip('/')}',outputs('Create_pdf')?['body/Path'])}}",
+            after("Create_pdf"),
         ),
         "Update_case_pdf": sp(
             "PatchItem",
@@ -482,7 +486,7 @@ def submit_flow(cfg):
         # 変換が失敗しても中間ファイルを残さない
         "Delete_temp_docx": sp(
             "DeleteFile",
-            {"dataset": site, "id": "@outputs('Create_temp_docx')?['body/{Identifier}']"},
+            {"dataset": site, "id": "@outputs('Create_temp_docx')?['body/Id']"},
             after("Update_case_pdf", status=("Succeeded", "Failed", "Skipped")),
         ),
     }
@@ -533,7 +537,9 @@ def submit_flow(cfg):
             after("Convert_to_pdf"),
         ),
         "Set_PdfUrl": set_var(
-            "varPdfUrl", "@outputs('Create_pdf')?['body/{Link}']", after("Create_pdf")
+            "varPdfUrl",
+            f"@{{concat('{site.rstrip('/')}',outputs('Create_pdf')?['body/Path'])}}",
+            after("Create_pdf"),
         ),
         "Update_case_pdf": sp(
             "PatchItem",

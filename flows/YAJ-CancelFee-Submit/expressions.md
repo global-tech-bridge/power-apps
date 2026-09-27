@@ -103,9 +103,10 @@ concat(variables('varDocumentNo'),'.png')
 base64ToBinary(variables('varSignatureBase64'))
 ```
 
-**E14** — 作成した署名画像のURL
+**E14** — 作成した署名画像のURL。`<サイトURL>` は `https://<テナント>.sharepoint.com/sites/yaj-cancelfee` のように末尾の `/` なしで書く。
+SharePoint「ファイルの作成」の出力に `{Link}` は無く、サイトからの相対パス `Path` が返る（2026-09-27 実環境で確認。以前の版は `{Link}` を参照して URL が常に空になっていた）
 ```
-outputs('Create_signature_png')?['body/{Link}']
+concat('<サイトURL>',outputs('Create_signature_png')?['body/Path'])
 ```
 
 **E15** — 保存済み署名画像のパス（再実行時）
@@ -137,7 +138,7 @@ concat(variables('varDocumentNo'),'.docx')
 
 **E20** — 中間 .docx のファイルID（削除対象）
 ```
-outputs('Create_temp_docx')?['body/{Identifier}']
+outputs('Create_temp_docx')?['body/Id']
 ```
 変換元の指定は Word Online (Business) のファイル ピッカーで行うため、
 式ではなく画面で `WorkTemp` の該当ファイルを選ぶ。
@@ -147,9 +148,9 @@ outputs('Create_temp_docx')?['body/{Identifier}']
 concat(variables('varDocumentNo'),'.pdf')
 ```
 
-**E22** — 作成したPDFのURL
+**E22** — 作成したPDFのURL（E14 と同じく `Path` から組み立てる）
 ```
-outputs('Create_pdf')?['body/{Link}']
+concat('<サイトURL>',outputs('Create_pdf')?['body/Path'])
 ```
 
 **E23** — 保存済みPDFのURL（再実行時）

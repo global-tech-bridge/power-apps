@@ -177,6 +177,19 @@ for wf in sorted(SRC.glob("Workflows/*.json")):
                     if f"item/{col}" not in params:
                         problems.append(f"[{label}] {name}: {host['operationId']}（{table}）に必須列 item/{col} が無い")
 
+    # --- 3c-2. SharePoint「ファイルの作成」の出力で、存在しない項目を参照していないか ---
+    # 以前は {Link} を参照して URL が常に空になっていた（実環境で確認）。
+    # 実際の出力項目は実行結果で確認したもの。
+    SP_CREATEFILE_OUT = {"ItemId", "Id", "Name", "DisplayName", "Path", "LastModified", "Size",
+                         "MediaType", "IsFolder", "ETag", "FileLocator"}
+    create_file_actions = {n for _, acts in walk_actions(definition["actions"]) for n, a in acts.items()
+                           if isinstance(a.get("inputs"), dict)
+                           and a["inputs"].get("host", {}).get("connectionName") == "shared_sharepointonline"
+                           and a["inputs"]["host"].get("operationId") == "CreateFile"}
+    for act, field in set(re.findall(r"outputs\('([^']+)'\)\?\['body/([^'\]]+)'\]", blob)):
+        if act in create_file_actions and field not in SP_CREATEFILE_OUT:
+            problems.append(f"[{label}] {act} の出力に '{field}' は無い（あるのは {', '.join(sorted(SP_CREATEFILE_OUT))}）")
+
     # --- 3d. 同時実行制御と同期の「応答」は併用できない ---
     # フローをオンにする時点で InvalidConcurrencyConfiguration で弾かれる（実環境で確認）。
     has_response = any(a.get("type") == "Response"

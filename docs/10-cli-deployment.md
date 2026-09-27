@@ -116,8 +116,8 @@ Microsoft Graph Command Line Tools から取り消せる。
 |---|---|---|
 | ライセンス | **標準コネクタのみ。追加費用なし** | Power Apps / Power Automate **Premium** |
 | MFA 条件付きアクセス | 影響なし | **動かない既知の問題あり** |
-| CLI デプロイ | **完全に自動化できる** | テンプレートの内部IDを解決するか、インポート後に画面で選び直す必要がある |
-| 日本語の文字化け | UTF-8 BOM ＋ フォント指定で対策済み。**要実機確認** | 起きにくい |
+| CLI デプロイ | **完全に自動化できる（実環境で確認）** | テンプレートの内部IDを解決するか、インポート後に画面で選び直す必要がある。**実環境では未検証**（PDF変換の入力指定を作り直す必要がある） |
+| 日本語の文字化け | UTF-8 BOM ＋ フォント指定で対策。**実環境で文字化けなしを確認（2026-09-27）** | 起きにくい |
 | レイアウト | HTML/CSS の範囲 | Word で自由 |
 
 方式を変えるときは `pdfMode` を書き換えて再生成するだけ。両方の定義が入っている。
@@ -174,6 +174,49 @@ CLI で入るのは**フローの定義だけ**。次は画面で確認する。
 - [ ] `Catch` スコープの実行条件が「失敗／タイムアウト／スキップ」の3つ
 - [ ] `oneDrive.tempFolder` のフォルダーが OneDrive に存在すること（無ければ作る）
 - [ ] Power Apps Studio → データ → フロー で3フローを再接続
+
+## 4b. 送信フローを CLI で1回通しで動かす（疎通テスト）
+
+```bash
+export AZURE_CONFIG_DIR=~/.cliauth/yanmar/azure
+YAJ_CONFIG=solution/config.local.json python3 scripts/build-solution.py
+YAJ_CONFIG=solution/config.local.json python3 scripts/e2e-submit-test.py <環境ID> /tmp/yaj-e2e \
+  --org=https://<組織>.crm7.dynamics.com
+```
+
+テスト案件（顧客名「テスト太郎」、顧客メールなし）を作り、送信フローを1回実行して、
+文書番号・状態・送信履歴・採番台帳を読み戻し、生成された PDF の中身（日本語の文字、
+署名画像）を確かめて1ページずつ PNG にする。**メールが1通、実行者宛にだけ送られる。**
+
+### Power Apps トリガーは CLI から呼べない
+
+Power Apps (V2) トリガーは、呼び出し元が Power Apps であることをトークンで確認する。
+Flow API 向け・Power Platform API 向けのトークンとも `MisMatchingOAuthClaims` /
+`DirectApiAuthorizationRequired` で拒否された（2026-09-27 実環境で確認）。
+
+さらに、手動実行（Button）トリガーに変えても、Flow API の実行 API が**本文を捨てる**
+既知の不具合（[microsoft/power-platform-skills#625](https://github.com/microsoft/power-platform-skills/issues/625)）
+で、必須入力付きでは起動できない（`TriggerInputSchemaMismatch`）。
+
+そこで `e2e-submit-test.py` は、**同じ定義のままトリガーを入力なしの手動実行に変え、
+渡すはずの値（案件ID・受付キー・署名画像）をフロー内に埋め込んだ一時コピー**を作って実行し、
+終わったら削除する。採番・PDF生成・保存・メール送信・エラー処理は本物と同一の定義で動く。
+
+### 実環境での結果（2026-09-27）
+
+| 確認項目 | 結果 |
+|---|---|
+| 実行 | 成功（32秒） |
+| 採番 | `20260927-001`。採番台帳に `CaseId` / 連番が記録された |
+| 状態 | `Sent` |
+| メール | 顧客メールが空のとき、担当者にだけ送られた（送信履歴にも記録） |
+| PDF の日本語 | **文字化けなし**。本文・費用一覧・確認文・確認欄まですべて入っている |
+| 署名画像 | **PDF に埋め込まれて表示された**（data URI 方式が有効） |
+| レイアウト | 元資料の書簡形式どおり（2ページ） |
+
+この実行で、`PdfUrl` と `SignatureImageUrl` が空になる不具合が見つかった
+（SharePoint「ファイルの作成」の出力に存在しない `{Link}` を参照していた）。
+`Path` から組み立てるように直し、組み立てた URL が実在するファイルを指すことを Graph で確認した。
 
 ## 5. ソースの構成
 

@@ -491,7 +491,7 @@
                   "type": "SetVariable",
                   "inputs": {
                     "name": "varSignatureUrl",
-                    "value": "@outputs('Create_signature_png')?['body/{Link}']"
+                    "value": "@{concat('https://CONTOSO.sharepoint.com/sites/yaj-cancelfee',outputs('Create_signature_png')?['body/Path'])}"
                   },
                   "runAfter": {
                     "Create_signature_png": [
@@ -670,7 +670,7 @@
                   "type": "SetVariable",
                   "inputs": {
                     "name": "varPdfUrl",
-                    "value": "@outputs('Create_pdf')?['body/{Link}']"
+                    "value": "@{concat('https://CONTOSO.sharepoint.com/sites/yaj-cancelfee',outputs('Create_pdf')?['body/Path'])}"
                   },
                   "runAfter": {
                     "Create_pdf": [
