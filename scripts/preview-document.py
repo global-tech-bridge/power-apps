@@ -36,8 +36,12 @@ html = wf["properties"]["definition"]["actions"]["Try"]["actions"]["Need_pdf"]["
 ]["inputs"]
 
 
-def sample_signature(width=520, height=150):
-    """署名画像の代わりに、手書き風の線が入った PNG を作る。"""
+def sample_signature(width=736, height=200):
+    """署名画像の代わりに、手書き風の線が入った PNG を作る。
+
+    大きさはアプリのペン入力（penSignature 736×200）と同じにする。小さい見本だと、
+    実物で起きた確認欄の崩れ（見出し列が縦に折り返す）がプレビューで再現しなかった。
+    """
 
     def chunk(tag, data):
         return (

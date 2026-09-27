@@ -162,6 +162,10 @@ def _esc(expr):
     )
 
 
+# 確認欄の見出しセル。幅は属性とインライン style の両方で与える（Word がクラス指定を無視するため）
+LABEL = '<td class="l" width="136" style="width:3.6cm">'
+
+
 def build_confirmation_html():
     """確認書のHTML。.doc として保存し OneDrive の変換で PDF にする。
 
@@ -213,7 +217,7 @@ def build_confirmation_html():
         ".title{text-align:center;font-size:13.5pt;font-weight:bold;margin:14pt 0;}"
         ".body{font-size:10pt;line-height:1.55;}"
         ".sec{font-size:11pt;font-weight:bold;margin:14pt 0 4pt 0;}"
-        "table.k{border-collapse:collapse;width:100%;font-size:10pt;}"
+        "table.k{border-collapse:collapse;width:100%;table-layout:fixed;font-size:10pt;}"
         "table.k td{border:0.5pt solid #808080;padding:4pt 6pt;vertical-align:top;}"
         "table.k td.l{width:3.6cm;font-weight:bold;background:#f2f2f2;}"
         ".sign{height:3.4cm;}"
@@ -234,15 +238,22 @@ def build_confirmation_html():
         f'<div class="body">{consent}</div>'
         # 確認欄
         '<div class="sec">確認欄</div>'
-        '<table class="k">'
-        f'<tr><td class="l">型式</td><td>{f("Model")}</td></tr>'
-        f'<tr><td class="l">機番</td><td>{serial}</td></tr>'
-        f'<tr><td class="l">整備区分</td><td>{f("MaintenanceType/Value")}</td></tr>'
-        f'<tr><td class="l">ご用命事項</td><td>{comment}</td></tr>'
-        f'<tr><td class="l">お名前</td><td>{signer}</td></tr>'
-        f'<tr><td class="l">日付</td><td>{signed_at}</td></tr>'
-        '<tr><td class="l">ご署名</td><td class="sign">'
-        "<img src=\"data:image/png;base64,@{variables('varSignatureBase64')}\">"
+        # 列幅は <col> とセルの width 属性でも与える。Word はクラス指定の CSS 幅より
+        # 中身の大きさを優先し、署名画像（736×200px＝約19.5cm）に押されて見出し列が
+        # 1文字ずつ縦に折り返された（2026-09-28 アプリからの送信で確認）。
+        '<table class="k" width="100%">'
+        '<col width="136" style="width:3.6cm"><col>'
+        f'<tr>{LABEL}型式</td><td>{f("Model")}</td></tr>'
+        f'<tr>{LABEL}機番</td><td>{serial}</td></tr>'
+        f'<tr>{LABEL}整備区分</td><td>{f("MaintenanceType/Value")}</td></tr>'
+        f'<tr>{LABEL}ご用命事項</td><td>{comment}</td></tr>'
+        f'<tr>{LABEL}お名前</td><td>{signer}</td></tr>'
+        f'<tr>{LABEL}日付</td><td>{signed_at}</td></tr>'
+        f'<tr>{LABEL}ご署名</td><td class="sign">'
+        # 画像は width/height 属性で大きさを決める（Word は属性のピクセル値でレイアウトする）。
+        # 比率はアプリのペン入力 penSignature（736×200）に合わせてある。変えるときは両方直すこと
+        "<img width=\"442\" height=\"120\" style=\"width:11.7cm;height:3.2cm\" "
+        "src=\"data:image/png;base64,@{variables('varSignatureBase64')}\">"
         "</td></tr>"
         "</table>"
         '<div class="foot">本書はヤンマーアグリジャパン株式会社 中部近畿支社の'

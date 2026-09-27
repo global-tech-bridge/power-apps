@@ -134,6 +134,22 @@ python3 scripts/preview-document.py /tmp/preview
 `preview.doc` はフローが OneDrive に作るファイルと**同じ中身**なので、
 Word で開いて崩れがなければ、変換後のPDFもほぼ同じになる。
 
+**テナントがあれば、メールを出さずに実際の変換結果（PDF）まで確かめられる。**
+
+```bash
+YAJ_CONFIG=solution/config.local.json python3 scripts/preview-document.py /tmp/preview
+YAJ_CONFIG=solution/config.local.json python3 scripts/convert-preview-pdf.py /tmp/preview/preview.doc
+```
+
+フローと同じ Office の変換サービス（Graph の `/content?format=pdf`）で PDF にする。
+一時ファイルは `WorkTemp` ライブラリに置き、変換後に消す。トークンは
+`graph-device-login.py` で取得したもの（Sites.Manage.All）を使う。
+
+> 2026-09-28、アプリから送信した確認書で**確認欄の見出し列が1文字ずつ縦に折り返し、
+> 3ページになった**。Word が署名画像の元の寸法（736×200px＝約19.5cm）で表の幅を割り振り、
+> 見出し列を押し潰していた。見本の署名画像が小さかったため、プレビューでは再現しなかった。
+> 見本をペン入力と同じ 736×200 にし、表の列幅と画像の大きさを属性でも与えるように直した。
+
 ## 3. 実行
 
 ```bash
